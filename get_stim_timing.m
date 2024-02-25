@@ -22,14 +22,7 @@ targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral
 
 
 %% Load subject info 
-% force the date and t1 runs columns to be read in as char instead of double (which would produce NaNs for those with multiple dates)
-opts = detectImportOptions('/projectnb/somerslab/scripts/jupyter/subjectInfo.csv');
-date_columns = [6,9,12,15,18,23,26,29,30,31];
-vartypes = opts.VariableTypes;
-vartypes(date_columns) = {'char'};
-opts.VariableTypes = vartypes;
-
-subjDf = readtable('/projectnb/somerslab/scripts/jupyter/subjectInfo.csv', opts);
+subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 n = length(subjCodes);
@@ -44,6 +37,7 @@ for ss = 1:n
     % Get number of spatial temporal runs (-1 for folder with metadata)
     num_spacetime_runs = sum(contains(folders, 'SpatialTemporal')) - 1;
     
+    % Loop through spacetime runs and extract timing for each
     for rr = 1:num_spacetime_runs
         
         timing_path = [runDataDir, 'SpatialTemporal', num2str(rr), '/EVs/'];
@@ -58,7 +52,7 @@ for ss = 1:n
         timing_datatbl = sortrows(timing_datatbl, 'start');
 
         % Save to tsv file 
-        writetable(timing_datatbl, [targetDir, subjCode]) % left off here
+        writetable(timing_datatbl, [targetDir, subjCode, '_run', num2str(rr)], 'Delimiter', '\t', 'FileType','text');
 
     end
 
