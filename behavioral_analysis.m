@@ -9,28 +9,15 @@
 addpath('/projectnb/somerslab/tom/helper_functions/')
 ccc;
 
-%% Set up directories and key variables
-projectDir = '/projectnb/somerslab/tom/projects/spatial_temp_network/';
-stimTimingBase = '/projectnb/somerslab/hcp_pipeline_subjects/';
-experiment_name = 'spacetime';
-EV_fileNames = {'Fixation_Block.txt', 'Passive_Auditory.txt', 'Passive_Tactile.txt', 'Passive_Visual.txt',...
-                'Spatial_Auditory.txt', 'Spatial_Tactile.txt', 'Spatial_Visual.txt',...
-                'Temporal_Auditory.txt', 'Temporal_Tactile.txt', 'Temporal_Visual.txt'};
-condition_codes = 1:length(EV_fileNames);
-targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/';
-
-
 %% Load subject info 
+taskname = 'spacetime';
 subjDf = load_subjInfo();
-subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
+subjDf_cut = subjDf(~strcmp(subjDf.([taskname,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 n = length(subjCodes);
 
-%% Initialize key directories and variables
-behavioral_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/';
-taskname = 'spacetime';
-
 %% Loop through subjs and get % correct
+behavioral_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/';
 modality_names = {'visual', 'auditory', 'tactile'};
 task_names = {'spatial', 'temporal'};
 condition_order = {'visual_spatial', 'visual_temporal', 'auditory_spatial', 'auditory_temporal', 'tactile_spatial', 'tactile_temporal'};
@@ -101,6 +88,8 @@ corr_matrix = triu(corr(perc_correct_matrix),1); % get upper triangle (without d
 mean_corr = mean(corr_matrix(corr_matrix~=0),'all'); % average correlation
 % This process is not technically statistically valid, but it gives a rough
 % idea of the correlation among measures, good enough for a power analysis
+% % We should have fisher z transformed, averaged, convert back to
+% correlation coeff.
 
 % Looking at sphericity: assumption of equal variances in the differences
 % between measures
@@ -148,9 +137,43 @@ design_tbl.modality = categorical(design_tbl.modality);
 rm = fitrm(perc_correct_all, "visual_spatial,visual_temporal,auditory_spatial,auditory_temporal,tactile_spatial,tactile_temporal~1", WithinDesign=design_tbl);
 results = ranova(rm,'WithinModel','task*modality')
 
+design_tbl = table([1,0,1,0]', [0,0,1,1]', 'VariableNames', {'task', 'modality'});
+design_tbl.task = categorical(design_tbl.task);
+design_tbl.modality = categorical(design_tbl.modality);
+rm = fitrm(perc_correct_all([1:9,11,13:20],1:4), "visual_spatial,visual_temporal,auditory_spatial,auditory_temporal~1", WithinDesign=design_tbl);
+results = ranova(rm,'WithinModel','task*modality')
 
+% design_tbl = table([1,0,1,0]', [0,0,1,1]', 'VariableNames', {'task', 'modality'});
+% design_tbl.task = categorical(design_tbl.task);
+% design_tbl.modality = categorical(design_tbl.modality);
+% rm = fitrm(perc_correct_all(:,[1,2,5,6]), "visual_spatial,visual_temporal,tactile_spatial,tactile_temporal~1", WithinDesign=design_tbl);
+% results = ranova(rm,'WithinModel','task*modality')
+% 
+% design_tbl = table([1,0,1,0]', [0,0,1,1]', 'VariableNames', {'task', 'modality'});
+% design_tbl.task = categorical(design_tbl.task);
+% design_tbl.modality = categorical(design_tbl.modality);
+% rm = fitrm(perc_correct_all(:,[3,4,5,6]), "auditory_spatial,auditory_temporal,tactile_spatial,tactile_temporal~1", WithinDesign=design_tbl);
+% results = ranova(rm,'WithinModel','task*modality')
 
+%% Plot swarmplot for visualization
+close all;
+figure; 
+boxplot(perc_correct_matrix, 'Labels', condition_order);
+ylim([0,1]);
+ylabel('Proportion Correct');
 
+newmat_modality = [mean(perc_correct_matrix(:,[1,2]),2), mean(perc_correct_matrix(:,[3,4]),2), mean(perc_correct_matrix(:,[5,6]),2)];
+newmat_task = [mean(perc_correct_matrix(:,[1,3,5]),2), mean(perc_correct_matrix(:,[2,4,6]),2)];
+
+figure; 
+boxplot(newmat_modality, 'Labels', {'visual', 'auditory', 'tactile'});
+ylabel('Proportion Correct');
+ylim([0,1]);
+
+figure; 
+boxplot(newmat_task, 'Labels', {'spatial', 'temporal'});
+ylabel('Proportion Correct');
+ylim([0,1]);
 
 
 

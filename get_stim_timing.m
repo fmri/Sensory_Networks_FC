@@ -48,8 +48,8 @@ for ss = 1:n
             timing_data(tt,3) = condition_codes(tt);
         end
 
-        timing_datatbl = array2table(timing_data, 'VariableNames', ["start","duration","condition"]);
-        timing_datatbl = sortrows(timing_datatbl, 'start');
+        timing_datatbl = array2table(timing_data, 'VariableNames', ["onset","duration","trial_type"]);
+        timing_datatbl = sortrows(timing_datatbl, 'onset');
 
         % Save to tsv file 
         writetable(timing_datatbl, [targetDir, subjCode, '_run', num2str(rr)], 'Delimiter', '\t', 'FileType','text');

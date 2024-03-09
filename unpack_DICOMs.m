@@ -10,14 +10,16 @@ ccc;
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
-unpack_t1s = true;
+unpack_t1s = false;
+unpack_func = false;
+unpack_fieldmaps = true;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
-subjCodes = {'NS'}; %subjDf_cut.subjCode;
+subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/'];
 
 %% Start looping through subjs
@@ -63,6 +65,8 @@ for ss = 1:length(subjCodes)
         fullSrcPath = [dicomsFullDir t1Run scanSuffix];
         endTargPath = [dirTarget 'anat/sub-' subjCode '_run' t1Run '_T1.nii'];
 
+        unix(['rm -r ' dirTarget 'anat/run' t1Run '_info'])
+
         if ~isfile(endTargPath) % does folder already contain .nii?
             % Actually unpack T1, then organize contents a bit
             unix(['unpacksdcmdir -src ' fullSrcPath ' -targ ' dirTarget ' -fsfast -run '...
@@ -93,27 +97,77 @@ for ss = 1:length(subjCodes)
     scanSuffix = ['-', func_seqName '/resources/DICOM/files/'];
 
     % Loop over runs and unpack each 
-    for rr = 1:length(runs)
-        run = runs(rr);
-        formattedRunID = sprintf('%03d',run);
-        runstr = num2str(run);
-        fullSrcPath = [dicomsFullDir runstr scanSuffix];
-        endTargPath = [dirTarget 'func/sub-' subjCode '_run' runstr '_' experiment_name '.nii'];
+    if unpack_func
+        for rr = 1:length(runs)
+            run = runs(rr);
+            formattedRunID = sprintf('%03d',run);
+            runstr = num2str(run);
+            fullSrcPath = [dicomsFullDir runstr scanSuffix];
+            endTargPath = [dirTarget 'func/sub-' subjCode '_run' runstr '_' experiment_name '.nii'];
+    
+            if ~isfile(endTargPath) % does folder already contain .nii?
+    
+                %Actually unpack functional data, then organize contents a bit
+                unix(['unpacksdcmdir -src ' fullSrcPath ' -targ ' dirTarget ...
+                   ' -fsfast -run ' runstr ' func nii ' 'sub-' subjCode '_run' runstr '_' experiment_name '.nii'])
+                unix(['mv ' dirTarget 'func/' formattedRunID '/sub-' subjCode '_run' runstr '_' experiment_name '.nii ' endTargPath]);
+                unix(['mv ' dirTarget 'func/seq.info ' dirTarget 'func/' formattedRunID '/']);
+                unix(['mv ' dirTarget 'func/' formattedRunID ' ' dirTarget 'func/' 'run' runstr '_info/']);
+                unix(['mv ' dirTarget  'dicomdir.sumfile ' dirTarget 'func/' 'run' runstr '_info/']);
+                unix(['mv ' dirTarget  'unpack.log ' dirTarget 'func/' 'run' runstr '_info/']);
+                disp([subjCode ' run ' runstr ': func unpacked']);
+    
+            else
+                warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
+            end    
+        end
+    end
+    
+    %% Unpack fieldmaps
+    if unpack_fieldmaps
+        % Get run numbers of func data
+        FMruns = subjDf_cut.([experiment_name, 'FM']){subjRow};
+        if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
+            FMruns = replace(FMruns, '/', ','); % still take all fieldmaps
+        end
+        FMruns = str2num(FMruns);        
+        assert(mod(length(FMruns),2)==0, ['Subj ' subjCode 'number of fieldmaps not a multiple of 2']);
 
-        if ~isfile(endTargPath) % does folder already contain .nii?
-            % Actually unpack functional data, then organize contents a bit
-            unix(['unpacksdcmdir -src ' fullSrcPath ' -targ ' dirTarget ...
-                ' -fsfast -run ' runstr ' func nii ' 'sub-' subjCode '_run' runstr '_' experiment_name '.nii'])
-            unix(['mv ' dirTarget 'func/' formattedRunID '/sub-' subjCode '_run' runstr '_' experiment_name '.nii ' endTargPath]);
-            unix(['mv ' dirTarget 'func/seq.info ' dirTarget 'func/' formattedRunID '/']);
-            unix(['mv ' dirTarget 'func/' formattedRunID ' ' dirTarget 'func/' 'run' runstr '_info/']);
-            unix(['mv ' dirTarget  'dicomdir.sumfile ' dirTarget 'func/' 'run' runstr '_info/']);
-            unix(['mv ' dirTarget  'unpack.log ' dirTarget 'func/' 'run' runstr '_info/']);
-            disp([subjCode ' run ' runstr ': func unpacked']);
+        for rr = 1:length(FMruns)
+            
+            run = FMruns(rr);
+            formattedRunID = sprintf('%03d',run);
+            runstr = num2str(run);
+            if mod(rr,2) == 1
+                FM_seqName = subjDf_cut.fieldmap1SequenceName{subjRow};
+                fileNameSuffix = 'AP';
+            else
+                FM_seqName = subjDf_cut.fieldmap2SequenceName{subjRow};
+                fileNameSuffix = 'PA';
+            end
+            scanSuffix = ['-', FM_seqName '/resources/DICOM/files/'];
+            fullSrcPath = [dicomsFullDir runstr scanSuffix];
 
-        else
-            warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
-        end    
+            fileName = ['/sub-' subjCode '_run' runstr '_fieldmap' fileNameSuffix '.nii'];
+
+            if ~isfile([dirTarget 'func/' fileName]) % does folder already contain .nii?
+    
+                %Actually unpack fieldmap data, then organize contents a bit
+                unix(['unpacksdcmdir -src ' fullSrcPath ' -targ ' dirTarget ' -fsfast -run ' runstr ' func nii ' fileName])
+                unix(['mkdir -p ' dirTarget 'func/fieldmap_unpack_info/run' runstr '/'])
+                unix(['rsync -a ' dirTarget 'func/' formattedRunID '// ' dirTarget '/func/fieldmap_unpack_info/run' runstr '/'])
+                unix(['mv ' dirTarget 'dicomdir.sumfile ' dirTarget '/func/fieldmap_unpack_info/run' runstr '/'])
+                unix(['mv ' dirTarget 'unpack.log ' dirTarget '/func/fieldmap_unpack_info/run' runstr '/'])
+                unix(['mv ' dirTarget 'func/seq.info ' dirTarget '/func/fieldmap_unpack_info/run' runstr '/'])
+                unix(['mv ' dirTarget 'func/fieldmap_unpack_info/run' runstr '/' fileName ' ' dirTarget 'func/'])
+                unix(['rm -r ' dirTarget '/func/' formattedRunID])
+            end
+
+
+        end
+
+
+
     end
 
 end
