@@ -6,7 +6,6 @@ ccc;
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
-unpack_t1s = true;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];

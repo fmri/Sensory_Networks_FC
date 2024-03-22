@@ -10,8 +10,8 @@ ccc;
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
-unpack_t1s = true;
-unpack_func = true;
+unpack_t1s = false;
+unpack_func = false;
 unpack_fieldmaps = true;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
@@ -147,7 +147,7 @@ for ss = 1:length(subjCodes)
                 %Actually unpack fieldmap data
                 unix(['mkdir -p ' dirTarget 'func/']); % make dir if not already there
                 cd /projectnb/somerslab/tom/helper_functions;
-                unix(['dcm2niix -o ' dirTarget 'func/' ' -f' ' sub-' subjCode '_run' runstr '_fieldmap ' ...
+                unix(['dcm2niix -o ' dirTarget 'func/' ' -f' ' sub-' subjCode '_run' runstr '_fieldmap' fileNameSuffix ' ' ...
                       fullSrcPath]);
                 cd /projectnb/somerslab/tom/projects/spacetime_network;
                 disp([subjCode ' run ' runstr ': fieldmap unpacked']);
