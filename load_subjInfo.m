@@ -1,5 +1,6 @@
 function [subjDf] = load_subjInfo(filepath)
 %LOAD_SUBJINFO loads csv with various subject information into a table
+% Created: Tom Possidente - Feb 2024
 
 % If not filepath provided, used default location
 if nargin == 0

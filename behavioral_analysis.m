@@ -3,7 +3,7 @@
 % spacetime task and calculate the % correct for each subj for each
 % condition for each modality and run statistical testing on them
 %
-% Created: Tom Possidente - Feb 2023
+% Created: Tom Possidente - Feb 2024
 %%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/')

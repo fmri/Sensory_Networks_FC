@@ -1,5 +1,6 @@
 %%%% 
-% The purpose of this script is to unpack experiment-specific (trifloc space/time) DICOMs to nifti files 
+% The purpose of this script is to unpack experiment-specific (trifloc
+% space/time) DICOMs to nifti files using unpackdcmdir
 % Some of this code is taken/modified from David Beeler's fmriPipeline.m function (/projectnb/somerslab/scripts/jupyter/fmri/scripts)
 % Created: Tom Possidente - Feb 2024
 %%%%%

@@ -1,4 +1,10 @@
-% Copy stimulus timing files to subject's directory
+%%%%
+% The purpose of this script is to copy the relevant stimulus timing files
+% to each subject's functional scan directory so that Conn Toolbox can find
+% it automatically.
+%
+% Created: Tom Possidente - March 2024
+%%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/')
 ccc;
