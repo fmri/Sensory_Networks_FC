@@ -195,8 +195,8 @@ for ss = 1:length(subjCodes)
                     end
                     
                     % Use topup command to convert from echo to magnitude/phase fieldmaps (requires all dims of images to be even)
-                    unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
-                          '--config=b02b0.cnf --iout=' fmapMagPhase_filepath]);
+                     unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
+                           '--config=b02b0.cnf --iout=' fmapMagPhase_filepath]);
 
                     % Use fslmaths to take time mean 
                     unix(['fslmaths ' fmapMagPhase_filepath ' -Tmean ' fmapMag_filepath])

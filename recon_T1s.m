@@ -21,7 +21,7 @@ subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/'];
 
 %% Start looping through subjs
-parfor ss = 1:length(subjCodes)
+for ss = 1:length(subjCodes)
 
     %% Set up subj varibles
     subjCode = subjCodes{ss};
@@ -58,9 +58,10 @@ parfor ss = 1:length(subjCodes)
     if isfolder(['/projectnb/somerslab/scripts/jupyter/fmri/recons/' subjCode '/'])
         disp([subjCode ' already reconned, skipping.']);
     else
-        disp([subjCode ' started recon']);
-        unix(['recon-all -i ' T1SourcePath ' -subject ' subjCode ' -all']);
-        disp([subjCode ' finished recon']);
+        continue
+        %disp([subjCode ' started recon']);
+        %unix(['recon-all -i ' T1SourcePath ' -subject ' subjCode ' -all']);
+        %disp([subjCode ' finished recon']);
     end
 
 

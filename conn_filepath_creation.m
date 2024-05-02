@@ -50,6 +50,15 @@ for ss=1:length(subjCodes)
 end
 
 
+% Print lh.aparc.annot paths for ROI selection
+for ss=1:length(subjCodes)
+
+    subjDirStruct = [struct_path '/' subjCodes{ss} '/label/lh.aparc.annot'];
+    assert(isfile(subjDirStruct), ['Subj ' subjCodes{ss} ' lh.aparc.annot file not found'])
+    disp(subjDirStruct)
+
+end
+
 % Print fieldmap paths
 for ss=1:length(subjCodes)
     subjCode = subjCodes{ss};
@@ -67,10 +76,10 @@ for ss=1:length(subjCodes)
     if num_pairs ~= 1 % if there is more than 1 pair of fieldmaps, things get more complicated
         if strcmp(subjCode, 'NS') % This subj has 1st run with 1st parir of FMs then next 3 runs with 2nd pair of FMs
             subjDirFM1 = [func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii'];
+                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
             disp(subjDirFM1)
             subjDirFM234 = [func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
-                num2str(FMruns(3)) num2str(FMruns(4)) '_fmapMag.nii'];
+                num2str(FMruns(3)) num2str(FMruns(4)) '_fmapMag.nii.gz'];
             disp(subjDirFM234)
             disp(subjDirFM234)
             disp(subjDirFM234)
@@ -81,10 +90,10 @@ for ss=1:length(subjCodes)
     else
         for ii = 1:length(runs_all{ss}) % print a fieldmap filepath for every functional run
             assert(isfile([func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii']), ['Subj ' subjCode ' runs ' ...
+                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz']), ['Subj ' subjCode ' runs ' ...
                 num2str(FMruns(1)) num2str(FMruns(2)) ' Fieldmap file not found'])
             subjDirFM = [func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii'];
+                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
             disp(subjDirFM)
         end
     end
