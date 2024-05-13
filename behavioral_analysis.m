@@ -6,7 +6,8 @@
 % Created: Tom Possidente - Feb 2024
 %%%%
 
-addpath('/projectnb/somerslab/tom/helper_functions/')
+addpath('/projectnb/somerslab/tom/helper_functions/');
+addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Load subject info 

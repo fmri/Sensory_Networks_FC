@@ -4,7 +4,8 @@
 % Created: Tom Possidente - March 2024
 %%%%%
 
-addpath('/projectnb/somerslab/tom/helper_functions/')
+addpath('/projectnb/somerslab/tom/helper_functions/');
+addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 unix('export SUBJECTS_DIR=/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/');

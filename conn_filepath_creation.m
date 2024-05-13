@@ -8,7 +8,10 @@
 
 
 addpath('/projectnb/somerslab/tom/helper_functions/');
-ccc;
+addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+%ccc;
+
+func_topupapplied = true; % give paths for functionals with fmaps already applied or not
 
 % Load in subject info
 experiment_name = 'spacetime';
@@ -30,6 +33,11 @@ end
 
 % Print functional paths
 runs_all = {};
+if func_topupapplied
+    suffix = '_topupApplied.nii';
+else
+    suffix = '.nii';
+end
 for ss=1:length(subjCodes)
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
@@ -42,7 +50,7 @@ for ss=1:length(subjCodes)
     runs_all{ss} = runs;
 
     for ii=1:length(runs)
-        subjDirFunc = [func_path '/' subjCode '/func/run' num2str(runs(ii)) '/sub-' subjCode '_run' num2str(runs(ii)) '_spacetime.nii'];
+        subjDirFunc = [func_path '/' subjCode '/func/run' num2str(runs(ii)) '/sub-' subjCode '_run' num2str(runs(ii)) '_spacetime' suffix];
         assert(isfile(subjDirFunc), ['Subj ' subjCode ' run ' num2str(runs(ii)) ' functional file not found'])
         disp(subjDirFunc)
     end

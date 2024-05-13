@@ -5,7 +5,8 @@
 % Created: Tom Possidente - Feb 2024
 %%%%%
 
-addpath('/projectnb/somerslab/tom/helper_functions/')
+addpath('/projectnb/somerslab/tom/helper_functions/');
+addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Set up directories and subj info
@@ -13,8 +14,8 @@ ccc;
 experiment_name = 'spacetime';
 unpack_t1s = false;
 unpack_func = false;
-unpack_fieldmaps = true;
-convert_fieldmaps = true; % convert fieldmaps from spin-echo to mag/phase (more commonly used)
+unpack_fieldmaps = false;
+convert_fieldmaps = true; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
@@ -158,71 +159,79 @@ for ss = 1:length(subjCodes)
             end
 
         end
+    end
 
-        if convert_fieldmaps
-            num_pairs = length(FMruns)/2;
-            run_inds = reshape(1:length(FMruns), [2,num_pairs]);
-            
-            for pp = 1:num_pairs
-
-                fmap_runs = FMruns(run_inds(:,pp)); % get run numbers for this pair of fmaps
-                fmapAP_filepath = [dirTarget 'func/sub-' subjCode '_run' num2str(fmap_runs(1)) '_fieldmapAP.nii'];
-                fmapPA_filepath = [dirTarget 'func/sub-' subjCode '_run' num2str(fmap_runs(2)) '_fieldmapPA.nii'];
-                fmapMerged_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMerged.nii.gz'];
-                fmapMagPhase_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMagPhase'];
-                fmapMag_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMag'];
-
-                if ~isfile([fmapMag_filepath '.nii'])
-                    % merge AP and PA files into one .nii
-                    unix(['fslmerge -t ' fmapMerged_filepath ' ' fmapAP_filepath ' ' fmapPA_filepath]);
-    
-                    % Load in the merged fm and check that the dims are all even
-                    images = niftiread(fmapMerged_filepath);
-                    dims = size(images);
-                    odd_dims = mod(dims,2)==1;
-                    padded = false;
-                    if any(odd_dims(1:3)) 
-                        padded = true;
-                        disp(['Subj ' subjCode ': One or more dims of the in the fieldmap is odd, padding with 0s to make all dims even. Will remove padding after fieldmap transformation.']);
-                        images = padarray(images, double(odd_dims(1:3)), 0, 'post');
-                        info = niftiinfo(fmapMerged_filepath);
-                        info.Description = [info.Description ' - Used Matlab to pad dimensions'];
-                        info.ImageSize = size(images);
-                        info.raw.dim(2:5) = size(images);
-                        split_outpath = split(fmapMerged_filepath,'.');
-                        niftiwrite(images, split_outpath{1}, info);
-                        unix(['rm ' fmapMerged_filepath]); % remove unpadded file 
-                    end
-                    
-                    % Use topup command to convert from echo to magnitude/phase fieldmaps (requires all dims of images to be even)
-                     unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
-                           '--config=b02b0.cnf --iout=' fmapMagPhase_filepath]);
-
-                    % Use fslmaths to take time mean 
-                    unix(['fslmaths ' fmapMagPhase_filepath ' -Tmean ' fmapMag_filepath])
-
-                    if padded % if padding happened, unpad 
-                        images = niftiread([fmapMag_filepath '.nii.gz']);
-                        dims = size(images);
-                        new_dims = dims - odd_dims(1:3); % take off 1 padded dim 
-                        images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3));
-                        info = niftiinfo([fmapMag_filepath '.nii.gz']);
-                        info.Description = [info.Description ' - Used Matlab to unpad dimensions'];
-                        info.ImageSize = size(images);
-                        info.raw.dim(2:5) = [size(images),1];
-                        niftiwrite(images, fmapMag_filepath, info);
-                        unix(['rm ' fmapMag_filepath '.nii.gz']); % remove padded file 
-
-                    end
-                else
-                    warning(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])
-                end
-            end
-
+    if convert_fieldmaps
+        % Get run numbers of func data
+        FMruns = subjDf_cut.([experiment_name, 'FM']){subjRow};
+        if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
+            FMruns = replace(FMruns, '/', ','); % still take all fieldmaps
         end
+        FMruns = str2num(FMruns);
+        assert(mod(length(FMruns),2)==0, ['Subj ' subjCode 'number of fieldmaps not a multiple of 2']);
+        
+        num_pairs = length(FMruns)/2;
+        run_inds = reshape(1:length(FMruns), [2,num_pairs]);
 
+        for pp = 1:num_pairs
 
+            fmap_runs = FMruns(run_inds(:,pp)); % get run numbers for this pair of fmaps
+            fmapAP_filepath = [dirTarget 'func/sub-' subjCode '_run' num2str(fmap_runs(1)) '_fieldmapAP.nii'];
+            fmapPA_filepath = [dirTarget 'func/sub-' subjCode '_run' num2str(fmap_runs(2)) '_fieldmapPA.nii'];
+            fmapMerged_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMerged.nii.gz'];
+            fmaptopup_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapTopupOut'];
+            fmapMag_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMag'];
+
+            if ~isfile([fmapMag_filepath '.nii.gz'])
+                % merge AP and PA files into one .nii
+                unix(['fslmerge -t ' fmapMerged_filepath ' ' fmapAP_filepath ' ' fmapPA_filepath]);
+
+                % Load in the merged fm and check that the dims are all even
+                images = niftiread(fmapMerged_filepath);
+                dims = size(images);
+                odd_dims = mod(dims,2)==1;
+                padded = false;
+                if any(odd_dims(1:3))
+                    padded = true;
+                    disp(['Subj ' subjCode ': One or more dims of the in the fieldmap is odd, padding with 0s to make all dims even. Will remove padding after fieldmap transformation.']);
+                    images = padarray(images, double(odd_dims(1:3)), 0, 'post');
+                    info = niftiinfo(fmapMerged_filepath);
+                    info.Description = [info.Description ' - Used Matlab to pad dimensions'];
+                    info.ImageSize = size(images);
+                    info.raw.dim(2:5) = size(images);
+                    split_outpath = split(fmapMerged_filepath,'.');
+                    niftiwrite(images, split_outpath{1}, info);
+                    unix(['rm ' fmapMerged_filepath]); % remove unpadded file
+                end
+
+                % Use topup command to convert from echo to more common fieldmaps (requires all dims of images to be even)
+                unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
+                    '--config=b02b0.cnf --iout=' fmaptopup_filepath]);
+
+                % Use fslmaths to take time mean
+                unix(['fslmaths ' fmaptopup_filepath ' -Tmean ' fmapMag_filepath])
+
+                if padded % if padding happened, unpad
+                    images = niftiread([fmapMag_filepath '.nii.gz']);
+                    dims = size(images);
+                    new_dims = dims - odd_dims(1:3); % take off 1 padded dim
+                    images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3));
+                    info = niftiinfo([fmapMag_filepath '.nii.gz']);
+                    info.Description = [info.Description ' - Used Matlab to unpad dimensions'];
+                    info.ImageSize = size(images);
+                    info.raw.dim(2:5) = [size(images),1];
+                    niftiwrite(images, fmapMag_filepath, info);
+                    unix(['rm ' fmapMag_filepath '.nii.gz']); % remove padded file
+
+                end
+            else
+                warning(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])
+            end
+        end
 
     end
 
+
+
 end
+
