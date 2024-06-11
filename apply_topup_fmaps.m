@@ -54,19 +54,18 @@ for ss = 1:length(subjCodes)
         if strcmp(subjCode, 'NS') % This subj has 1st run with 1st pair of FMs then next 3 runs with 2nd pair of FMs
             assert(num_pairs == 2, ['unexpected number of fieldmaps for subj ' subjCode ' (expected 2, got ' num2str(num_pairs)])
             if ff==1
-                topup_path = [dirTarget 'func/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_fmapTopupOut'];
+                topup_path = [dirTarget 'bold/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_fmapTopupOut'];
             else
-                topup_path = [dirTarget 'func/sub-' subjCode 'runs' num2str(FMruns(3)) num2str(FMruns(4)) '_fmapTopupOut'];
+                topup_path = [dirTarget 'bold/sub-' subjCode 'runs' num2str(FMruns(3)) num2str(FMruns(4)) '_fmapTopupOut'];
             end
         else % all other subjs should have 1 fieldmap pair
             assert(num_pairs == 1, ['unexpected number of fieldmaps for subj ' subjCode ' (expected 1, got ' num2str(num_pairs)])
-            topup_path = [dirTarget 'func/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_fmapTopupOut'];
+            topup_path = [dirTarget 'bold/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_fmapTopupOut'];
         end
 
         % Apply topup to funcitonal scans
-        func_run_str = num2str(func_runs(ff));
-        path_func = [dirTarget 'func/run' func_run_str '/sub-' subjCode '_run' func_run_str '_spacetime.nii'];
-        path_func_out = [dirTarget 'func/run' func_run_str '/sub-' subjCode 'run' func_run_str '_spacetime_topupApplied.nii'];
+        path_func = [dirTarget 'bold/00' num2str(ff) '/fmcpr.nii.gz'];
+        path_func_out = [dirTarget 'bold/00' num2str(ff) '/fmcpr_topupApplied.nii'];
 
         if isfile(path_func_out)
             warning('There is already a functional file with topup applied in this subjects run directory, skipping...')

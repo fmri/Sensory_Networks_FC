@@ -40,6 +40,10 @@ for ss = 1:n
     subjID = [spactime_date upper(subjCode)];
 
     files = {dir([behavioral_dir subjID]).name};
+    if isempty(files)
+        disp(['No behavrioal data files for subj ' subjCode]);
+        continue
+    end
     files_csv = files(contains(files, '.csv')); % Get only csv files in this dir
     assert(length(files_csv)==num_runs, ['Subj ' subjCode ': Number of runs specified in subjInfo.csv does not match number of runs found in behavioral data files']);
     
@@ -53,7 +57,12 @@ for ss = 1:n
         nrows = height(behavioral_data);
         modalities(length(modalities)+1:length(modalities)+nrows) = behavioral_data.modality;
         conditions(length(conditions)+1:length(conditions)+nrows) = behavioral_data.type;
-        responses(length(responses)+1:length(responses)+nrows) = behavioral_data.trials_response;
+        try
+            responses(length(responses)+1:length(responses)+nrows) = behavioral_data.trials_response;
+        catch
+            disp(['"trials_response" column not found for subj ' subjCode ' run ' num2str(rr) ' using "odd_trial_responseCorrect instead.'])
+            responses(length(responses)+1:length(responses)+nrows) = behavioral_data.odd_trial_responseCorrect;
+        end
     end
 
     % Loop through each modality and calculate % correct
@@ -76,6 +85,10 @@ end
 perc_correct_all = array2table(perc_correct_all, 'VariableNames',condition_order)
 save('behavioral_percent_correct_data.mat', 'subjCodes', 'perc_correct_all', 'n_cond');
 writetable(perc_correct_all, 'behavioral_data.csv')
+
+missing_all_data = all(ismissing(perc_correct_all),2);
+perc_correct_all=perc_correct_all(~missing_all_data,:); % delete any rows with all nans
+n = n-sum(missing_all_data);
 
 %% Power analysis
 % For a repeated measures ANOVA With sample N=20, alpha = 0.05, power = 0.8, 
@@ -113,20 +126,20 @@ vars = var(measure_differences); % if these variances are similar, sphericity is
 % measures, within factors ANOVA with the following parameters:
 % alpha: 0.05
 % power = 0.8
-% total sample size = 20
+% total sample size = 24
 % number of groups = 1
 % number of measurements = 6
-% corr among repeated measures = 0.391
+% corr among repeated measures = 0.3184
 % nonspereicity correction (epsilon) = 0.8 
-% The result is an effect size detectable of f = 0.284 which is
-% approximately a cohen's d of 0.57 (medium-large effect size)
+% The result is an effect size detectable of f = 0.273 which is
+% approximately a cohen's d of 0.546 (medium-large effect size)
 
-% To translate a cohens d of 0.57 into a raw mean difference we can use the
+% To translate a cohens d of 0.546 into a raw mean difference we can use the
 % fact that cohens d = difference in means / pooled SD
 pooled_SD = sqrt(mean(sqrt(var(perc_correct_matrix))));
-diff_in_means_detectable = 0.57*pooled_SD;
+diff_in_means_detectable = 0.546*pooled_SD;
 
-% We can detect a difference in means of about 0.198 as a main effect
+% We can detect a difference in means of about 0.1900 as a main effect
 % currently. Interaction effects likely require a larger difference in
 % means
 

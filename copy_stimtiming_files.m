@@ -15,7 +15,6 @@ ccc;
 experiment_name = 'spacetime';
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
-dicomsBase=[projectDir 'data/copied_DICOMs/'];
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
@@ -40,8 +39,9 @@ for ss = 1:length(subjCodes)
 
     for rr = 1:length(runs)
         sourceFile = [stimtimeDir subjCode '_run' num2str(rr) '.txt'];
-        destFile = [subjectsDir 'unpacked_data_nii/' subjCode '/func/run' num2str(runs(rr)) '/sub-' subjCode '_run' num2str(runs(rr)) '_spacetime_events.tsv'];
+        destFile = [subjectsDir 'unpacked_data_nii/' subjCode '/bold/00' num2str(rr) '/fmcpr_topupApplied.sm3_events.tsv'];
         unix(['cp ' sourceFile ' ' destFile])
+        unix(['rm ' subjectsDir 'unpacked_data_nii/' subjCode '/bold/00' num2str(rr) '/fmcpr_topupApplied.sms3_events.tsv'])
     end
 
 

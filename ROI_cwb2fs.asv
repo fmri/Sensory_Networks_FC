@@ -45,7 +45,7 @@ aud_ROIs = {'pSTS', 'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud', 'cmSFG'};% ignore pST
 aud_ROIs_use = {'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud'};
 tac_ROIs = {'S2', 'midIns', 'S1', 'pSTS-Tac', 'ppTac', 'PMv', 'posCingSulc'};
 tac_ROIs_use = {};
-vis_ROIs = {'pVis', 'SPCS', 'IPCS', 'midIFS'}; % ignore preSMA-V
+vis_ROIs = {'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS'};
 vis_ROIs_use = {'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS'};
 mult_ROIs = {'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult', 'cmSFG_mult', 'Ins_mult'}; % use Ins_mult and cmSFG_mult as pure MD areas? 
 mult_ROIs_use = {'cmSFG_mult', 'Ins_mult'};
@@ -210,10 +210,10 @@ for ss = 1:length(subjCodes)
     % Check how much each ROI overlaps
     ROI_overlap_matrix_lh = NaN(length(ROI_names_lh), length(ROI_names_lh));
     for ii = 1:length(ROI_names_lh)
-        ROI_voxels_orig_lh(ss,ismember(all_ROIs,ROI_names_lh{ii})) = sum(all_ROIs_data_lh(:,ii));
         for ff = 1:length(ROI_names_lh)
             if ismember(ROI_names_lh{ii}, all_ROIs_use) && ismember(ROI_names_lh{ff}, all_ROIs_use)
                 ROI_overlap_matrix_lh(ii,ff) = sum(all_ROIs_data_lh(:,ii) .* all_ROIs_data_lh(:,ff)) / sum(all_ROIs_data_lh(:,ii));
+                ROI_voxels_orig_lh()
             end
         end
     end
@@ -221,7 +221,6 @@ for ss = 1:length(subjCodes)
     
     ROI_overlap_matrix_rh = NaN(length(ROI_names_rh), length(ROI_names_rh));
     for ii = 1:length(ROI_names_rh)
-        ROI_voxels_orig_rh(ss,ismember(all_ROIs,ROI_names_rh{ii})) = sum(all_ROIs_data_rh(:,ii));
         for ff = 1:length(ROI_names_rh)
             if ismember(ROI_names_rh{ii}, all_ROIs_use) && ismember(ROI_names_rh{ff}, all_ROIs_use)
                 ROI_overlap_matrix_rh(ii,ff) = sum(all_ROIs_data_rh(:,ii) .* all_ROIs_data_rh(:,ff)) / sum(all_ROIs_data_rh(:,ii));
@@ -232,7 +231,9 @@ for ss = 1:length(subjCodes)
 
     % If any overlap between ROIs in any voxel, replace with 0
     %% TODO: ROIs ARE IN DIFFERENT/WRONG ORDER FOR EACH TABLE/SUBJ %%
+    ROI_voxels_orig_lh(ss,ROI_exists_lh) = sum(all_ROIs_data_lh,1);
     ROI_use_mask_lh = ismember(ROI_names_lh, all_ROIs_use);
+    ROI_voxels_orig_rh(ss,ROI_exists_rh) = sum(all_ROIs_data_rh,1);
     ROI_use_mask_rh = ismember(ROI_names_rh, all_ROIs_use);
     for vv = 1:fsavg_hem_voxels
         if sum(all_ROIs_data_lh(vv,ROI_use_mask_lh)) > 1

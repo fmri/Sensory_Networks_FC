@@ -27,6 +27,39 @@ projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/copied_DI
 for s=1:length(subjCodes)
     subjCode = subjCodes{s};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
-    subjID = [subjDf_cut.([experiment_name 'Date']){subjRow} subjCode];
-    unix(['rsync -av ' rawDicomDir '/' subjID ' ' projectDir]);
+
+    % Copy over session with experiment data
+    experimentDate = subjDf_cut.([experiment_name 'Date']){subjRow};
+    subjID_exp = [experimentDate subjCode];
+    unix(['rsync -av ' rawDicomDir '/' subjID_exp ' ' projectDir]);
+
+    % Make sure we a session with the T1 data
+    t1Date = subjDf_cut.t1Date{subjRow};
+    t1Run = subjDf_cut.t1Runs{subjRow};
+    if contains(t1Date, '/') % if multiple dates
+        t1Dates = strsplit(t1Date, '/');
+        t1Runs = strsplit(t1Run, '/');
+        dateMask = strcmp(t1Dates, experimentDate);
+        t1Date = t1Dates{dateMask};
+        t1Run = t1Runs{dateMask}; % use the one that matches experiment date
+    end
+
+    if ~strcmp(t1Date, experimentDate) % if t1 date and spacetime date don't match, copy over data from t1 date as well
+        unix(['rsync -av ' rawDicomDir t1Date subjCode ' ' projectDir]);
+    end
+
+    % Make sure we have all sessions with resting state
+    rsDate = subjDf_cut.restDate{subjRow};
+    rsRun = subjDf_cut.restRuns{subjRow};
+    if contains(rsDate, '/') % if multiple dates
+        rsDate = str2num(replace(rsDate, '/', ','));
+        rsRun = strsplit(rsRun, '/');
+    else
+        rsDate = str2num(rsDate);
+    end
+
+    for dd = 1:length(rsDate)
+        unix(['rsync -av ' rawDicomDir num2str(rsDate(dd)) subjCode ' ' projectDir]);
+    end
 end
+

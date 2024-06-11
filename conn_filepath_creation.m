@@ -34,7 +34,7 @@ end
 % Print functional paths
 runs_all = {};
 if func_topupapplied
-    suffix = '_topupApplied.nii';
+    suffix = '_topupApplied.sm3.nii';
 else
     suffix = '.nii';
 end
@@ -50,7 +50,7 @@ for ss=1:length(subjCodes)
     runs_all{ss} = runs;
 
     for ii=1:length(runs)
-        subjDirFunc = [func_path '/' subjCode '/func/run' num2str(runs(ii)) '/sub-' subjCode '_run' num2str(runs(ii)) '_spacetime' suffix];
+        subjDirFunc = [func_path '/' subjCode '/bold/00' num2str(ii) '/fmcpr' suffix];
         assert(isfile(subjDirFunc), ['Subj ' subjCode ' run ' num2str(runs(ii)) ' functional file not found'])
         disp(subjDirFunc)
     end

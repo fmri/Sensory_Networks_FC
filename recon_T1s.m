@@ -56,13 +56,16 @@ for ss = 1:length(subjCodes)
     % Initialize directories 
     T1SourcePath = [dirSource 'anat/run' t1Run '/sub-' subjCode '_run' t1Run '_T1.nii'];
     
-    if isfolder(['/projectnb/somerslab/scripts/jupyter/fmri/recons/' subjCode '/'])
+    if isfile(['/projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.nii'])
         disp([subjCode ' already reconned, skipping.']);
+    elseif isfile(['/projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.mgz'])
+        disp([subjCode ' already reconned, but T1 is in mgz format. Converting to nii with mri_convert, then skipping recon.'])
+        unix(['mri_convert /projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.mgz ' ...
+               '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.nii'])
     else
-        continue
-        %disp([subjCode ' started recon']);
-        %unix(['recon-all -i ' T1SourcePath ' -subject ' subjCode ' -all']);
-        %disp([subjCode ' finished recon']);
+        disp([subjCode ' started recon']);
+        unix(['recon-all -i ' T1SourcePath ' -subject ' subjCode ' -all']);
+        disp([subjCode ' finished recon']);
     end
 
 

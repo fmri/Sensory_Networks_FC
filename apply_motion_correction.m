@@ -19,7 +19,7 @@ subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/unpacked_data_nii/'];
 
 %% Loop through subjs
-for ss = 1:length(subjCodes)
+parfor ss = 1:length(subjCodes)
 
     %% Set up subj varibles
     subjCode = subjCodes{ss};
@@ -31,8 +31,13 @@ for ss = 1:length(subjCodes)
     runs = str2num(runs);
 
     for rr = 1:length(runs)
-
-        unix(['mc-sess -s ' subjCode ' -d ' subjectsDir ' -per-run']);
-
+        if ~isfile([subjectsDir subjCode '/bold/00' num2str(rr) '/fmcpr.nii.gz'])
+            unix(['mktemplate-sess -s ' subjCode ' -d ' subjectsDir]);
+            unix(['mc-sess -s ' subjCode ' -d ' subjectsDir ' -per-run']);
+        else
+            disp(['Motion correction file found for subj ' subjCode ' run ' num2str(rr) '... skipping']);
+        end
     end
 end
+
+

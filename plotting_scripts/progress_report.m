@@ -17,8 +17,8 @@ N = length(subjCodes);
 
 base_dir = [projectDir, 'data/'];
 
-steps = {'copy DICOMs', 'unpack DICOMs', 'event files', 'recon T1s', 'motion correction', ...
-         'fieldmap topup', 'ROIs made', 'Conn preprocessed', 'Conn denoised'};
+steps = {'copy DICOMs', 'unpack T1/task/fmaps', 'unpacked rs', 'event files', 'recon T1s', 'MC task', 'MC rs' ...
+         'fieldmap topup', 'preprocessed task', 'preprocessed rs', 'ROIs made', 'Conn denoised'};
 
 steps_per_subj = zeros(N, length(steps));
 
@@ -35,7 +35,7 @@ for ss = 1:N
         steps_per_subj(ss,1) = 1;
     end
 
-    % Check for unpacked dicoms
+    % Check for unpacked t1, task functional, and fieldmaps
     hasrun1 = isfile([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/f.nii']);
     dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/anat/']).name};
     hasanat = length(dirs)==3;
@@ -46,34 +46,57 @@ for ss = 1:N
         steps_per_subj(ss,2) = 1;
     end
 
-    % Check for event file
-    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/f_events.tsv'])
+    % Check for unpacked resting state
+    has_rs1 = isfile([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/f.nii']);
+    if has_rs1
         steps_per_subj(ss,3) = 1;
+    end
+
+    % Check for event file
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/']).name};
+    if any(contains(dirs, '_events.tsv'))
+        steps_per_subj(ss,4) = 1;
     end
 
     % Check for T1 recon
     if isfile([base_dir, 'recons/' subjCode '/mri/T1.nii'])
-        steps_per_subj(ss,4) = 1;
-    end
-
-    % Check for motion corrected functionals
-    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/f_mc.nii'])
         steps_per_subj(ss,5) = 1;
     end
 
-    % Check for topup fieldmap creation
-    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/']).name};
-    if any(contains(dirs, 'fmapTopupOut.nii'))
+    % Check for motion corrected task functionals
+    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/fmcpr.nii.gz'])
         steps_per_subj(ss,6) = 1;
+    end
+
+    % Check for motion corrected rs functionals
+    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/fmcpr.nii.gz'])
+        steps_per_subj(ss,7) = 1;
+    end
+
+    % Check for topup fieldmap creation
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/']).name};
+    if any(contains(dirs, 'topupApplied') & contains(dirs, '.nii'))
+        steps_per_subj(ss,8) = 1;
+    end
+
+    % Check for freesurfer preprocessed task
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/']).name};
+    if any(contains(dirs, 'fmcpr_topupApplied.sm'))
+        steps_per_subj(ss,9) = 1;
+    end
+
+    % Check for freesurfer preprocessed rs
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/']).name};
+    if any(contains(dirs, 'fmcpr_topupApplied.sm'))
+        steps_per_subj(ss,10) = 1;
     end
 
     % Check for ROIs
     dirs = {dir([base_dir 'ROIs/']).name};
-    if sum(contains(dirs, [lower(subjCode) '_ROI_fs_164_']) > 10)
-        steps_per_subj(ss,7) = 1;
+    if sum(contains(dirs, [lower(subjCode) '_ROI_fs_164_'])) > 30
+        steps_per_subj(ss,11) = 1;
     end
 
-    % Check for Conn preprocessing
     
 end
 
@@ -98,7 +121,7 @@ for ss = 1:N
     yticklabels('')
 end
 
-steps_xticklabels = {' ', 'copy DICOMs', 'unpack DICOMs', 'event files', 'recon T1s', 'motion correction', ...
-         'fieldmap topup', 'ROIs made', 'Conn preprocessed', 'Conn denoised'};
+steps_xticklabels = [' ', steps];
+xticks(0:length(steps));
 xticklabels(steps_xticklabels);
 

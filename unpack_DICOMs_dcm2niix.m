@@ -15,7 +15,8 @@ experiment_name = 'spacetime';
 unpack_t1s = false;
 unpack_func = false;
 unpack_fieldmaps = false;
-convert_fieldmaps = true; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
+unpack_rs = true;
+convert_fieldmaps = false; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
@@ -102,14 +103,13 @@ for ss = 1:length(subjCodes)
             formattedRunID = sprintf('%03d',run);
             runstr = num2str(run);
             fullSrcPath = [dicomsFullDir runstr scanSuffix];
-            endTargPath = [dirTarget 'func/run' runstr '/sub-' subjCode '_run' runstr '_' experiment_name '.nii'];
+            endTargPath = [dirTarget 'bold/00' num2str(rr) '/f.nii'];
 
             if ~isfile(endTargPath) % does folder already contain .nii?
                 %Actually unpack functional data
-                unix(['mkdir -p ' dirTarget 'func/run' runstr '/']); % make dir if not already there
+                unix(['mkdir -p ' dirTarget 'bold/00' num2str(rr) '/']); % make dir if not already there
                 cd /projectnb/somerslab/tom/helper_functions;
-                unix(['dcm2niix -o ' dirTarget 'func/run' runstr '/' ' -f' ' sub-' subjCode '_run' runstr '_' ...
-                    experiment_name ' ' fullSrcPath]);
+                unix(['dcm2niix -o ' dirTarget 'bold/00' num2str(rr) '/' ' -f' ' f ' fullSrcPath]);
                 cd /projectnb/somerslab/tom/projects/spacetime_network;
                 disp([subjCode ' run ' runstr ': func unpacked']);
 
@@ -146,11 +146,11 @@ for ss = 1:length(subjCodes)
 
             fileName = ['/sub-' subjCode '_run' runstr '_fieldmap' fileNameSuffix '.nii'];
 
-            if ~isfile([dirTarget 'func/' fileName]) % does folder already contain .nii?
+            if ~isfile([dirTarget 'bold/' fileName]) % does folder already contain .nii?
                 %Actually unpack fieldmap data
-                unix(['mkdir -p ' dirTarget 'func/']); % make dir if not already there
+                unix(['mkdir -p ' dirTarget 'bold/']); % make dir if not already there
                 cd /projectnb/somerslab/tom/helper_functions;
-                unix(['dcm2niix -o ' dirTarget 'func/' ' -f' ' sub-' subjCode '_run' runstr '_fieldmap' fileNameSuffix ' ' ...
+                unix(['dcm2niix -o ' dirTarget 'bold/' ' -f' ' sub-' subjCode '_run' runstr '_fieldmap' fileNameSuffix ' ' ...
                     fullSrcPath]);
                 cd /projectnb/somerslab/tom/projects/spacetime_network;
                 disp([subjCode ' run ' runstr ': fieldmap unpacked']);
@@ -169,20 +169,20 @@ for ss = 1:length(subjCodes)
         end
         FMruns = str2num(FMruns);
         assert(mod(length(FMruns),2)==0, ['Subj ' subjCode 'number of fieldmaps not a multiple of 2']);
-        
+
         num_pairs = length(FMruns)/2;
         run_inds = reshape(1:length(FMruns), [2,num_pairs]);
 
         for pp = 1:num_pairs
 
             fmap_runs = FMruns(run_inds(:,pp)); % get run numbers for this pair of fmaps
-            fmapAP_filepath = [dirTarget 'func/sub-' subjCode '_run' num2str(fmap_runs(1)) '_fieldmapAP.nii'];
-            fmapPA_filepath = [dirTarget 'func/sub-' subjCode '_run' num2str(fmap_runs(2)) '_fieldmapPA.nii'];
-            fmapMerged_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMerged.nii.gz'];
-            fmaptopup_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapTopupOut'];
-            fmapMag_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMag'];
+            fmapAP_filepath = [dirTarget 'bold/sub-' subjCode '_run' num2str(fmap_runs(1)) '_fieldmapAP.nii'];
+            fmapPA_filepath = [dirTarget 'bold/sub-' subjCode '_run' num2str(fmap_runs(2)) '_fieldmapPA.nii'];
+            fmapMerged_filepath = [dirTarget 'bold/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMerged.nii.gz'];
+            fmaptopup_filepath = [dirTarget 'bold/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapTopupOut'];
+            %fmapMag_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMag'];
 
-            if ~isfile([fmapMag_filepath '.nii.gz'])
+            if ~isfile([fmaptopup_filepath '.nii'])
                 % merge AP and PA files into one .nii
                 unix(['fslmerge -t ' fmapMerged_filepath ' ' fmapAP_filepath ' ' fmapPA_filepath]);
 
@@ -194,7 +194,7 @@ for ss = 1:length(subjCodes)
                 if any(odd_dims(1:3))
                     padded = true;
                     disp(['Subj ' subjCode ': One or more dims of the in the fieldmap is odd, padding with 0s to make all dims even. Will remove padding after fieldmap transformation.']);
-                    images = padarray(images, double(odd_dims(1:3)), 0, 'post');
+                    images = padarray(images, double(odd_dims), 0, 'post');
                     info = niftiinfo(fmapMerged_filepath);
                     info.Description = [info.Description ' - Used Matlab to pad dimensions'];
                     info.ImageSize = size(images);
@@ -209,19 +209,19 @@ for ss = 1:length(subjCodes)
                     '--config=b02b0.cnf --iout=' fmaptopup_filepath]);
 
                 % Use fslmaths to take time mean
-                unix(['fslmaths ' fmaptopup_filepath ' -Tmean ' fmapMag_filepath])
+                %unix(['fslmaths ' fmaptopup_filepath ' -Tmean ' fmapMag_filepath])
 
                 if padded % if padding happened, unpad
-                    images = niftiread([fmapMag_filepath '.nii.gz']);
+                    images = niftiread([fmaptopup_filepath '.nii.gz']);
                     dims = size(images);
-                    new_dims = dims - odd_dims(1:3); % take off 1 padded dim
-                    images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3));
-                    info = niftiinfo([fmapMag_filepath '.nii.gz']);
+                    new_dims = dims - odd_dims; % take off 1 padded dim
+                    images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3), 1:new_dims(4));
+                    info = niftiinfo([fmaptopup_filepath '.nii.gz']);
                     info.Description = [info.Description ' - Used Matlab to unpad dimensions'];
                     info.ImageSize = size(images);
-                    info.raw.dim(2:5) = [size(images),1];
-                    niftiwrite(images, fmapMag_filepath, info);
-                    unix(['rm ' fmapMag_filepath '.nii.gz']); % remove padded file
+                    info.raw.dim(2:5) = size(images);
+                    niftiwrite(images, fmaptopup_filepath, info);
+                    unix(['rm ' fmaptopup_filepath '.nii.gz']); % remove padded file
 
                 end
             else
@@ -231,6 +231,57 @@ for ss = 1:length(subjCodes)
 
     end
 
+    if unpack_rs
+
+        runs = subjDf_cut.('restRuns'){subjRow};
+        rs_date = subjDf_cut.('restDate'){subjRow};
+        if isempty(rs_date)
+            disp(['No resting state sessions found for subj ' subjCode '...skipping unpacking resting state DICOMs'])
+            continue
+        end
+        if contains(runs, '/') % runs with different fieldmaps
+            runs = split(runs, '/');
+            dates = str2num(replace(rs_date, '/', ','));
+            for ii = 1:length(runstr)
+                runs{ii} = str2num(runs{ii});
+            end
+        else
+            runs = {str2num(runs)};
+            dates = str2num(rs_date);
+        end
+
+        % Initialize directories
+        rs_seqName = subjDf_cut.('restSequenceName'){subjRow};
+        scanSuffix = ['-', rs_seqName '/resources/DICOM/files/'];
+
+        % Loop over runs and unpack each
+        count = 0;
+        for cc = 1:length(runs)
+            runs_curr = runs{cc};
+            dicomsFullDir = [dicomsBase num2str(dates(cc)) subjCode '/scans/'];
+            for rr = 1:length(runs_curr)
+                count = count + 1;
+                run = runs_curr(rr);
+                formattedRunID = sprintf('%03d',run);
+                runstr = num2str(run);
+                fullSrcPath = [dicomsFullDir runstr scanSuffix];
+                endTargPath = [dirTarget 'rest/00' num2str(count) '/f.nii'];
+
+                if ~isfile(endTargPath) % does folder already contain .nii?
+                    %Actually unpack functional data
+                    unix(['mkdir -p ' dirTarget 'rest/00' num2str(count) '/']); % make dir if not already there
+                    cd /projectnb/somerslab/tom/helper_functions;
+                    unix(['dcm2niix -o ' dirTarget 'rest/00' num2str(count) '/' ' -f' ' f ' fullSrcPath]);
+                    cd /projectnb/somerslab/tom/projects/spacetime_network;
+                    disp([subjCode ' run ' runstr ': resting state unpacked']);
+
+                else
+                    warning(['Subj ' subjCode ' run ' runstr ': resting state target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
+                end
+            end
+        end
+
+    end
 
 
 end

@@ -29,8 +29,8 @@ for ss = 1:length(subjCodes)
     runs = str2num(runs);
 
     for rr = 1:length(runs)
-        old = [subjectsDir 'unpacked_data_nii/' num2str(subjCode) '/bold/00' num2str(rr) '/f_events.nii'];
-        new = [subjectsDir 'unpacked_data_nii/' num2str(subjCode) '/bold/00' num2str(rr) '/f_events.tsv'];
+        old = [subjectsDir 'unpacked_data_nii/' num2str(subjCode) '/bold/00' num2str(rr) '/f_events.tsv'];
+        new = [subjectsDir 'unpacked_data_nii/' num2str(subjCode) '/bold/00' num2str(rr) '/fmcpr_topupApplied_events.tsv'];
         unix(['mv ' old ' ' new]);
     end
 end
