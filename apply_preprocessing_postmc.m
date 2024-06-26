@@ -21,7 +21,9 @@ subjCodes = subjDf_cut.subjCode;
 N = length(subjCodes);
 fwhm = 3; %mm
 
-parfor ss = 1:N
+subjCodes = {'AB'}
+
+for ss = 1:N
 
     %% Set up subj varibles
     subjCode = subjCodes{ss};
@@ -40,8 +42,8 @@ parfor ss = 1:N
     for rr = 1:length(runs)
 
         % Run proprocessing without MC
-        if ~isfile([subjectsDir subjCode '/bold/00' num2str(rr) '/fmcpr_topupApplied.sm' num2str(fwhm) '.nii.gz'])
-            unix(['preproc-sess -s ' subjCode ' -d ' subjectsDir ' -fsd bold' ' -per-run -fwhm ' num2str(fwhm) ' -nomc -i fmcpr_topupApplied']);
+        if ~isfile([subjectsDir subjCode '/bold/00' num2str(rr) '/auf_topupApplied.sm' num2str(fwhm) '.nii.gz'])
+            unix(['preproc-sess -s ' subjCode ' -d ' subjectsDir ' -fsd bold' ' -per-run -fwhm ' num2str(fwhm) ' -nomc -i auf_topupApplied']);
         else
            disp(['final preproc file found for subj ' subjCode ' run ' num2str(rr) '... skipping']);
         end

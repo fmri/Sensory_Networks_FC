@@ -1,13 +1,17 @@
-%%% The purpose of this script is to apply freesurfer motion correction
-%%% to functional files
-%%% Tom Possidente May 2024
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The purpose of this script is to run SPM's ART detection on all spacetime
+% subjs (post motion correction) 
+% Thomas Possidente - June 2024
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Set up subj paths and variables
 addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/art_detection_spm/')
 
 experiment_name = 'spacetime';
 
+restingstate = true; % whether to mc resting state data as well
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
@@ -18,8 +22,7 @@ subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/unpacked_data_nii/'];
 
-%% Loop through subjs
-parfor ss = 1:length(subjCodes)
+for ss = 1:length(subjCodes)
 
     %% Set up subj varibles
     subjCode = subjCodes{ss};
@@ -30,14 +33,8 @@ parfor ss = 1:length(subjCodes)
     end
     runs = str2num(runs);
 
-    for rr = 1:length(runs)
-        if ~isfile([subjectsDir subjCode '/bold/00' num2str(rr) '/fmcpr.nii.gz'])
-            unix(['mktemplate-sess -s ' subjCode ' -d ' subjectsDir]);
-            unix(['mc-sess -s ' subjCode ' -d ' subjectsDir ' -per-run']);
-        else
-            disp(['Motion correction file found for subj ' subjCode ' run ' num2str(rr) '... skipping']);
-        end
-    end
 end
+
+
 
 

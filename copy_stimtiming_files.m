@@ -39,9 +39,9 @@ for ss = 1:length(subjCodes)
 
     for rr = 1:length(runs)
         sourceFile = [stimtimeDir subjCode '_run' num2str(rr) '.txt'];
-        destFile = [subjectsDir 'unpacked_data_nii/' subjCode '/bold/00' num2str(rr) '/fmcpr_topupApplied.sm3_events.tsv'];
+        destFile = [subjectsDir 'unpacked_data_nii/' subjCode '/bold/00' num2str(rr) '/f_events.tsv'];
         unix(['cp ' sourceFile ' ' destFile])
-        unix(['rm ' subjectsDir 'unpacked_data_nii/' subjCode '/bold/00' num2str(rr) '/fmcpr_topupApplied.sms3_events.tsv'])
+        %unix(['rm ' subjectsDir 'unpacked_data_nii/' subjCode '/bold/00' num2str(rr) '/fmcpr_topupApplied.sms3_events.tsv'])
     end
 
 

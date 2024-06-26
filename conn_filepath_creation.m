@@ -9,18 +9,55 @@
 
 addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
-%ccc;
+ccc;
 
 func_topupapplied = true; % give paths for functionals with fmaps already applied or not
+resting_state = false;
+
+if resting_state 
+    data_dir = 'rest';
+    experiment_name = 'rest';
+else
+    data_dir = 'bold';
+    experiment_name = 'spacetime';
+end
 
 % Load in subject info
-experiment_name = 'spacetime';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 
+ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 struct_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/';
-func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii';
+func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
+
+% Print ROI annot paths for ROI selection
+not_found = zeros(length(subjCodes),1);
+for ss=1:length(subjCodes)
+    
+    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_all_ROIs.annot'];
+    if ~isfile(subjROIpath)
+        not_found(ss) = 1;
+    else
+        disp(subjROIpath)
+    end
+end
+disp(['No ROIs: ' string(subjCodes(logical(not_found)))' ])
+
+% Change subjCodes to reflect only subjs with ROIs
+if resting_state
+    subjCodes = subjCodes(~logical(not_found));
+    subjCodes = subjCodes(~ismember(subjCodes, {'PP','MM'})); % these two subjs have different resting state sequences
+else
+    subjCodes = subjCodes(~logical(not_found));
+end
+
+for ss=1:length(subjCodes)
+    
+    subjROIpath = [ROI_path '/' subjCodes{ss} '_all_ROIs.surf.nii'];
+    disp(subjROIpath)
+
+end
 
 % Print T1 paths
 for ss=1:length(subjCodes)
@@ -34,8 +71,10 @@ end
 % Print functional paths
 runs_all = {};
 if func_topupapplied
-    suffix = '_topupApplied.sm3.nii';
+    prefix = 'sau';
+    suffix = '_topupApplied.surf.nii';
 else
+    prefix = '';
     suffix = '.nii';
 end
 for ss=1:length(subjCodes)
@@ -50,21 +89,41 @@ for ss=1:length(subjCodes)
     runs_all{ss} = runs;
 
     for ii=1:length(runs)
-        subjDirFunc = [func_path '/' subjCode '/bold/00' num2str(ii) '/fmcpr' suffix];
+        subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/' prefix 'f' suffix];
         assert(isfile(subjDirFunc), ['Subj ' subjCode ' run ' num2str(runs(ii)) ' functional file not found'])
         disp(subjDirFunc)
     end
 
 end
 
-
-% Print lh.aparc.annot paths for ROI selection
+% Print realignment files (rp_f.txt)
 for ss=1:length(subjCodes)
+    subjCode = subjCodes{ss};
+    for ii=1:length(runs_all{ss})
+        realignment_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/rp_f.txt'];
+        assert(isfile(realignment_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' realignment file not found'])
+        disp(realignment_filepath)
+    end
+end
 
-    subjDirStruct = [struct_path '/' subjCodes{ss} '/label/lh.aparc.annot'];
-    assert(isfile(subjDirStruct), ['Subj ' subjCodes{ss} ' lh.aparc.annot file not found'])
-    disp(subjDirStruct)
+% Print QC files (art_regression_timeseries_auf_topupApplied.mat)
+for ss=1:length(subjCodes)
+    subjCode = subjCodes{ss};
+    for ii=1:length(runs_all{ss})
+        QC_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/art_regression_timeseries_auf_topupApplied.mat'];
+        assert(isfile(QC_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' QC file not found'])
+        disp(QC_filepath)
+    end
+end
 
+% Print scrubbing files (art_regression_outliers_auf_topupApplied.mat)
+for ss=1:length(subjCodes)
+    subjCode = subjCodes{ss};
+    for ii=1:length(runs_all{ss})
+        scrub_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/art_regression_outliers_auf_topupApplied.mat'];
+        assert(isfile(scrub_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' scrubbing file not found'])
+        disp(scrub_filepath)
+    end
 end
 
 % Print fieldmap paths
@@ -83,10 +142,10 @@ for ss=1:length(subjCodes)
 
     if num_pairs ~= 1 % if there is more than 1 pair of fieldmaps, things get more complicated
         if strcmp(subjCode, 'NS') % This subj has 1st run with 1st parir of FMs then next 3 runs with 2nd pair of FMs
-            subjDirFM1 = [func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
+            subjDirFM1 = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
                 num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
             disp(subjDirFM1)
-            subjDirFM234 = [func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
+            subjDirFM234 = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
                 num2str(FMruns(3)) num2str(FMruns(4)) '_fmapMag.nii.gz'];
             disp(subjDirFM234)
             disp(subjDirFM234)
@@ -97,10 +156,10 @@ for ss=1:length(subjCodes)
 
     else
         for ii = 1:length(runs_all{ss}) % print a fieldmap filepath for every functional run
-            assert(isfile([func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
+            assert(isfile([func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
                 num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz']), ['Subj ' subjCode ' runs ' ...
                 num2str(FMruns(1)) num2str(FMruns(2)) ' Fieldmap file not found'])
-            subjDirFM = [func_path '/' subjCode '/func/sub-' subjCode 'runs' ...
+            subjDirFM = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
                 num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
             disp(subjDirFM)
         end

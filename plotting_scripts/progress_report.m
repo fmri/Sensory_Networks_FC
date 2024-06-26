@@ -18,7 +18,7 @@ N = length(subjCodes);
 base_dir = [projectDir, 'data/'];
 
 steps = {'copy DICOMs', 'unpack T1/task/fmaps', 'unpacked rs', 'event files', 'recon T1s', 'MC task', 'MC rs' ...
-         'fieldmap topup', 'preprocessed task', 'preprocessed rs', 'ROIs made', 'Conn denoised'};
+         'fieldmap topup', 'preprocessed task', 'preprocessed rs', 'ROIs made', 'denoised task', 'denoised rs'};
 
 steps_per_subj = zeros(N, length(steps));
 
@@ -64,12 +64,12 @@ for ss = 1:N
     end
 
     % Check for motion corrected task functionals
-    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/fmcpr.nii.gz'])
+    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/uf.nii'])
         steps_per_subj(ss,6) = 1;
     end
 
     % Check for motion corrected rs functionals
-    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/fmcpr.nii.gz'])
+    if isfile([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/uf.nii'])
         steps_per_subj(ss,7) = 1;
     end
 
@@ -79,25 +79,35 @@ for ss = 1:N
         steps_per_subj(ss,8) = 1;
     end
 
-    % Check for freesurfer preprocessed task
+    % Check for fully preprocessed task
     dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/']).name};
-    if any(contains(dirs, 'fmcpr_topupApplied.sm'))
+    if any(contains(dirs, 'sauf_topupApplied.surf'))
         steps_per_subj(ss,9) = 1;
     end
 
     % Check for freesurfer preprocessed rs
     dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/']).name};
-    if any(contains(dirs, 'fmcpr_topupApplied.sm'))
+    if any(contains(dirs, 'sauf_topupApplied.surf'))
         steps_per_subj(ss,10) = 1;
     end
 
     % Check for ROIs
     dirs = {dir([base_dir 'ROIs/']).name};
-    if sum(contains(dirs, [lower(subjCode) '_ROI_fs_164_'])) > 30
+    if any(contains(dirs, ['lh.' subjCode '_all_ROIs.annot'])) && any(contains(dirs, ['rh.' subjCode '_all_ROIs.annot']))
         steps_per_subj(ss,11) = 1;
     end
 
+    % Check for denoised task
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/']).name};
+    if any(contains(dirs, 'dsauf_topupApplied.surf'))
+        steps_per_subj(ss,12) = 1;
+    end
     
+    % Check for denoised rs
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/rest/001/']).name};
+    if any(contains(dirs, 'dsauf_topupApplied.surf'))
+        steps_per_subj(ss,13) = 1;
+    end
 end
 
 %% Plotting progress report

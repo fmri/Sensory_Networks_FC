@@ -101,7 +101,7 @@ for ss = 1:length(subjCodes)
 
     assert(sum(ROI_exists_lh)==length(ROI_names_lh) & sum(ROI_exists_rh)==length(ROI_names_rh), 'ROIs not in list');
 
-    %% Convert border to ROI files (gi)
+    %% Convert border to ROI files (gii)
     if ~isfile([save_out_filepath lower(subjCode) '_ROI_wb.L.func.gii'])
         unix(['wb_command -border-to-rois ' left_wbsurface ' ' wb_ROI_borders_L ' ' save_out_filepath lower(subjCode) '_ROI_wb.L.func.gii']);
     end

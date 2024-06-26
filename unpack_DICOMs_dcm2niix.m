@@ -15,8 +15,8 @@ experiment_name = 'spacetime';
 unpack_t1s = false;
 unpack_func = false;
 unpack_fieldmaps = false;
-unpack_rs = true;
 convert_fieldmaps = false; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
+unpack_rs = true;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
@@ -105,7 +105,7 @@ for ss = 1:length(subjCodes)
             fullSrcPath = [dicomsFullDir runstr scanSuffix];
             endTargPath = [dirTarget 'bold/00' num2str(rr) '/f.nii'];
 
-            if ~isfile(endTargPath) % does folder already contain .nii?
+            %if ~isfile(endTargPath) % does folder already contain .nii?
                 %Actually unpack functional data
                 unix(['mkdir -p ' dirTarget 'bold/00' num2str(rr) '/']); % make dir if not already there
                 cd /projectnb/somerslab/tom/helper_functions;
@@ -113,9 +113,9 @@ for ss = 1:length(subjCodes)
                 cd /projectnb/somerslab/tom/projects/spacetime_network;
                 disp([subjCode ' run ' runstr ': func unpacked']);
 
-            else
-                warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
-            end
+            %else
+            %    warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
+            %end
         end
     end
 
@@ -182,7 +182,7 @@ for ss = 1:length(subjCodes)
             fmaptopup_filepath = [dirTarget 'bold/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapTopupOut'];
             %fmapMag_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMag'];
 
-            if ~isfile([fmaptopup_filepath '.nii'])
+            if ~isfile([fmaptopup_filepath '_fieldcoef.nii.gz'])
                 % merge AP and PA files into one .nii
                 unix(['fslmerge -t ' fmapMerged_filepath ' ' fmapAP_filepath ' ' fmapPA_filepath]);
 
@@ -206,26 +206,26 @@ for ss = 1:length(subjCodes)
 
                 % Use topup command to convert from echo to more common fieldmaps (requires all dims of images to be even)
                 unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
-                    '--config=b02b0.cnf --iout=' fmaptopup_filepath]);
+                    '--config=b02b0.cnf --out=' fmaptopup_filepath]);
 
                 % Use fslmaths to take time mean
                 %unix(['fslmaths ' fmaptopup_filepath ' -Tmean ' fmapMag_filepath])
 
-                if padded % if padding happened, unpad
-                    images = niftiread([fmaptopup_filepath '.nii.gz']);
-                    dims = size(images);
-                    new_dims = dims - odd_dims; % take off 1 padded dim
-                    images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3), 1:new_dims(4));
-                    info = niftiinfo([fmaptopup_filepath '.nii.gz']);
-                    info.Description = [info.Description ' - Used Matlab to unpad dimensions'];
-                    info.ImageSize = size(images);
-                    info.raw.dim(2:5) = size(images);
-                    niftiwrite(images, fmaptopup_filepath, info);
-                    unix(['rm ' fmaptopup_filepath '.nii.gz']); % remove padded file
-
-                end
+                % if padded % if padding happened, unpad
+                %     images = niftiread([fmaptopup_filepath '.nii.gz']);
+                %     dims = size(images);
+                %     new_dims = dims - odd_dims; % take off 1 padded dim
+                %     images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3), 1:new_dims(4));
+                %     info = niftiinfo([fmaptopup_filepath '.nii.gz']);
+                %     info.Description = [info.Description ' - Used Matlab to unpad dimensions'];
+                %     info.ImageSize = size(images);
+                %     info.raw.dim(2:5) = size(images);
+                %     niftiwrite(images, fmaptopup_filepath, info);
+                %     unix(['rm ' fmaptopup_filepath '.nii.gz']); % remove padded file
+                % 
+                % end
             else
-                warning(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])
+                %warning(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])
             end
         end
 
@@ -276,7 +276,7 @@ for ss = 1:length(subjCodes)
                     disp([subjCode ' run ' runstr ': resting state unpacked']);
 
                 else
-                    warning(['Subj ' subjCode ' run ' runstr ': resting state target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
+                    disp(['Subj ' subjCode ' run ' runstr ': resting state target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
                 end
             end
         end

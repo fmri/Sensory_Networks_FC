@@ -22,12 +22,12 @@ subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/'];
 
 %% Loop through subjs
-for ss = 1:length(subjCodes)
-    % Set up subj varibles
+parfor ss = 1:length(subjCodes)
+    % Set up subj varibles40
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     experiment_date = subjDf_cut.([experiment_name,'Date']){subjRow};
-    dirTarget = [projectDir 'data/unpacked_data_nii/' subjCode, '/' ];
+    dirTarget = [projectDir 'data/unpacked_data_nii_backup_preproc_alt/' subjCode, '/' ];
     unix(['mkdir -p ' dirTarget]); % make dir if not already there
 
     assert(~contains(experiment_date,'/'), ['Subj ', subjCode, ': experiment selected has multiple dates (this should not happen)'])
@@ -64,8 +64,8 @@ for ss = 1:length(subjCodes)
         end
 
         % Apply topup to funcitonal scans
-        path_func = [dirTarget 'bold/00' num2str(ff) '/fmcpr.nii.gz'];
-        path_func_out = [dirTarget 'bold/00' num2str(ff) '/fmcpr_topupApplied.nii'];
+        path_func = [dirTarget 'bold/00' num2str(ff) '/uf.nii'];
+        path_func_out = [dirTarget 'bold/00' num2str(ff) '/uf_topupApplied.nii'];
 
         if isfile(path_func_out)
             warning('There is already a functional file with topup applied in this subjects run directory, skipping...')
