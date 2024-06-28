@@ -12,7 +12,7 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 func_topupapplied = true; % give paths for functionals with fmaps already applied or not
-resting_state = false;
+resting_state = true;
 
 if resting_state 
     data_dir = 'rest';
@@ -35,7 +35,7 @@ func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_d
 not_found = zeros(length(subjCodes),1);
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_all_ROIs.annot'];
+    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_all_ROIs_nomissing.annot'];
     if ~isfile(subjROIpath)
         not_found(ss) = 1;
     else
@@ -54,7 +54,7 @@ end
 
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/' subjCodes{ss} '_all_ROIs.surf.nii'];
+    subjROIpath = [ROI_path '/' subjCodes{ss} '_all_ROIs_nomissing.surf.nii'];
     disp(subjROIpath)
 
 end
@@ -71,8 +71,8 @@ end
 % Print functional paths
 runs_all = {};
 if func_topupapplied
-    prefix = 'sau';
-    suffix = '_topupApplied.surf.nii';
+    prefix = 'u';
+    suffix = '_topupApplied.nii.gz';
 else
     prefix = '';
     suffix = '.nii';

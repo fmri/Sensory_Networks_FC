@@ -9,7 +9,7 @@ subjCodes = subjDf_cut.subjCode;
 
 ROI_dir = [projectDir 'data/ROIs/'];
 files = {dir(ROI_dir).name};
-files_cut = files(contains(files, 'all_ROIs.annot') & contains(files, 'lh.'));
+files_cut = files(contains(files, 'all_ROIs_nomissing.annot') & contains(files, 'lh.'));
 
 for ff = 1:length(files_cut)
     
@@ -18,5 +18,3 @@ for ff = 1:length(files_cut)
 end
 
 
-%%
-filename = conn_annot2nii_mod('lh.TP_all_ROIs.annot');

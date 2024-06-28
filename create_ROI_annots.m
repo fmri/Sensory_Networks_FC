@@ -27,6 +27,9 @@ all_ROIs_use = {'tgPCS', 'cIFS_G', 'FO', 'CO', 'pAud', 'pVis', 'preSMA-V', 'SPCS
 ROI_file_list_pre = {dir([projectDir '/data/ROIs/']).name};
 ROI_file_list = ROI_file_list_pre(contains(ROI_file_list_pre, 'nooverlap')); % only taking ROI files that are binarized and without overlap
 
+fs_number = 163842;
+missing_ROIs_allsubj = cell(length(subjCodes),1);
+
 % Read in reference annot file so we can keep the same structure for our annot files
 annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 [verts_ref, labels_ref, ctable_ref] = read_annotation(annotpath); % Read in lh.aparc.annot file for reference annotation file structure
@@ -51,13 +54,15 @@ for ss = 1:length(subjCodes)
     %% lh annot file creation
     % Initialize variables necessary for creating lh annot file
     annot_labels_lh = zeros(length(verts_ref),1); % start with labels as all 0s
-    annot_ctable_lh.numEntries = length(ROIfiles_lh) + 1; % plus one for 'unknown' label 0
+    annot_ctable_lh.numEntries = length(all_ROIs_use) + 1; % 12 ROIs plus one for 'unknown' label 0
     annot_ctable_lh.orig_tab = ctable_ref.orig_tab; % keep same colortable reference
     annot_ctable_lh.struct_names = {ctable_ref.struct_names{1}}; % 'unknown' label is always 1st
     annot_ctable_lh.table = ctable_ref.table(1,:); % copy canonical color RGB and label for 'unknown' label
+    hasROIs = cell(length(ROIfiles_lh),1);
+    n_rois_lh = length(ROIfiles_lh);
 
     % Loop through lh ROIs
-    for rr = 1:length(ROIfiles_lh)
+    for rr = 1:n_rois_lh
 
         % Load ROI
         ROI_file = ROIfiles_lh{rr};
@@ -66,6 +71,7 @@ for ss = 1:length(subjCodes)
         % Add struct_name (label name)
         whichROI = cellfun(@(pattern) contains(ROI_file,pattern), all_ROIs_use); % determine which ROI name is in this file
         ROI_name = all_ROIs_use{whichROI};
+        hasROIs{rr} = ROI_name;
         annot_ctable_lh.struct_names{rr+1} = ROI_name; % use this name for struct name (rr+1 because we added unknown struct name already
 
         % Add ctable row and update label index to match
@@ -75,16 +81,30 @@ for ss = 1:length(subjCodes)
 
     end
 
+    % Add dummy ROIs for missing ROIs so that Conn will be able to use all ROIs
+    missing_ROIs = all_ROIs_use(~ismember(all_ROIs_use, hasROIs'));
+    for mr = 1:length(missing_ROIs)
+        missing_ROIs_allsubj{ss}{end+1} = [missing_ROIs{mr} ' (L)'];
+        annot_ctable_lh.struct_names{n_rois_lh+mr+1} = missing_ROIs{mr}; % +1 for 'unknown' name
+        annot_ctable_lh.table(n_rois_lh+mr+1,:) = ctable_ref.table(n_rois_lh+mr+1,:); % just keep same canonical label number and color for this ROI
+        label_curr = annot_ctable_lh.table(n_rois_lh+mr+1,5); % Extract the specific label number
+        dummy_vol = false(1,fs_number); 
+        dummy_vol(mr) = true; % just one voxel of ROI for dummy value
+        annot_labels_lh(dummy_vol) = label_curr; % replace 1s with label number in annotation labels variable
+    end
+
     % Save annot file
-    write_annotation([projectDir '/data/ROIs/lh.' subjCode '_all_ROIs.annot'], annot_verts, annot_labels_lh, annot_ctable_lh);
+    write_annotation([projectDir '/data/ROIs/lh.' subjCode '_all_ROIs_nomissing.annot'], annot_verts, annot_labels_lh, annot_ctable_lh);
 
     %% rh annot file creation
     % Initialize variables necessary for creating rh annot file
     annot_labels_rh = zeros(length(verts_ref),1);
-    annot_ctable_rh.numEntries = length(ROIfiles_rh) + 1; % plus one for 'unknown' label 0
+    annot_ctable_rh.numEntries = length(all_ROIs_use) + 1; % plus one for 'unknown' label 0
     annot_ctable_rh.orig_tab = ctable_ref.orig_tab;
     annot_ctable_rh.struct_names = {ctable_ref.struct_names{1}}; % 'unknown' label is always 1st
     annot_ctable_rh.table = ctable_ref.table(1,:); % copy canonical color RGB and label fpr 'unknown' label
+    hasROIs = cell(length(ROIfiles_rh),1);
+    n_rois_rh = length(ROIfiles_rh);
 
     % Loop through rh ROIs
     for rr = 1:length(ROIfiles_rh)
@@ -96,6 +116,7 @@ for ss = 1:length(subjCodes)
         % Add struct_name (label name)
         whichROI = cellfun(@(pattern) contains(ROI_file,pattern), all_ROIs_use);
         ROI_name = all_ROIs_use{whichROI};
+        hasROIs{rr} = ROI_name;
         annot_ctable_rh.struct_names{rr+1} = ROI_name;
 
         % Add ctable row and update label index to match
@@ -105,8 +126,20 @@ for ss = 1:length(subjCodes)
 
     end
 
+    % Add dummy ROIs for missing ROIs so that Conn will be able to use all ROIs
+    missing_ROIs = all_ROIs_use(~ismember(all_ROIs_use, hasROIs'));
+    for mr = 1:length(missing_ROIs)
+        missing_ROIs_allsubj{ss}{end+1} = [missing_ROIs{mr} ' (R)'];
+        annot_ctable_rh.struct_names{n_rois_rh+mr+1} = missing_ROIs{mr}; % +1 for 'unknown' name
+        annot_ctable_rh.table(n_rois_rh+mr+1,:) = ctable_ref.table(n_rois_rh+mr+1,:); % just keep same canonical label number and color for this ROI
+        label_curr = annot_ctable_rh.table(n_rois_rh+mr+1,5); % Extract the specific label number
+        dummy_vol = false(1,fs_number); 
+        dummy_vol(1) = true; % just one voxel of ROI for dummy value
+        annot_labels_rh(dummy_vol) = label_curr; % replace 1s with label number in annotation labels variable
+    end
+
     % Save annot file
-    write_annotation([projectDir '/data/ROIs/rh.' subjCode '_all_ROIs.annot'], annot_verts, annot_labels_rh, annot_ctable_rh);
+    write_annotation([projectDir '/data/ROIs/rh.' subjCode '_all_ROIs_nomissing.annot'], annot_verts, annot_labels_rh, annot_ctable_rh);
 
     %% Finished
     disp(['Finished creating ROI annot files for subj ' subjCode]);

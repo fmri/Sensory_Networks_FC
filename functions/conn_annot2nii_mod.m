@@ -1,4 +1,4 @@
-function niifilename = conn_annot2nii(varargin)
+function niifilename = conn_annot2nii_mod(varargin)
 % CONN_ANNOT2NII lh.filename.annot rh.filename.annot
 % converts freesurfer .annot file into .nii/.txt surface nifti ROI file
 %

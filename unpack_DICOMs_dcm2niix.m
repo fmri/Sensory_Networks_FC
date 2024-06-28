@@ -14,9 +14,11 @@ ccc;
 experiment_name = 'spacetime';
 unpack_t1s = false;
 unpack_func = false;
-unpack_fieldmaps = false;
-convert_fieldmaps = false; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
-unpack_rs = true;
+unpack_task_fieldmaps = false;
+unpack_rs_fieldmaps = false;
+convert_task_fieldmaps = false; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
+convert_rs_fieldmaps = true;
+unpack_rs = false;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
@@ -106,12 +108,12 @@ for ss = 1:length(subjCodes)
             endTargPath = [dirTarget 'bold/00' num2str(rr) '/f.nii'];
 
             %if ~isfile(endTargPath) % does folder already contain .nii?
-                %Actually unpack functional data
-                unix(['mkdir -p ' dirTarget 'bold/00' num2str(rr) '/']); % make dir if not already there
-                cd /projectnb/somerslab/tom/helper_functions;
-                unix(['dcm2niix -o ' dirTarget 'bold/00' num2str(rr) '/' ' -f' ' f ' fullSrcPath]);
-                cd /projectnb/somerslab/tom/projects/spacetime_network;
-                disp([subjCode ' run ' runstr ': func unpacked']);
+            %Actually unpack functional data
+            unix(['mkdir -p ' dirTarget 'bold/00' num2str(rr) '/']); % make dir if not already there
+            cd /projectnb/somerslab/tom/helper_functions;
+            unix(['dcm2niix -o ' dirTarget 'bold/00' num2str(rr) '/' ' -f' ' f ' fullSrcPath]);
+            cd /projectnb/somerslab/tom/projects/spacetime_network;
+            disp([subjCode ' run ' runstr ': func unpacked']);
 
             %else
             %    warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
@@ -120,7 +122,7 @@ for ss = 1:length(subjCodes)
     end
 
     %% Unpack fieldmaps
-    if unpack_fieldmaps
+    if unpack_task_fieldmaps
         % Get run numbers of func data
         FMruns = subjDf_cut.([experiment_name, 'FM']){subjRow};
         if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
@@ -161,7 +163,70 @@ for ss = 1:length(subjCodes)
         end
     end
 
-    if convert_fieldmaps
+    if unpack_rs_fieldmaps 
+        % Get rs date(s)
+        rs_date = subjDf_cut.('restDate'){subjRow};
+        if contains(rs_date, '/') % different rs runs may have different dates
+            rs_date = strsplit(rs_date, '/');
+        else
+            rs_date = {rs_date};
+        end
+
+        % Get run numbers of rs data
+        FMruns = subjDf_cut.('restFM'){subjRow};
+        if contains(FMruns, '/') % different rs runs may have different fieldmaps
+            FMruns = strsplit(FMruns, '/'); % still take all fieldmaps
+        else
+            FMruns = {FMruns};
+        end
+
+        for dd = 1:length(rs_date)
+            rsdicomsFullDir = [dicomsBase rs_date{dd} subjCode '/scans/'];
+            FMruns_curr = str2num(FMruns{dd});
+            assert(mod(length(FMruns_curr),2)==0, ['Subj ' subjCode 'number of fieldmaps not a multiple of 2']);
+    
+            for rr = 1:length(FMruns_curr)
+    
+                run = FMruns_curr(rr);
+                formattedRunID = sprintf('%03d',run);
+                runstr = num2str(run);
+                if mod(rr,2) == 1
+                    FM_seqName = subjDf_cut.fieldmap1SequenceName{subjRow};
+                    fileNameSuffix = 'AP';
+                else
+                    FM_seqName = subjDf_cut.fieldmap2SequenceName{subjRow};
+                    fileNameSuffix = 'PA';
+                end
+                scanSuffix = ['-', FM_seqName '/resources/DICOM/files/'];
+                fullSrcPath = [rsdicomsFullDir runstr scanSuffix];
+                if ~isfolder(fullSrcPath)
+                    fullSrcPath(end-33) = '3'; % change from 2_2mm to 2_3mm
+                    fullSrcPath(end-28) = '4'; % change from 69sl to 64sl
+                    fmap_prefix = '_rsfieldmap';
+                else
+                    fmap_prefix = '_fieldmap';
+                end
+    
+                fileName = ['/sub-' subjCode '_run' runstr fmap_prefix fileNameSuffix '.nii'];
+    
+                if ~isfile([dirTarget 'bold/' fileName]) % does folder already contain .nii?
+                    %Actually unpack fieldmap data
+                    unix(['mkdir -p ' dirTarget 'bold/']); % make dir if not already there
+                    cd /projectnb/somerslab/tom/helper_functions;
+                    unix(['dcm2niix -o ' dirTarget 'bold/' ' -f' ' sub-' subjCode '_run' runstr fmap_prefix fileNameSuffix ' ' ...
+                        fullSrcPath]);
+                    cd /projectnb/somerslab/tom/projects/spacetime_network;
+                    disp([subjCode ' run ' runstr ': fieldmap unpacked']);
+                else
+                    disp(['Subj ' subjCode ' run ' runstr ': fieldmap target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
+                end
+            end
+
+        end
+    end
+
+
+    if convert_task_fieldmaps
         % Get run numbers of func data
         FMruns = subjDf_cut.([experiment_name, 'FM']){subjRow};
         if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
@@ -222,10 +287,88 @@ for ss = 1:length(subjCodes)
                 %     info.raw.dim(2:5) = size(images);
                 %     niftiwrite(images, fmaptopup_filepath, info);
                 %     unix(['rm ' fmaptopup_filepath '.nii.gz']); % remove padded file
-                % 
+                %
                 % end
             else
                 %warning(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])
+            end
+        end
+
+    end
+
+    if convert_rs_fieldmaps %%%%%%%%%%%
+        % Get run numbers of func data
+        FMruns = subjDf_cut.('restFM'){subjRow};
+        if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
+            FMruns = replace(FMruns, '/', ','); % still take all fieldmaps
+        end
+        FMruns = str2num(FMruns);
+        assert(mod(length(FMruns),2)==0, ['Subj ' subjCode 'number of fieldmaps not a multiple of 2']);
+
+        num_pairs = length(FMruns)/2;
+        run_inds = reshape(1:length(FMruns), [2,num_pairs]);
+
+        for pp = 1:num_pairs
+
+            fmap_runs = FMruns(run_inds(:,pp)); % get run numbers for this pair of fmaps
+            fmapAP_filepath = [dirTarget 'bold/sub-' subjCode '_run' num2str(fmap_runs(1)) '_fieldmapAP.nii'];
+            if ~isfile(fmapAP_filepath)
+                fmapAP_filepath = [dirTarget 'bold/sub-' subjCode '_run' num2str(fmap_runs(1)) '_rsfieldmapAP.nii'];
+                fmap_prefix = '_rs';
+            else
+                fmap_prefix = '_';
+            end
+            fmapPA_filepath = [dirTarget 'bold/sub-' subjCode '_run' num2str(fmap_runs(2)) fmap_prefix 'fieldmapPA.nii'];
+            fmapMerged_filepath = [dirTarget 'bold/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) fmap_prefix 'fmapMerged.nii.gz'];
+            fmaptopup_filepath = [dirTarget 'bold/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) fmap_prefix 'fmapTopupOut'];
+            %fmapMag_filepath = [dirTarget 'func/sub-' subjCode 'runs' num2str(fmap_runs(1)) num2str(fmap_runs(2)) '_fmapMag'];
+
+            if ~isfile([fmaptopup_filepath fmap_prefix 'fieldcoef.nii.gz'])
+                % merge AP and PA files into one .nii
+                unix(['fslmerge -t ' fmapMerged_filepath ' ' fmapAP_filepath ' ' fmapPA_filepath]);
+
+                % Load in the merged fm and check that the dims are all even
+                images = niftiread(fmapMerged_filepath);
+                dims = size(images);
+                odd_dims = mod(dims,2)==1;
+                padded = false;
+                if any(odd_dims(1:3))
+                    padded = true;
+                    disp(['Subj ' subjCode ': One or more dims of the in the fieldmap is odd, padding with 0s to make all dims even. Will remove padding after fieldmap transformation.']);
+                    images = padarray(images, double(odd_dims), 0, 'post');
+                    info = niftiinfo(fmapMerged_filepath);
+                    info.Description = [info.Description ' - Used Matlab to pad dimensions'];
+                    info.ImageSize = size(images);
+                    info.raw.dim(2:5) = size(images);
+                    split_outpath = split(fmapMerged_filepath,'.');
+                    niftiwrite(images, split_outpath{1}, info);
+                    unix(['rm ' fmapMerged_filepath]); % remove unpadded file
+                else
+                    split_outpath = split(fmapMerged_filepath,'.');
+                end
+
+                % Use topup command to convert from echo to more common fieldmaps (requires all dims of images to be even)
+                unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
+                    '--config=b02b0.cnf --out=' fmaptopup_filepath]);
+
+                % Use fslmaths to take time mean
+                %unix(['fslmaths ' fmaptopup_filepath ' -Tmean ' fmapMag_filepath])
+
+                % if padded % if padding happened, unpad
+                %     images = niftiread([fmaptopup_filepath '.nii.gz']);
+                %     dims = size(images);
+                %     new_dims = dims - odd_dims; % take off 1 padded dim
+                %     images = images(1:new_dims(1), 1:new_dims(2), 1:new_dims(3), 1:new_dims(4));
+                %     info = niftiinfo([fmaptopup_filepath '.nii.gz']);
+                %     info.Description = [info.Description ' - Used Matlab to unpad dimensions'];
+                %     info.ImageSize = size(images);
+                %     info.raw.dim(2:5) = size(images);
+                %     niftiwrite(images, fmaptopup_filepath, info);
+                %     unix(['rm ' fmaptopup_filepath '.nii.gz']); % remove padded file
+                %
+                % end
+            else
+                warning(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])
             end
         end
 
