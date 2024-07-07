@@ -195,7 +195,7 @@ end
 for cc = 1:Ncond
     figure;
     heatmap(names, names, connmat_group_nandiag(:,:,1,cc), 'Colormap', turbo, 'ColorLimits', [min(connmat_group_nandiag(),[], 'all'),max(connmat_group_nandiag,[],'all')], 'FontSize',16)
-    title(['Group Average Conn Mat | Condition ' conditions{cc}])
+    title(['Group Average Conn Mat | Condition ' conditions{cc}]);
 end
 
 % for cc = 1:Ncond
@@ -205,6 +205,21 @@ end
 %     heatmap(names, names, connmat_group2(:,:,1,cc), 'Colormap', turbo, 'ColorLimits', [-1,1], 'FontSize',16)
 %     title(['Group Average Conn Mat 2 | Condition ' conditions{cc}])
 % end
+
+%% Plot group level connectivity difference matrices 
+if ~resting_state
+    ztrans_connmat_group = atanh(connmat_group_nandiag);% fisher z-transoform the rs
+    diffs1 = [2,4, 5,8,  7,10, 5,7];
+    diffs2 = [1,1, 2,2 , 4,4,  8,10];
+        conditions = {'Fixation' , 'Passive_Auditory', 'Passive_Tactile', 'Passive_Visual', 'Spatial_Auditory',...
+            'Spatial_Tactile', 'Spatial_Visual', 'Temporal_Auditory', 'Temporal_Tactile', 'Temporal_Visual'};
+    for cc = 1:length(diffs1)
+        figure;
+        diff = ztrans_connmat_group(:,:,1,diffs1(cc))-ztrans_connmat_group(:,:,1,diffs2(cc));
+        heatmap(names, names,  diff, 'Colormap', turbo, 'ColorLimits', [min(diff(),[], 'all'),max(diff,[],'all')], 'FontSize',16)
+        title([conditions{diffs1(cc)} '-' conditions{diffs2(cc)}])
+    end
+end
 
 %% Plot individual connectivity matrices
 

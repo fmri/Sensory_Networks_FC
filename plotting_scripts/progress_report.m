@@ -98,7 +98,7 @@ for ss = 1:N
     end
 
     % Check for denoised task
-    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/001/']).name};
+    dirs = {dir([base_dir, 'unpacked_data_nii/' subjCode '/bold/002/']).name};
     if any(contains(dirs, 'dsauf_topupApplied.surf'))
         steps_per_subj(ss,12) = 1;
     end

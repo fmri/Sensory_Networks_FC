@@ -12,7 +12,7 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Set up directories and key variables
-projectDir = '/projectnb/somerslab/tom/projects/spatial_temp_network/';
+projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 stimTimingBase = '/projectnb/somerslab/hcp_pipeline_subjects/';
 experiment_name = 'spacetime';
 EV_fileNames = {'Fixation_Block.txt', 'Passive_Auditory.txt', 'Passive_Tactile.txt', 'Passive_Visual.txt',...

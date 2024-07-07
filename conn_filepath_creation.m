@@ -12,19 +12,25 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 func_topupapplied = true; % give paths for functionals with fmaps already applied or not
-resting_state = true;
-
-if resting_state 
-    data_dir = 'rest';
-    experiment_name = 'rest';
-else
-    data_dir = 'bold';
-    experiment_name = 'spacetime';
-end
+resting_state = false;
+localizer = true;
 
 % Load in subject info
 subjDf = load_subjInfo();
-subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
+if resting_state 
+    data_dir = 'rest';
+    experiment_name = 'rest';
+    subjInds = ~strcmp(subjDf.([experiment_name,'Runs']),'');
+elseif localizer
+    data_dir = 'localizer';
+    experiment_name = 'x1WayLocalizer';
+    subjInds = ~( strcmp(subjDf.([experiment_name,'Runs']),'') & strcmp(subjDf.('x3WayLocalizerRuns'),'') );
+else
+    data_dir = 'bold';
+    experiment_name = 'spacetime';
+    subjInds = ~strcmp(subjDf.([experiment_name,'Runs']),'');
+end
+subjDf_cut = subjDf(subjInds,:);
 subjCodes = subjDf_cut.subjCode;
 
 ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
@@ -48,6 +54,8 @@ disp(['No ROIs: ' string(subjCodes(logical(not_found)))' ])
 if resting_state
     subjCodes = subjCodes(~logical(not_found));
     subjCodes = subjCodes(~ismember(subjCodes, {'PP','MM'})); % these two subjs have different resting state sequences
+elseif localizer
+    subjectCodes = subjCodes; % use all subjs
 else
     subjCodes = subjCodes(~logical(not_found));
 end
@@ -71,8 +79,8 @@ end
 % Print functional paths
 runs_all = {};
 if func_topupapplied
-    prefix = 'u';
-    suffix = '_topupApplied.nii.gz';
+    prefix = 'sau';
+    suffix = '_topupApplied.surf.nii';
 else
     prefix = '';
     suffix = '.nii';
@@ -82,12 +90,16 @@ for ss=1:length(subjCodes)
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     runs = subjDf_cut.([experiment_name, 'Runs']){subjRow};
 
+    if localizer && isempty(runs)
+        runs = subjDf_cut.('x3WayLocalizerRuns'){subjRow};
+    end
+
     if contains(runs, '/') % runs with different fieldmaps
         runs = replace(runs, '/', ','); % still take all runs
     end
     runs = str2num(runs);
     runs_all{ss} = runs;
-
+        
     for ii=1:length(runs)
         subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/' prefix 'f' suffix];
         assert(isfile(subjDirFunc), ['Subj ' subjCode ' run ' num2str(runs(ii)) ' functional file not found'])

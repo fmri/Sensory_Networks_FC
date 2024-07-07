@@ -26,7 +26,7 @@ subjs_converted_fmaps = {'NM', 'RR', 'RT', 'NS', 'PL', 'PT', 'TP', 'UV', 'LA', '
     'KQ', 'SL', 'PQ'}; % these subjects had their fmaps registered to their functional data in order to convert from 2.2 - 2.3mm and will need to be handled differently
 
 %% Loop through subjs
-parfor ss = 1:length(subjCodes)
+for ss = 1:length(subjCodes)
 
     % Set up subj varibles
     subjCode = subjCodes{ss};
