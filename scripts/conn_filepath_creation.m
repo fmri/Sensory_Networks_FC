@@ -11,9 +11,9 @@ addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
-func_topupapplied = true; % give paths for functionals with fmaps already applied or not
-resting_state = false;
-localizer = true;
+func_topupapplied = false; % give paths for functionals with fmaps already applied or not
+resting_state = true;
+localizer = false;
 
 % Load in subject info
 subjDf = load_subjInfo();
@@ -35,7 +35,7 @@ subjCodes = subjDf_cut.subjCode;
 
 ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 struct_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/';
-func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
+func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_nofmaps/';
 
 % Print ROI annot paths for ROI selection
 not_found = zeros(length(subjCodes),1);

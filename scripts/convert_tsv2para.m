@@ -1,0 +1,77 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The purpose of this script is to convert the BIDs formatted.tsv condition
+% timing files to freesurfer formatted .para condition timing files
+%
+% Tom Possidente July 2024
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ccc;
+
+%% Set up subject info data
+experiment_name = 'spacetime';
+
+dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+
+subjDf = load_subjInfo();
+subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
+subjCodes = subjDf_cut.subjCode;
+N = length(subjCodes);
+
+% Tom Localizer condition numbers:
+% 1 = Fixation
+% 2 = Passive Auditory
+% 3 = Passive Tactile
+% 4 = Passive Visual
+% 5 = Active Auditory
+% 6 = Active Tactile
+% 7 = Active Visual
+
+% DB localizer
+% 1 = vA
+% 2 = vP
+% 3 = aA
+% 4 = aP
+% 5 = tA
+% 6 = tP
+% 7 = f
+
+toms_order = [1,2,3,4,5,6,7];
+db_order = [7,4,6,2,3,5,1];
+
+%% Loop over subjs
+
+for ss = 1:N
+
+    subjCode = subjCodes{ss};
+    subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
+    
+    % Get run numbers
+    runs = subjDf_cut.('x1WayLocalizerRuns'){subjRow};
+
+    if isempty(runs)
+        runs = subjDf_cut.('x3WayLocalizerRuns'){subjRow};
+    end
+
+    if contains(runs, '/')
+        runs = replace(runs, '/', ',');
+    end
+    runs = str2num(runs);
+    
+    % Loop over runs
+    for rr = 1:length(runs)
+        runDir = [dataDir subjCode '/localizer/00' num2str(rr) '/'];
+
+        % Load .tsv file
+        tsv = readtable([runDir 'f_events.tsv'], "FileType","text");
+
+        % Convert to freesurfer para format
+        mat = tsv{:,:}; % get rid of header row 
+        para = [mat(:,1), mat(:,3), mat(:,2)]; % switch columns 2 and 3
+        para(:,2) = db_order(para(:,2));
+
+        % Save as .para
+        writematrix(para, [runDir 'localizer_condition_timing.para'], 'filetype','text', 'delimiter','\t')
+
+    end
+
+end

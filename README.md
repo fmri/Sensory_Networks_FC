@@ -8,8 +8,9 @@ This repository contains code for preprocessing, analysing, and making figures f
 Running most of this code requires access to the data folder which is available on SCC (/projectnb/somerslab/tom/projects/spacetime_network/data/).
 
 Organization:
-- Main directory: contains key scripts for file i/o and organization, file conversion, and preprocessing
-- analysis: contains scripts for analysis of preprocessed data
+- scripts: contains key scripts for file i/o and organization, file conversion, and preprocessing
+- conn_analysis: contains scripts for analysis of data preprocessed using Conn
+- fs_analysis_results: contains results of analysis of data preprocessed using freesurfer
 - archive_code: old scripts/functions no longer used/useful
 - functions: key functions used by scripts
 - plotting_scripts: scripts used to plot information or analysis results

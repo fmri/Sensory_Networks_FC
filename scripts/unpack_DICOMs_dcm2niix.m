@@ -13,12 +13,12 @@ ccc;
 
 experiment_name = 'spacetime';
 unpack_t1s = false;
-unpack_func = false;
+unpack_func = true;
 unpack_rs = false;
 unpack_localizer = false;
 unpack_task_fieldmaps = false;
 unpack_rs_fieldmaps = false;
-convert_task_fieldmaps = true; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
+convert_task_fieldmaps = false; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
 convert_rs_fieldmaps = false;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
@@ -28,6 +28,7 @@ subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/'];
+
 
 %% Start looping through subjs
 for ss = 1:length(subjCodes)
@@ -107,17 +108,16 @@ for ss = 1:length(subjCodes)
             fullSrcPath = [dicomsFullDir runstr scanSuffix];
             endTargPath = [dirTarget 'bold/00' num2str(rr) '/f.nii'];
 
-            %if ~isfile(endTargPath) % does folder already contain .nii?
-            %Actually unpack functional data
-            unix(['mkdir -p ' dirTarget 'bold/00' num2str(rr) '/']); % make dir if not already there
-            cd /projectnb/somerslab/tom/helper_functions;
-            unix(['dcm2niix -o ' dirTarget 'bold/00' num2str(rr) '/' ' -f' ' f ' fullSrcPath]);
-            cd /projectnb/somerslab/tom/projects/spacetime_network;
-            disp([subjCode ' run ' runstr ': func unpacked']);
-
-            %else
-            %    warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
-            %end
+            if ~isfile(endTargPath) % does folder already contain .nii?
+                %Actually unpack functional data
+                unix(['mkdir -p ' dirTarget 'bold/00' num2str(rr) '/']); % make dir if not already there
+                cd /projectnb/somerslab/tom/helper_functions;
+                unix(['dcm2niix -o ' dirTarget 'bold/00' num2str(rr) '/' ' -f' ' f ' fullSrcPath]);
+                cd /projectnb/somerslab/tom/projects/spacetime_network;
+                disp([subjCode ' run ' runstr ': func unpacked']);
+            else
+                warning(['Subj ' subjCode ' run ' runstr ': func target folder already contains this file. Remove this file if you want to re-unpack. Skipping.'])
+            end
         end
     end
 

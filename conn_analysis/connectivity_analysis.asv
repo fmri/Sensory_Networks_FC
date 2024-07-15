@@ -8,9 +8,9 @@
 ccc;
 
 %% Setup analysis parameters
-resting_state = true;
-hierarchical_clustering = true;
-plot_individual_connmats = true;
+resting_state = false;
+hierarchical_clustering = false;
+plot_individual_connmats = false;
 save_out = true;
 
 if resting_state
@@ -47,6 +47,7 @@ desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFS_G (L)', 'pAud (L)', 'tgP
     'SPCS (L)', 'IPCS (L)', 'midIFS (L)', 'preSMA-V (L)', 'pVis (L)', 'SPCS (R)', 'IPCS (R)', 'midIFS (R)', ...
     'preSMA-V (R)', 'pVis (R)',...
     'cmSFG_mult (L)', 'Ins_mult (L)', 'cmSFG_mult (R)', 'Ins_mult (R)'};
+
 
 %% Get missing ROI data
 load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs_allsubj', 'subjCodes');
