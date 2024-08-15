@@ -13,21 +13,23 @@ ccc;
 
 experiment_name = 'spacetime';
 unpack_t1s = false;
-unpack_func = true;
+unpack_func = false;
 unpack_rs = false;
 unpack_localizer = false;
 unpack_task_fieldmaps = false;
 unpack_rs_fieldmaps = false;
-convert_task_fieldmaps = false; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
+convert_task_fieldmaps = true; % convert fieldmaps from spin-echo to magnitude maps (usable by CONN)
 convert_rs_fieldmaps = false;
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
+dataDir = 'unpacked_data_nii_fs_localizer';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir, 'data/'];
+subjCodes = {'MM'}; %%%%%%%%%%%%%%%%%%%%%%%
 
 
 %% Start looping through subjs
@@ -37,7 +39,7 @@ for ss = 1:length(subjCodes)
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     experiment_date = subjDf_cut.([experiment_name,'Date']){subjRow};
-    dirTarget = [projectDir 'data/unpacked_data_nii/' subjCode, '/' ];
+    dirTarget = [projectDir 'data/' dataDir '/' subjCode, '/' ];
     unix(['mkdir -p ' dirTarget]); % make dir if not already there
 
     assert(~contains(experiment_date,'/'), ['Subj ', subjCode, ': experiment selected has multiple dates (this should not happen)'])
@@ -134,7 +136,7 @@ for ss = 1:length(subjCodes)
         end
         loc_seqName = subjDf_cut.('x1WayLocalizerSequenceName'){subjRow};
 
-        if isempty(LCruns) % if there are no 1waylocalizer runs, look for 3waylocalizer
+        if isempty(LCruns) || ismember(subjCode, {'RR', 'MM'}) % if there are no 1waylocalizer runs, look for 3waylocalizer. RR and MM have poor activation in 1way and more 3way runs, so use 3way
             LCruns = subjDf_cut.('x3WayLocalizerRuns'){subjRow};
             loc_seqName = subjDf_cut.('x3WayLocalizerSequenceName'){subjRow};
             LCdate = subjDf_cut.('x3WayLocalizerDate'){subjRow};

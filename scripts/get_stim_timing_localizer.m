@@ -15,11 +15,23 @@ ccc;
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 stimTimingBase = '/projectnb/somerslab/hcp_pipeline_subjects/';
 experiment_name = 'x1WayLocalizer';
-EV_fileNames = {'1way_Fixation_Block.txt', '1way_Passive_Auditory.txt', '1way_Passive_Tactile.txt', ...
+targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/stim_timing/';
+
+use_3way = true; 
+
+if use_3way
+    file_suffix = '3WayLocalizer';
+    EV_fileNames = {'3way_Active_Auditory.txt', '3way_Active_Tactile.txt', '3way_Active_Visual.txt',...
+        '3way_Fixation_Block.txt', '3way_Passive_Visual.txt'};
+else
+    file_suffix = '1WayLocalizer';
+    EV_fileNames = {'1way_Fixation_Block.txt', '1way_Passive_Auditory.txt', '1way_Passive_Tactile.txt', ...
     '1way_Passive_Visual.txt', '1way_Active_Auditory.txt', '1way_Active_Tactile.txt'...
     '1way_Active_Visual.txt'};
+end
+
 condition_codes = 1:length(EV_fileNames);
-targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/stim_timing/';
+
 
 
 %% Load subject info
@@ -39,7 +51,7 @@ for ss = 1:n
     filestr = '1wayPilot';
     num_localizer_runs = sum(contains(folders, filestr)) - 1;
 
-    if num_localizer_runs<=0 % some subjs have it labeled differently
+    if num_localizer_runs<=0 || (strcmp(subjCode, 'MM') && use_3way) % some subjs have it labeled differently
         filestr = '1way3wayPilot';
         num_localizer_runs = sum(contains(folders, filestr)) - 1;
     end
@@ -50,10 +62,17 @@ for ss = 1:n
 
         timing_path = [runDataDir, filestr, num2str(rr), '/EVs/'];
         timing_data = table();
-        num_stimtiming_files = sum(contains({dir(timing_path).name}, '1way'));
-        if num_stimtiming_files == 6 || num_stimtiming_files == 7 % should contain 6 or 7 files (some don't have fixation block)
+        if use_3way
+            num_stimtiming_files = sum(contains({dir(timing_path).name}, '3way'));
+            condition = num_stimtiming_files == 5;     
+        else
+            num_stimtiming_files = sum(contains({dir(timing_path).name}, '1way'));
+            condition = num_stimtiming_files == 6 || num_stimtiming_files == 7; % should contain 6 or 7 files (some don't have fixation block)
+        end
+
+        if condition
             count = count + 1;
-            if ~isfile([targetDir, subjCode, '_run', num2str(count) '_1Waylocalizer.txt'])
+            if ~isfile([targetDir, subjCode, '_run', num2str(count) '_' file_suffix '.txt'])
                 for tt = 1:length(EV_fileNames)
                     if isfile([timing_path, EV_fileNames{tt}])
                         time_tbl = readtable([timing_path, EV_fileNames{tt}]);
@@ -66,7 +85,7 @@ for ss = 1:n
                 timing_data = sortrows(timing_data, 'onset');
 
                 % Save to tsv file
-                writetable(timing_data, [targetDir, subjCode, '_run', num2str(count) '_1Waylocalizer'], 'Delimiter', '\t', 'FileType','text');
+                writetable(timing_data, [targetDir, subjCode, '_run', num2str(count) '_' file_suffix], 'Delimiter', '\t', 'FileType','text');
 
             end
         end

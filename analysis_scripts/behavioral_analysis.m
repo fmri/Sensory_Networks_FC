@@ -10,10 +10,12 @@ addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
+save_out = false;
+
 %% Load subject info 
-taskname = 'spacetime';
+taskname = 'x1WayLocalizer';
 subjDf = load_subjInfo();
-subjDf_cut = subjDf(~strcmp(subjDf.([taskname,'Runs']),''),:);
+subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
 n = length(subjCodes);
 
@@ -21,30 +23,51 @@ n = length(subjCodes);
 behavioral_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/';
 modality_names = {'visual', 'auditory', 'tactile'};
 task_names = {'spatial', 'temporal'};
-condition_order = {'visual_spatial', 'visual_temporal', 'auditory_spatial', 'auditory_temporal', 'tactile_spatial', 'tactile_temporal'};
 n_conditions = length(task_names)*length(modality_names);
+correct_colnames = {'trials_response', 'trialsresponse', 'odd_trial_responseCorrect'};
 perc_correct_all = nan(n,n_conditions);
 n_cond = nan(n,n_conditions); 
+
+if strcmp(taskname, 'x1WayLocalizer')
+    condition_str = {'active', 'passive'};
+    condition_order = {'visual_active', 'visual_passive', 'auditory_active', 'auditory_passive', 'tactile_active', 'tactile_passive'};
+elseif strcmp(taskname, 'spacetime')
+    condition_str = {'spatial', 'temporal'};
+    condition_order = {'visual_spatial', 'visual_temporal', 'auditory_spatial', 'auditory_temporal', 'tactile_spatial', 'tactile_temporal'};
+end
 
 for ss = 1:n
 
     subjCode = subjCodes{ss};
     row_ind = strcmp(subjCode,subjCodes);
-    spactime_date = subjDf_cut.([taskname 'Date']){row_ind};
-    runs = subjDf_cut.([taskname, 'Runs']){row_ind};
+    spacetime_date = subjDf_cut.([taskname 'Date']){row_ind};
+    if isempty(spacetime_date) && strcmp(taskname, 'x1WayLocalizer')
+        spacetime_date = subjDf_cut.('x3WayLocalizerDate'){row_ind};
+        runs = subjDf_cut.('x3WayLocalizerRuns'){row_ind};
+    else
+        runs = subjDf_cut.([taskname, 'Runs']){row_ind};
+    end
     if contains(runs, '/') % runs with different fieldmaps
         runs = replace(runs, '/', ','); % still take all runs
     end
     runs = str2num(runs);
     num_runs = length(runs);
-    subjID = [spactime_date upper(subjCode)];
+    subjID = [spacetime_date upper(subjCode)];
 
     files = {dir([behavioral_dir subjID]).name};
     if isempty(files)
         disp(['No behavrioal data files for subj ' subjCode]);
         continue
     end
-    files_csv = files(contains(files, '.csv')); % Get only csv files in this dir
+
+    if strcmp(taskname, 'spacetime')
+        files_csv = files( contains(files, '.csv') & (contains(files, '_spatial_temporal_') | contains(files, 'ac_trifloc_task')) ); % Get only csv files in this dir
+    elseif strcmp(taskname, 'x1WayLocalizer')
+        files_csv = files( contains(files, '.csv') & (contains(files, 'trifloc_task_') | contains(files, 'ac_trifloc_task')) ); % Get only csv files in this dir
+    else
+        error('unrecognized taskname');
+    end
+
     assert(length(files_csv)==num_runs, ['Subj ' subjCode ': Number of runs specified in subjInfo.csv does not match number of runs found in behavioral data files']);
     
     responses = [];
@@ -57,25 +80,24 @@ for ss = 1:n
         nrows = height(behavioral_data);
         modalities(length(modalities)+1:length(modalities)+nrows) = behavioral_data.modality;
         conditions(length(conditions)+1:length(conditions)+nrows) = behavioral_data.type;
-        try
-            responses(length(responses)+1:length(responses)+nrows) = behavioral_data.trials_response;
-        catch
-            disp(['"trials_response" column not found for subj ' subjCode ' run ' num2str(rr) ' using "odd_trial_responseCorrect instead.'])
-            responses(length(responses)+1:length(responses)+nrows) = behavioral_data.odd_trial_responseCorrect;
+        which_column = find(ismember(correct_colnames, behavioral_data.Properties.VariableNames), 1);
+        if which_column ~= 1
+            keyboard;
         end
+        responses(length(responses)+1:length(responses)+nrows) = behavioral_data.(correct_colnames{which_column});
     end
 
-    % Loop through each modality and calculate % correct
+    % Loop through each modality and calculate % correctdd
     for mm = 1:length(modality_names)
-        modality_spatial_mask = strcmpi(modality_names{mm}, modalities) & strcmpi('spatial', conditions);
-        n_cond(ss,(mm*2)-1) = sum(modality_spatial_mask);
-        perc_correct_all(ss,(mm*2)-1) = mean(responses(modality_spatial_mask));
+        modality_cond1_mask = strcmpi(modality_names{mm}, modalities) & strcmpi(condition_str{1}, conditions);
+        n_cond(ss,(mm*2)-1) = sum(modality_cond1_mask);
+        perc_correct_all(ss,(mm*2)-1) = mean(responses(modality_cond1_mask), 'omitnan');
         assert(~isnan(perc_correct_all(ss,(mm*2)-1)), 'percent correct calculated as nan, should not happen');
 
-        modality_temporal_mask = strcmpi(modality_names{mm}, modalities) & strcmpi('temporal', conditions);
-        n_cond(ss,(mm*2)) = sum(modality_temporal_mask);
-        perc_correct_all(ss,(mm*2)) = mean(responses(modality_temporal_mask));
-        assert(~isnan(perc_correct_all(ss,(mm*2))), 'percent correct calculated as nan, should not happen');
+        modality_cond2_mask = strcmpi(modality_names{mm}, modalities) & strcmpi(condition_str{2}, conditions);
+        n_cond(ss,(mm*2)) = sum(modality_cond2_mask);
+        perc_correct_all(ss,(mm*2)) = mean(responses(modality_cond2_mask), 'omitnan');
+        assert(~isnan(perc_correct_all(ss,(mm*2))) || strcmp(condition_str{2}, 'passive'), 'percent correct calculated as nan, should not happen');
     end
 
     
@@ -83,8 +105,10 @@ end
 
 %% Save out results
 perc_correct_all = array2table(perc_correct_all, 'VariableNames',condition_order)
-save('behavioral_percent_correct_data.mat', 'subjCodes', 'perc_correct_all', 'n_cond');
-writetable(perc_correct_all, 'behavioral_data.csv')
+if save_out
+    save('behavioral_percent_correct_data.mat', 'subjCodes', 'perc_correct_all', 'n_cond');
+    writetable(perc_correct_all, 'behavioral_data.csv')
+end
 
 missing_all_data = all(ismissing(perc_correct_all),2);
 perc_correct_all=perc_correct_all(~missing_all_data,:); % delete any rows with all nans

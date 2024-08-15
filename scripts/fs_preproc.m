@@ -18,9 +18,11 @@ path_topup_fmparams = '/projectnb/somerslab/tom/projects/spacetime_network/data/
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-N = height(subjDf_cut);
+N = length(subjCodes);
 
 data_dir = [projectDir 'data/unpacked_data_nii_fs_localizer/'];
+
+individual_subj_space = true; % keep activation on individual subj surface (if false, use fsaverage)
 
 %% Loop through subjs
 smooth = 5; %mm
@@ -41,7 +43,7 @@ parfor ss = 1:N
     % Get fieldmap run numbers
     seq_name = 'x1WayLocalizer';
     FMruns = subjDf_cut.([seq_name 'FM']){subjRow};
-    if isempty(FMruns)
+    if isempty(FMruns) || strcmp(subjCode, 'MM')
         seq_name = 'x3WayLocalizer';
         FMruns = subjDf_cut.([seq_name 'FM']){subjRow};
     end
@@ -80,7 +82,14 @@ parfor ss = 1:N
 
     %% Run the rest of preproc
     unix(['stc-sess -i fmcpr_tu -o fmcpr_tu.siemens -ngroups 1 -so siemens -s ' subjCode ' -d ' data_dir ' -fsd localizer -update']);
-    unix(['rawfunc2surf-sess -i fmcpr_tu.siemens -fwhm ' num2str(smooth) ' -s ' subjCode ' -d ' data_dir ' -fsd localizer -trgsubject fsaverage -stc siemens -save-unsmoothed -update -per-run']);
+    
+    if individual_subj_space
+        trgsubj = subjCode;
+    else
+        trgsubj = 'fsaverage';
+    end
+
+    unix(['rawfunc2surf-sess -i fmcpr_tu.siemens -fwhm ' num2str(smooth) ' -s ' subjCode ' -d ' data_dir ' -fsd localizer -trgsubject ' trgsubj ' -stc siemens -save-unsmoothed -update -per-run']);
    
     disp(['Finished subj ' subjCode]);
 

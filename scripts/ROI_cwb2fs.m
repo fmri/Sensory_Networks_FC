@@ -47,14 +47,21 @@ tac_ROIs = {'S2', 'midIns', 'S1', 'pSTS-Tac', 'ppTac', 'PMv', 'posCingSulc'};
 tac_ROIs_use = {};
 vis_ROIs = {'pVis', 'SPCS', 'IPCS', 'midIFS'}; % ignore preSMA-V
 vis_ROIs_use = {'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS'};
-mult_ROIs = {'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult', 'cmSFG_mult', 'Ins_mult'}; % use Ins_mult and cmSFG_mult as pure MD areas? 
+mult_ROIs = {'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult', 'cmSFG_mult', 'Ins_mult'}; % use Ins_mult and cmSFG_mult as pure MD areas?
 mult_ROIs_use = {'cmSFG_mult', 'Ins_mult'};
+
+% all_ROIs = {'pSTS', 'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud', 'cmSFG', 'S2', 'midIns',...
+%     'S1', 'pSTS-Tac', 'ppTac', 'PMv', 'posCingSulc', 'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS',...
+%     'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult', 'cmSFG_mult', 'Ins_mult'};
+% all_ROIs_use = {'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud', 'pVis', 'preSMA-V', 'SPCS', ...
+%                 'IPCS', 'midIFS', 'cmSFG_mult', 'Ins_mult'};
 
 all_ROIs = {'pSTS', 'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud', 'cmSFG', 'S2', 'midIns',...
     'S1', 'pSTS-Tac', 'ppTac', 'PMv', 'posCingSulc', 'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS',...
     'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult', 'cmSFG_mult', 'Ins_mult'};
-all_ROIs_use = {'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud', 'pVis', 'preSMA-V', 'SPCS', ...
-                'IPCS', 'midIFS', 'cmSFG_mult', 'Ins_mult'};
+all_ROIs_use = {'pSTS', 'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud', 'cmSFG', 'S2', 'midIns',...
+    'S1', 'pSTS-Tac', 'ppTac', 'PMv', 'posCingSulc', 'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS',...
+    'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult', 'cmSFG_mult', 'Ins_mult'};
 
 % Make matrices to track number of voxels in each ROI
 ROI_voxels_final_lh = NaN(N,length(all_ROIs));
@@ -64,7 +71,7 @@ ROI_voxels_final_rh = NaN(N,length(all_ROIs));
 ROI_voxels_orig_rh = NaN(N,length(all_ROIs));
 ROI_perc_deleted_rh = NaN(N,length(all_ROIs));
 
-% Initialize variable to look at which ROIs overlap 
+% Initialize variable to look at which ROIs overlap
 ROI_perc_voxel_overlap_lh = {};
 ROI_perc_voxel_overlap_rh = {};
 
@@ -191,6 +198,7 @@ for ss = 1:length(subjCodes)
     %% Delete overlap between ROIs
 
     % First load in data from each ROI
+
     fsavg_hem_voxels = 163842;
     all_ROIs_data_lh = nan(fsavg_hem_voxels, length(ROI_names_lh));
     all_ROIs_data_rh = nan(fsavg_hem_voxels, length(ROI_names_rh));
@@ -218,7 +226,7 @@ for ss = 1:length(subjCodes)
         end
     end
     ROI_perc_voxel_overlap_lh{ss} = array2table(ROI_overlap_matrix_lh,'VariableNames',ROI_names_lh);
-    
+
     ROI_overlap_matrix_rh = NaN(length(ROI_names_rh), length(ROI_names_rh));
     for ii = 1:length(ROI_names_rh)
         ROI_voxels_orig_rh(ss,ismember(all_ROIs,ROI_names_rh{ii})) = sum(all_ROIs_data_rh(:,ii));
@@ -231,7 +239,6 @@ for ss = 1:length(subjCodes)
     ROI_perc_voxel_overlap_rh{ss} = array2table(ROI_overlap_matrix_rh,'VariableNames',ROI_names_rh);
 
     % If any overlap between ROIs in any voxel, replace with 0
-    %% TODO: ROIs ARE IN DIFFERENT/WRONG ORDER FOR EACH TABLE/SUBJ %%
     ROI_use_mask_lh = ismember(ROI_names_lh, all_ROIs_use);
     ROI_use_mask_rh = ismember(ROI_names_rh, all_ROIs_use);
     for vv = 1:fsavg_hem_voxels
@@ -246,18 +253,22 @@ for ss = 1:length(subjCodes)
     % % Track how many voxels get deleted
     % ROI_voxels_final_lh(ss,ROI_exists_lh) = sum(all_ROIs_data_lh,1);
     % ROI_perc_deleted_lh(ss,ROI_exists_lh) = (ROI_voxels_orig_lh(ss,ROI_exists_lh) - ROI_voxels_final_lh(ss,ROI_exists_lh))./ROI_voxels_orig_lh(ss,ROI_exists_lh);
-    % 
+    %
     % ROI_voxels_final_rh(ss,ROI_exists_rh) = sum(all_ROIs_data_rh,1);
     % ROI_perc_deleted_rh(ss,ROI_exists_rh) = (ROI_voxels_orig_rh(ss,ROI_exists_rh) - ROI_voxels_final_rh(ss,ROI_exists_rh))./ROI_voxels_orig_rh(ss,ROI_exists_rh);
 
     % Replace old ROI data with new ROI data for each ROI
     for ff = 1:length(ROI_names_lh)
         all_ROI_info_lh{ff}.vol = all_ROIs_data_lh(:,ff)';
-        MRIwrite(all_ROI_info_lh{ff}, [save_out_filepath lower(subjCode) '_ROI_fs_164_' ROIname_lh_santized{ff} '_lh_binarized_nooverlap.nii'])
+        if ~isfile([save_out_filepath lower(subjCode) '_ROI_fs_164_' ROIname_lh_santized{ff} '_lh_binarized_nooverlap.nii'])
+            MRIwrite(all_ROI_info_lh{ff}, [save_out_filepath lower(subjCode) '_ROI_fs_164_' ROIname_lh_santized{ff} '_lh_binarized_nooverlap.nii'])
+        end
     end
     for ff = 1:length(ROI_names_rh)
         all_ROI_info_rh{ff}.vol = all_ROIs_data_rh(:,ff)';
-        MRIwrite(all_ROI_info_rh{ff}, [save_out_filepath lower(subjCode) '_ROI_fs_164_' ROIname_rh_santized{ff} '_rh_binarized_nooverlap.nii'])
+        if ~isfile([save_out_filepath lower(subjCode) '_ROI_fs_164_' ROIname_rh_santized{ff} '_rh_binarized_nooverlap.nii'])
+            MRIwrite(all_ROI_info_rh{ff}, [save_out_filepath lower(subjCode) '_ROI_fs_164_' ROIname_rh_santized{ff} '_rh_binarized_nooverlap.nii'])
+        end
     end
 
     disp(['DONE CONVERTING ROIS FOR SUBJ: ' subjCode]);
@@ -269,10 +280,10 @@ ROI_nvoxel_orig_tbl_lh.subjCode = subjCodes;
 
 % ROI_percvoxel_del_tbl_lh = array2table(ROI_perc_deleted_lh, 'VariableNames', all_ROIs);
 % ROI_percvoxel_del_tbl_lh.subjCode = subjCodes;
-% 
+%
 % ROI_nvoxel_final_tbl_lh = array2table(ROI_voxels_final_lh, 'VariableNames', all_ROIs);
 % ROI_nvoxel_final_tbl_lh.subjCode = subjCodes;
-% 
+%
 % ROI_nvoxel_deleted_tbl_lh = array2table(ROI_voxels_orig_lh.*ROI_perc_deleted_lh, 'VariableNames', all_ROIs);
 % ROI_nvoxel_deleted_tbl_lh.subjCode = subjCodes;
 
@@ -284,7 +295,7 @@ ROI_nvoxel_orig_tbl_rh.subjCode = subjCodes;
 
 % ROI_nvoxel_final_tbl_rh = array2table(ROI_voxels_final_rh, 'VariableNames', all_ROIs);
 % ROI_nvoxel_final_tbl_rh.subjCode = subjCodes;
-% 
+%
 % ROI_nvoxel_deleted_tbl_rh = array2table(ROI_voxels_orig_rh.*ROI_perc_deleted_rh, 'VariableNames', all_ROIs);
 % ROI_nvoxel_deleted_tbl_rh.subjCode = subjCodes;
 
@@ -292,8 +303,8 @@ ROI_nvoxel_orig_tbl_rh.subjCode = subjCodes;
 %     'ROI_nvoxel_orig_tbl_rh', 'ROI_nvoxel_orig_tbl_lh', 'ROI_nvoxel_deleted_tbl_lh',...
 %     'ROI_nvoxel_final_tbl_lh', 'ROI_percvoxel_del_tbl_lh','ROI_perc_voxel_overlap_lh', 'ROI_perc_voxel_overlap_rh');
 
-save('ROI_persubj_voxel_info.mat', 'ROI_nvoxel_orig_tbl_rh', 'ROI_nvoxel_orig_tbl_lh',...
-     'ROI_perc_voxel_overlap_lh', 'ROI_perc_voxel_overlap_rh');
+save('ROI40_persubj_voxel_info.mat', 'ROI_nvoxel_orig_tbl_rh', 'ROI_nvoxel_orig_tbl_lh',...
+    'ROI_perc_voxel_overlap_lh', 'ROI_perc_voxel_overlap_rh');
 
 
 

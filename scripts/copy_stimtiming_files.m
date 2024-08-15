@@ -21,13 +21,16 @@ subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir 'data/'];
 stimtimeDir = [subjectsDir 'behavioral/stim_timing/'];
 
-experiment_name = 'x1WayLocalizer'; % Change stimtiming files to x1WayLocalizer here if you want to copy those files into the functional localizer dirs
+experiment_name = 'x3WayLocalizer'; % Change stimtiming files to x1WayLocalizer here if you want to copy those files into the functional localizer dirs
 
 if strcmp(experiment_name, 'spacetime')
     file_suffix = '.txt';
     func_dir = 'bold';
 elseif strcmp(experiment_name, 'x1WayLocalizer')
     file_suffix = '_1Waylocalizer.txt';
+    func_dir = 'localizer';
+elseif strcmp(experiment_name, 'x3WayLocalizer')
+    file_suffix = '_3WayLocalizer.txt';
     func_dir = 'localizer';
 else
     error('Experiment name not recognized. Should be either "spacetime" or "x1WayLocalizer"');
@@ -53,7 +56,7 @@ for ss = 1:length(subjCodes)
 
     for rr = 1:length(runs)
         sourceFile = [stimtimeDir subjCode '_run' num2str(rr) file_suffix];
-        destFile = [subjectsDir 'unpacked_data_nii/' subjCode '/' func_dir '/00' num2str(rr) '/f_events.tsv'];
+        destFile = [subjectsDir 'unpacked_data_nii_fs_localizer/' subjCode '/' func_dir '/00' num2str(rr) '/f_events.tsv'];
         unix(['cp ' sourceFile ' ' destFile])
     end
 

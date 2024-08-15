@@ -17,12 +17,17 @@ subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 
 % Set ROIs to use and get ROI file list
-ROIs_not_used = {'pSTS_lh', 'cmSFG_lh', 'S2_lh', 'midIns_lh', 'S1_lh', 'pSTS-Tac_lh', 'ppTac_lh', 'PMv_lh', 'posCingSulc_lh',...
-    'IPCS_mult_lh', 'Lat_par_mult_lh', 'LatPar_mult_lh', 'SPCS_mult_lh', 'midIFS_mult_lh', 'pSTS_rh', 'cmSFG_rh',...
-    'S2_rh', 'midIns_rh', 'S1_rh', 'pSTS-Tac_rh', 'ppTac_rh', 'PMv_rh', 'posCingSulc_rh', 'IPCS_mult_rh', ...
-    'Lat_par_mult_rh', 'LatPar_mult_rh', 'SPCS_mult_rh', 'midIFS_mult_rh'};
+% ROIs_not_used = {'pSTS_lh', 'cmSFG_lh', 'S2_lh', 'midIns_lh', 'S1_lh', 'pSTS-Tac_lh', 'ppTac_lh', 'PMv_lh', 'posCingSulc_lh',...
+%     'IPCS_mult_lh', 'Lat_par_mult_lh', 'LatPar_mult_lh', 'SPCS_mult_lh', 'midIFS_mult_lh', 'pSTS_rh', 'cmSFG_rh',...
+%     'S2_rh', 'midIns_rh', 'S1_rh', 'pSTS-Tac_rh', 'ppTac_rh', 'PMv_rh', 'posCingSulc_rh', 'IPCS_mult_rh', ...
+%     'Lat_par_mult_rh', 'LatPar_mult_rh', 'SPCS_mult_rh', 'midIFS_mult_rh'};
+% all_ROIs_use = {'tgPCS', 'cIFS_G', 'FO', 'CO', 'pAud', 'pVis', 'preSMA-V', 'SPCS', ...
+%                 'IPCS', 'midIFS', 'cmSFG_mult', 'Ins_mult'};
+ROIs_not_used = {};
 all_ROIs_use = {'tgPCS', 'cIFS_G', 'FO', 'CO', 'pAud', 'pVis', 'preSMA-V', 'SPCS', ...
-                'IPCS', 'midIFS', 'cmSFG_mult', 'Ins_mult'};
+                'IPCS', 'midIFS', 'cmSFG_mult', 'Ins_mult', 'pSTS', 'cmSFG', 'S2', 'midIns', 'S1', 'pSTS-Tac', 'ppTac', 'PMv', 'posCingSulc',...
+                'IPCS_mult', 'Lat_par_mult', 'LatPar_mult', 'SPCS_mult', 'midIFS_mult'};
+
 
 ROI_file_list_pre = {dir([projectDir '/data/ROIs/']).name};
 ROI_file_list = ROI_file_list_pre(contains(ROI_file_list_pre, 'nooverlap')); % only taking ROI files that are binarized and without overlap
@@ -32,6 +37,7 @@ missing_ROIs_allsubj = cell(length(subjCodes),1);
 
 % Read in reference annot file so we can keep the same structure for our annot files
 annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
+%annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.a2009s.annot'];
 [verts_ref, labels_ref, ctable_ref] = read_annotation(annotpath); % Read in lh.aparc.annot file for reference annotation file structure
 
 % Create vertices for all annot files to use (same number of vertices for all bc fsaverage space
@@ -94,7 +100,7 @@ for ss = 1:length(subjCodes)
     end
 
     % Save annot file
-    write_annotation([projectDir '/data/ROIs/lh.' subjCode '_all_ROIs_nomissing.annot'], annot_verts, annot_labels_lh, annot_ctable_lh);
+    write_annotation([projectDir '/data/ROIs/lh.' subjCode '_40_ROIs_nomissing.annot'], annot_verts, annot_labels_lh, annot_ctable_lh);
 
     %% rh annot file creation
     % Initialize variables necessary for creating rh annot file
@@ -139,7 +145,7 @@ for ss = 1:length(subjCodes)
     end
 
     % Save annot file
-    write_annotation([projectDir '/data/ROIs/rh.' subjCode '_all_ROIs_nomissing.annot'], annot_verts, annot_labels_rh, annot_ctable_rh);
+    write_annotation([projectDir '/data/ROIs/rh.' subjCode '_40_ROIs_nomissing.annot'], annot_verts, annot_labels_rh, annot_ctable_rh);
 
     %% Finished
     disp(['Finished creating ROI annot files for subj ' subjCode]);
