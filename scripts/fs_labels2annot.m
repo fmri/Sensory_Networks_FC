@@ -27,10 +27,12 @@ annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 % Create vertices for all annot files to use (same number of vertices for all bc fsaverage space)
 annot_verts = verts_ref;
 
-ROIs = ["aINS", "preSMA", "ppreCun", "dACC", ... % multisensory
-        "sPCS", "iPCS", "midIFS", "aIPS", "pIPS", "DO", "LOT", "VOT",... % visual
-        "tgPCS", "cIFSG", "pAud", "CO", "FO", "cmSFG"]'; % auditory
+ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
+        'sPCS', 'iPCS', 'midIFS', 'pVis', ... % visual
+        'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
 N_ROIs = length(ROIs);
+
+fs_number = 163842;
 
 %% Loop through subjs and create annot file
 ROI_dir = [projectDir '/data/ROIs/'];
@@ -46,14 +48,34 @@ for ss = 1:N
         % Get labels for this subj/hemisphere
         hemi = hemis{hh};
         subj_labels = all_label_files(contains(all_label_files, [subjCode '_']) & ~contains(all_label_files, '_indiv') ...
-            & contains(all_label_files, ['_' hemi]));
+            & contains(all_label_files, ['_' hemi]) & contains(all_label_files, ROIs) & contains(all_label_files, '.label'));
         if strcmp(subjCode, 'NS') % due to "NS" being in the label aINS, we have to take out the wrong aINS for this subj
             bad_aINS = contains(subj_labels, 'aINS') & ~contains(subj_labels, 'NS_aINS');
             subj_labels = subj_labels(~bad_aINS);
         end
 
-        assert(length(subj_labels)==N_ROIs, ['Number of ROIs for ' subjCode ' ' hemi ' is ' num2str(length(subj_labels)) ...
-                                            ' but should be ' num2str(N_ROIs)]);
+        % Check for replacement ROIs and make sure they are used
+        replacement_ROIs = contains(subj_labels, 'replacement.label');
+        if any(replacement_ROIs)
+            rep_ROI_inds = find(replacement_ROIs);
+            bad_nonrepl = false(length(subj_labels),1);
+            for ii = 1:length(rep_ROI_inds)
+                repl_ROI_name = strsplit(subj_labels{rep_ROI_inds(ii)}, '_');
+                repl_ROI_name = repl_ROI_name{2};
+                bad_nonrepl(contains(subj_labels, '.nii') | contains(subj_labels, [repl_ROI_name '_' hemi '.label'])) = true;
+            end
+            subj_labels = subj_labels(~bad_nonrepl);
+        end
+        
+        % Check for missing ROIs
+        any_missing = false;
+        if length(subj_labels) ~= N_ROIs
+            any_missing = true;
+            subj_label_namesplit = cellfun(@(x) strsplit(x,'_'), subj_labels,'UniformOutput',false);
+            subj_label_names = cellfun(@(x) x{2}, subj_label_namesplit, 'UniformOutput',false);
+            missing_ROIs = ROIs(~contains(ROIs, subj_label_names));
+            disp(['Subj ' subjCode ' missing ROI ' missing_ROIs{:} ' ' hemi ])
+        end
 
         % Initialize variables necessary for creating lh annot file
         annot_labels = zeros(length(verts_ref),1); % start with labels as all 0s
@@ -63,19 +85,12 @@ for ss = 1:N
         annot_ctable.table = ctable_ref.table(1,:); % copy canonical color RGB and label for 'unknown' label
 
         % Loop through ROIs
-        for rr = 1:N_ROIs
-
+        N_ROIs_subj = length(subj_labels);
+        for rr = 1:N_ROIs_subj
             % Load ROI
             ROI_file = subj_labels{rr};
             label_data = readtable([projectDir '/data/ROIs/' ROI_file], 'FileType','text'); % read ROI data
-            label_vertex_inds = label_data{:,1};
-
-            % check of there are every 0s or 163842 (if there are 0s we are
-            % good, if there is a 163842 we are off by one and should
-            % subtract 1 from label_vertex_inds 
-            if any(ismember([0, 163842], label_vertex_inds))
-                keyboard
-            end
+            label_vertex_inds = label_data{:,1} + 1; % inds off by one 
 
             % Add struct_name (label name)
             whichROI = cellfun(@(x) contains(ROI_file,x), ROIs); % determine which ROI name is in this file
@@ -86,14 +101,26 @@ for ss = 1:N
             annot_ctable.table(rr+1,:) = ctable_ref.table(rr+1,:); % just keep same canonical label number and color for this ROI
             label_curr = annot_ctable.table(rr+1,5); % Extract the specific label number
             annot_labels(label_vertex_inds) = label_curr; % replace 0s with label number in annotation labels variable
+        end
 
+        % If there are any missing ROIs, add a dummy ROI to the annotation
+        if any_missing
+            for mr = 1:length(missing_ROIs)
+                annot_ctable.struct_names{N_ROIs_subj+mr+1} = missing_ROIs{mr}; % +1 for 'unknown' name
+                annot_ctable.table(N_ROIs_subj+mr+1,:) = ctable_ref.table(N_ROIs_subj+mr+1,:); % just keep same canonical label number and color for this ROI
+                label_curr = annot_ctable.table(N_ROIs_subj+mr+1,5); % Extract the specific label number
+                dummy_vol = false(1,fs_number); 
+                dummy_vol(mr) = true; % just one voxel of ROI for dummy value
+                annot_labels(dummy_vol) = label_curr; % replace 1s with label number in annotation labels variable
+            end
         end
         
         % Actually write annotation file
-        %write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs.annot'], annot_verts, annot_labels, annot_ctable);
-        keyboard;
+        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs.annot'], annot_verts, annot_labels, annot_ctable);
 
     end
+
+    disp(['Finished subj ' subjCode]);
 
 end
 

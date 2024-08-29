@@ -1,5 +1,5 @@
 %%%%
-% The purpose of this script is to load in the behavioral data for the 
+% The purpose of this script is to load in the behavioral data for the
 % spacetime task and calculate the % correct for each subj for each
 % condition for each modality and run statistical testing on them
 %
@@ -12,7 +12,7 @@ ccc;
 
 save_out = false;
 
-%% Load subject info 
+%% Load subject info
 taskname = 'x1WayLocalizer';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
@@ -26,7 +26,8 @@ task_names = {'spatial', 'temporal'};
 n_conditions = length(task_names)*length(modality_names);
 correct_colnames = {'trials_response', 'trialsresponse', 'odd_trial_responseCorrect'};
 perc_correct_all = nan(n,n_conditions);
-n_cond = nan(n,n_conditions); 
+n_cond = nan(n,n_conditions);
+perc_correct_byrun = nan(n,2,6);
 
 if strcmp(taskname, 'x1WayLocalizer')
     condition_str = {'active', 'passive'};
@@ -69,38 +70,50 @@ for ss = 1:n
     end
 
     assert(length(files_csv)==num_runs, ['Subj ' subjCode ': Number of runs specified in subjInfo.csv does not match number of runs found in behavioral data files']);
-    
+
     responses = [];
     modalities = {};
     conditions = {};
 
+
     % Loop through each run and collect reponses, modality, and condition data
-    for rr = 1:num_runs 
+    len_runs = zeros(num_runs+1,1);
+    for rr = 1:num_runs
         behavioral_data = readtable([behavioral_dir subjID, '/', files_csv{rr}], 'Delimiter',',');
         nrows = height(behavioral_data);
-        modalities(length(modalities)+1:length(modalities)+nrows) = behavioral_data.modality;
-        conditions(length(conditions)+1:length(conditions)+nrows) = behavioral_data.type;
+        modalities(ss,rr,:) = behavioral_data.modality;
+        conditions(ss,rr,:) = behavioral_data.type;
+
         which_column = find(ismember(correct_colnames, behavioral_data.Properties.VariableNames), 1);
         if which_column ~= 1
             keyboard;
         end
-        responses(length(responses)+1:length(responses)+nrows) = behavioral_data.(correct_colnames{which_column});
+        responses(ss,rr,:) = behavioral_data.(correct_colnames{which_column});
+        len_runs(rr+1) = length(behavioral_data.(correct_colnames{which_column}));
     end
 
-    % Loop through each modality and calculate % correctdd
+    if strcmp(subjCode, 'LA')
+        keyboard;
+    end
+    subj_responses = squeeze(responses(ss,:,:));
+
+    % Loop through each modality and calculate % correct
     for mm = 1:length(modality_names)
-        modality_cond1_mask = strcmpi(modality_names{mm}, modalities) & strcmpi(condition_str{1}, conditions);
-        n_cond(ss,(mm*2)-1) = sum(modality_cond1_mask);
-        perc_correct_all(ss,(mm*2)-1) = mean(responses(modality_cond1_mask), 'omitnan');
+        modality_cond1_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{1}, conditions(ss,:,:)));
+        n_cond(ss,(mm*2)-1) = sum(modality_cond1_mask,'all');
+        perc_correct_all(ss,(mm*2)-1) = mean(subj_responses(modality_cond1_mask), 'all', 'omitnan');
         assert(~isnan(perc_correct_all(ss,(mm*2)-1)), 'percent correct calculated as nan, should not happen');
 
-        modality_cond2_mask = strcmpi(modality_names{mm}, modalities) & strcmpi(condition_str{2}, conditions);
-        n_cond(ss,(mm*2)) = sum(modality_cond2_mask);
-        perc_correct_all(ss,(mm*2)) = mean(responses(modality_cond2_mask), 'omitnan');
+        for rr = 1:num_runs
+            perc_correct_byrun(ss,mm,rr) = mean(responses(ss,rr, modality_cond1_mask(rr,:)), 'omitnan');
+        end
+
+        modality_cond2_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{2}, conditions(ss,:,:)));
+        n_cond(ss,(mm*2)) = sum(modality_cond2_mask, 'all');
+        perc_correct_all(ss,(mm*2)) = mean(subj_responses(modality_cond2_mask), 'all', 'omitnan');
         assert(~isnan(perc_correct_all(ss,(mm*2))) || strcmp(condition_str{2}, 'passive'), 'percent correct calculated as nan, should not happen');
     end
 
-    
 end
 
 %% Save out results
@@ -115,7 +128,7 @@ perc_correct_all=perc_correct_all(~missing_all_data,:); % delete any rows with a
 n = n-sum(missing_all_data);
 
 %% Power analysis
-% For a repeated measures ANOVA With sample N=20, alpha = 0.05, power = 0.8, 
+% For a repeated measures ANOVA With sample N=20, alpha = 0.05, power = 0.8,
 % and a 3x2 measurements, we need to calculate the correlation among
 % repeated measures and assess nonsphericity in order to do a power
 % analysis.
@@ -138,7 +151,7 @@ for ii = 1:5
         if (ii ~= jj) && (ii > jj)
             count = count + 1;
             measure_differences(:,count) = perc_correct_matrix(:,ii) - perc_correct_matrix(:,jj);
-            disp(num2str([ii, jj])); % checking all combos are done 
+            disp(num2str([ii, jj])); % checking all combos are done
         end
 
     end
@@ -154,7 +167,7 @@ vars = var(measure_differences); % if these variances are similar, sphericity is
 % number of groups = 1
 % number of measurements = 6
 % corr among repeated measures = 0.3184
-% nonspereicity correction (epsilon) = 0.8 
+% nonspereicity correction (epsilon) = 0.8
 % The result is an effect size detectable of f = 0.273 which is
 % approximately a cohen's d of 0.546 (medium-large effect size)
 
@@ -186,7 +199,7 @@ results = ranova(rm,'WithinModel','task*modality')
 % design_tbl.modality = categorical(design_tbl.modality);
 % rm = fitrm(perc_correct_all(:,[1,2,5,6]), "visual_spatial,visual_temporal,tactile_spatial,tactile_temporal~1", WithinDesign=design_tbl);
 % results = ranova(rm,'WithinModel','task*modality')
-% 
+%
 % design_tbl = table([1,0,1,0]', [0,0,1,1]', 'VariableNames', {'task', 'modality'});
 % design_tbl.task = categorical(design_tbl.task);
 % design_tbl.modality = categorical(design_tbl.modality);
@@ -195,7 +208,7 @@ results = ranova(rm,'WithinModel','task*modality')
 
 %% Plot swarmplot for visualization
 close all;
-figure; 
+figure;
 boxplot(perc_correct_matrix, 'Labels', condition_order);
 ylim([0,1]);
 ylabel('Proportion Correct');
@@ -203,12 +216,12 @@ ylabel('Proportion Correct');
 newmat_modality = [mean(perc_correct_matrix(:,[1,2]),2), mean(perc_correct_matrix(:,[3,4]),2), mean(perc_correct_matrix(:,[5,6]),2)];
 newmat_task = [mean(perc_correct_matrix(:,[1,3,5]),2), mean(perc_correct_matrix(:,[2,4,6]),2)];
 
-figure; 
+figure;
 boxplot(newmat_modality, 'Labels', {'visual', 'auditory', 'tactile'});
 ylabel('Proportion Correct');
 ylim([0,1]);
 
-figure; 
+figure;
 boxplot(newmat_task, 'Labels', {'spatial', 'temporal'});
 ylabel('Proportion Correct');
 ylim([0,1]);

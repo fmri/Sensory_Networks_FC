@@ -14,7 +14,7 @@ experiment_name = 'spacetime';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL'})); % no ROIs for these subjs
+subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR'})); % no ROIs for these subjs
 N = length(subjCodes);
 
 %% Set key paths and variables
@@ -143,7 +143,8 @@ ylabel('Number of Vertices');
 
 
 
-
+%% Save ROI size table
+%save('ROI_size_table.mat', 'ROI_size_table');
 
 
 

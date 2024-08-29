@@ -11,7 +11,7 @@ addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
-func_topupapplied = false; % give paths for functionals with fmaps already applied or not
+func_topupapplied = true; % give paths for functionals with fmaps already applied 
 resting_state = true;
 localizer = false;
 
@@ -35,13 +35,13 @@ subjCodes = subjDf_cut.subjCode;
 
 ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 struct_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/';
-func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_nofmaps/';
+func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
 
 % Print ROI annot paths for ROI selection
 not_found = zeros(length(subjCodes),1);
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_all_ROIs_nomissing.annot'];
+    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs.annot'];
     if ~isfile(subjROIpath)
         not_found(ss) = 1;
     else
@@ -62,7 +62,7 @@ end
 
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/' subjCodes{ss} '_all_ROIs_nomissing.surf.nii'];
+    subjROIpath = [ROI_path '/' subjCodes{ss} '_ROIs.surf.nii'];
     disp(subjROIpath)
 
 end
@@ -79,8 +79,8 @@ end
 % Print functional paths
 runs_all = {};
 if func_topupapplied
-    prefix = 'sau';
-    suffix = '_topupApplied.surf.nii';
+    prefix = 'u';
+    suffix = '_topupApplied.nii';
 else
     prefix = '';
     suffix = '.nii';
@@ -102,7 +102,12 @@ for ss=1:length(subjCodes)
         
     for ii=1:length(runs)
         subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/' prefix 'f' suffix];
-        assert(isfile(subjDirFunc), ['Subj ' subjCode ' run ' num2str(runs(ii)) ' functional file not found'])
+        if ~isfile(subjDirFunc)
+            subjDirFunc = [subjDirFunc '.gz'];
+            if ~isfile(subjDirFunc)
+                error(['Subj ' subjCode ' run ' num2str(runs(ii)) ' functional file not found'])
+            end
+        end
         disp(subjDirFunc)
     end
 

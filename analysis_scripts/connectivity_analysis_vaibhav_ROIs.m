@@ -8,49 +8,53 @@
 ccc;
 
 %% Setup analysis parameters
-resting_state = true;
+resting_state = false;
 hierarchical_clustering = true;
 plot_individual_connmats = false;
-save_out = false;
+save_out = true;
 
 if resting_state
     ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/preprocessing/';
-    subjCodes = {'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'PT', 'PL', 'NS'};
-    N = length(subjCodes);
+    N = 13;
+    subjIDs = {'RR', 'MK', 'LA', 'TP', 'NM', 'SL', 'UV', 'PQ', 'KQ', 'LN', 'PT', 'PL', 'NS'};
     Ncond = 1; % one condition = resting state
     conditions = {'rest'};
     ROI_data = cell(N,1);
     %ROI_trial_inds = cell(N,1);
-    fourth_ROI_check = 'ROIs.CO (L)';
+    fourth_ROI_check = 'all_ROIs.CO (L)';
     extra_ROIs_end = 4;
 else
-    % ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_task_nofmap/results/preprocessing/';
-    % %ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_all_preproc_alt_fmap_order/results/preprocessing/';
-    % N = 16;
-    % subjIDs = {'RR', 'MM', 'PP', 'MK', 'LA', 'TP', 'NM', 'SL', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
-    % Ncond = 10;
-    % conditions = {'Fixation' , 'Passive_Auditory', 'Passive_Tactile', 'Passive_Visual', 'Spatial_Auditory',...
-    %     'Spatial_Tactile', 'Spatial_Visual', 'Temporal_Auditory', 'Temporal_Tactile', 'Temporal_Visual'};
-    % ROI_data = cell(N,Ncond);
-    % ROI_trial_inds = cell(N,1);
-    % fourth_ROI_check = 'all_ROIs.CO (L)'; %%%%
-    % extra_ROIs_end = 13; %%%%
+    ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_task_nofmap/results/preprocessing/';
+    %ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_all_preproc_alt_fmap_order/results/preprocessing/';
+    N = 16;
+    subjIDs = {'RR', 'MM', 'PP', 'MK', 'LA', 'TP', 'NM', 'SL', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
+    Ncond = 10;
+    conditions = {'Fixation' , 'Passive_Auditory', 'Passive_Tactile', 'Passive_Visual', 'Spatial_Auditory',...
+        'Spatial_Tactile', 'Spatial_Visual', 'Temporal_Auditory', 'Temporal_Tactile', 'Temporal_Visual'};
+    ROI_data = cell(N,Ncond);
+    ROI_trial_inds = cell(N,1);
+    fourth_ROI_check = 'all_ROIs.CO (L)'; %%%%
+    extra_ROIs_end = 13; %%%%
 end
 
 %% Setup ROIs
 
-aud_ROIs_use = {'tgPCS', 'cIFSG', 'FO', 'CO', 'cmSFG', 'pAud'};
-vis_ROIs_use = {'sPCS', 'iPCS', 'midIFS', 'pVis'};
-mult_ROIs_use = {'aINS', 'ppreCun', 'preSMA', 'dACC'};
+aud_ROIs_use = {'tgPCS', 'cIFS/G', 'FO', 'CO', 'pAud'};
+vis_ROIs_use = {'pVis', 'preSMA-V', 'SPCS', 'IPCS', 'midIFS'};
+mult_ROIs_use = {'cmSFG_mult', 'Ins_mult'};
 
-desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
-    'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
-    'sPCS (L)', 'iPCS (L)', 'midIFS (L)', 'pVis (L)', 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', 'pVis (R)'}; %,...
-%    'aINS (L)', 'ppreCun (L)', 'preSMA (L)', 'dACC (L)', 'aINS (R)', 'ppreCun (R)', 'preSMA (R)', 'dACC (R)'};
+desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFS_G (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
+    'cIFS_G (R)', 'pAud (R)',...
+    'SPCS (L)', 'IPCS (L)', 'midIFS (L)', 'preSMA-V (L)', 'pVis (L)', 'SPCS (R)', 'IPCS (R)', 'midIFS (R)', ...
+    'preSMA-V (R)', 'pVis (R)',...
+    'cmSFG_mult (L)', 'Ins_mult (L)', 'cmSFG_mult (R)', 'Ins_mult (R)'};
 
+% desired_order = {'tgPCS (L)', 'cIFS_G (L)', 'pAud (L)', 'tgPCS (R)', 'cIFS_G (R)', 'pAud (R)',...
+%     'SPCS (L)', 'IPCS (L)', 'pVis (L)', 'SPCS (R)', 'IPCS (R)', 'pVis (R)',...
+%     'cmSFG_mult (L)', 'Ins_mult (L)', 'cmSFG_mult (R)', 'Ins_mult (R)'};
 
 %% Get missing ROI data
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs_allsubj', 'subjCodes');
 
 %% Get ROI data
 
@@ -64,7 +68,7 @@ for ss = 1:N
     for ff = 1:length(subjfiles)
 
         load([ROI_dataDir subjfiles{ff}], 'names', 'data', 'conditionname', 'conditionweights');
-
+        %data2 = data;
         if resting_state
             assert(strcmp(conditionname,'rest'), ['Condition name is not "rest" for subj ' num2str(ss)])
             condcount = condcount + 1;
@@ -97,7 +101,7 @@ for ss = 1:N
         %ROI_trial_inds{ss,cond_ind} = ROI_trial_inds{ss,cond_ind}(4:end-extra_ROIs_end);
         %data2 = data2(4:end-extra_ROIs_end);
         names = names(4:end-extra_ROIs_end);
-        names_clean = cellfun(@(f) f(6:end), names, 'UniformOutput', false);
+        names_clean = cellfun(@(f) f(10:end), names, 'UniformOutput', false);
 
         % Reorder ROIs
         [ROIs_match, reorder_inds] = ismember(desired_order, names_clean);
@@ -122,24 +126,28 @@ end
 
 N_ROIs = length(names);
 connmats = NaN(N_ROIs, N_ROIs, N, Ncond);
+%connmats2 = NaN(N_ROIs, N_ROIs, N, Ncond);
 pvals = NaN(N_ROIs, N_ROIs, N, Ncond);
 
 for ss = 1:N
-    subjID = subjCodes{ss};
+    subjID = subjIDs{ss};
     for cc = 1:Ncond
         data = ROI_data{ss,cc};
+        %data2 = ROI_data2{ss,cc};
         for rr1 = 1:N_ROIs
             ROI1 = data{rr1};
-            ROI1_name = replace([subjCodes{ss} '_' desired_order{rr1}], ' (L)', '_lh');
-            ROI1_name = replace(ROI1_name, ' (R)', '_rh');
+            %ROI1_2 = data2{rr1};
             for rr2 = 1:N_ROIs
                 ROI2 = data{rr2};
-                ROI2_name = replace([subjCodes{ss} '_' desired_order{rr2}], ' (L)', '_lh');
-                ROI2_name = replace(ROI2_name, ' (R)', '_rh');
-                if ismember(ROI2_name, missing_ROIs) || ismember(ROI1_name, missing_ROIs) % if subj is missing ROI, connmat is nan
+                %ROI2_2 = data2{rr2};
+                %if resting_state
+                missing_ROIs = missing_ROIs_allsubj{ismember(subjIDs,subjID)};
+                if isempty(missing_ROIs)
+                    [connmats(rr1,rr2,ss,cc), pvals(rr1,rr2,ss,cc)] = corr(ROI1, ROI2);
+                elseif any(ismember({desired_order{rr1}, desired_order{rr2}}, missing_ROIs)) % if subj is missing ROI, connmat is nan
                     connmats(rr1,rr2,ss,cc) = NaN;
                     pvals(rr1,rr2,ss,cc) = NaN;
-                    disp(['Subj ' num2str(ss) ' (' subjID ') missing ROIs: ' missing_ROIs{ismember(missing_ROIs,ROI2_name)} missing_ROIs{ismember(missing_ROIs,ROI1_name)}]);
+                    disp(['Subj ' num2str(ss) ' (' subjID ') missing ROIs: ' missing_ROIs]);
                 else
                     [connmats(rr1,rr2,ss,cc), pvals(rr1,rr2,ss,cc)] = corr(ROI1, ROI2);
                 end
@@ -166,6 +174,7 @@ end
 
 %% Connectivity group
 connmat_group = mean(connmats, 3, 'omitnan');
+%connmat_group2 = mean(connmats2,3);
 
 %% Calculate hierarchical clustering
 if hierarchical_clustering

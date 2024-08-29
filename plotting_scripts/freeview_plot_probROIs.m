@@ -12,7 +12,7 @@ ccc;
 ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 subjCode = {'probabilistic'};
 
-ROI = 'FO';
+ROI = 'tgPCS';
 use_fsaverage = true;
 opacity = '0.3';
 

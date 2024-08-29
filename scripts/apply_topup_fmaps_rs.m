@@ -16,6 +16,7 @@ path_topup_fmparams = '/projectnb/somerslab/tom/projects/spacetime_network/data/
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
+subjCodes = subjCodes(~ismember(subjCodes, {'SL', 'RR', 'AH'}));
 subjectsDir = [projectDir, 'data/'];
 
 experiment_name = 'rest';
@@ -26,11 +27,11 @@ subjs_converted_fmaps = {'NM', 'RR', 'RT', 'NS', 'PL', 'PT', 'TP', 'UV', 'LA', '
     'KQ', 'SL', 'PQ'}; % these subjects had their fmaps registered to their functional data in order to convert from 2.2 - 2.3mm and will need to be handled differently
 
 %% Loop through subjs
-for ss = 1:length(subjCodes)
+parfor ss = 1:length(subjCodes)
 
     % Set up subj varibles
     subjCode = subjCodes{ss};
-    if ismember(subjCode, {'MM', 'PP', 'AH'}) % no resting state (or different sequence than normal)
+    if ismember(subjCode, {'MM', 'PP'}) && strcmp(experiment_name, 'rest'); % no resting state (or different sequence than normal)
         continue
     end
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
@@ -158,6 +159,7 @@ for ss = 1:length(subjCodes)
                 continue
             else
                 apply_topup_padding(path_func, path_topup_fmparams, topup_path, path_func_out, subjCode);
+            
             end
         end
     end
