@@ -9,7 +9,7 @@ subjCodes = subjDf_cut.subjCode;
 
 ROI_dir = [projectDir 'data/ROIs/'];
 files = {dir(ROI_dir).name};
-files_cut = files(contains(files, 'ROIs.annot') & contains(files, 'lh.'));
+files_cut = files(contains(files, 'ROIs_pVisMod.annot') & contains(files, 'lh.'));
 
 for ff = 1:length(files_cut)
     

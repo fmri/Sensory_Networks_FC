@@ -16,7 +16,10 @@ projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjectsDir_trg = [projectDir, 'data/unpacked_data_nii_fs_localizer/'];
+subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'AH', 'SL'}));
+
+subjectsDir_trg = [projectDir, 'data/unpacked_data_nii/'];
+fsd = 'bold';
 N = length(subjCodes);
 
 %% Loop over subjs
@@ -24,7 +27,7 @@ mean_per_run = nan(N,6);
 for ss = 1:length(subjCodes)
     subjCode = subjCodes{ss};
     disp(subjCode)
-    subjDir = [subjectsDir_trg subjCode '/localizer/'];
+    subjDir = [subjectsDir_trg subjCode '/' fsd '/'];
 
     dir_contents = {dir(subjDir).name};
     num_runs = sum(contains(dir_contents, '00'));
@@ -35,6 +38,9 @@ for ss = 1:length(subjCodes)
         assert(length(midpoint) == 1, 'more than one timepoint with 0 motion displacement');
         displacement = displacement(~displacement==0);
         mean_per_run(ss,rr) = mean(displacement);
+        if mean_per_run(ss,rr) >= 1
+            disp(['Subj ' subjCode ' run ' num2str(rr) ' has mean displacement over 1mm (' num2str(mean_per_run(ss,rr)) ')']);
+        end
     end
 end
 

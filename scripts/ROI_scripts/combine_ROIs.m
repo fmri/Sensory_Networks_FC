@@ -20,7 +20,9 @@ subjCodes = subjCodes(~ismember(subjCodes, {'SL', 'AH', 'RR'})); % rejected subj
 N = length(subjCodes);
 
 %% Set key variables
-pVis_ROIs = {'VOT', 'LOT', 'DO', 'aIPS', 'pIPS'};
+pVis_ROIs = {'VOT', 'LOT', 'aIPS', 'pIPS'};
+%pVis_ROIs = {'VOT', 'LOT', 'DO', 'aIPS', 'pIPS'};
+
 ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 ROI_files = {dir(ROI_dir).name};
 hemis = {'lh', 'rh'};
@@ -58,7 +60,7 @@ for ss = 1:N
         end
         
         % Save out pVis ROI
-        label_fname = [ROI_dir subjCode '_pVis_' hemi '.label'];
+        label_fname = [ROI_dir subjCode '_pVis_mod_' hemi '.label'];
         [ROI_unique,~,~] = unique(pVis,'rows');
         label_file = fopen(label_fname,'w');
         fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(ROI_unique,1)) '\n']);

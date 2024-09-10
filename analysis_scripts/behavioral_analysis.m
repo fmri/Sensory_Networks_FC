@@ -6,14 +6,13 @@
 % Created: Tom Possidente - Feb 2024
 %%%%
 
-addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 save_out = false;
 
 %% Load subject info
-taskname = 'x1WayLocalizer';
+taskname = 'spacetime';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
@@ -92,17 +91,19 @@ for ss = 1:n
         len_runs(rr+1) = length(behavioral_data.(correct_colnames{which_column}));
     end
 
-    if strcmp(subjCode, 'LA')
-        keyboard;
-    end
     subj_responses = squeeze(responses(ss,:,:));
 
     % Loop through each modality and calculate % correct
     for mm = 1:length(modality_names)
         modality_cond1_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{1}, conditions(ss,:,:)));
         n_cond(ss,(mm*2)-1) = sum(modality_cond1_mask,'all');
-        perc_correct_all(ss,(mm*2)-1) = mean(subj_responses(modality_cond1_mask), 'all', 'omitnan');
+        perc_correct = mean(subj_responses(modality_cond1_mask), 'all', 'omitnan');
+        perc_correct_all(ss,(mm*2)-1) = perc_correct;
         assert(~isnan(perc_correct_all(ss,(mm*2)-1)), 'percent correct calculated as nan, should not happen');
+
+        if perc_correct <= 0.55
+            disp(['Subj ' subjCode ' condition ' modality_names{mm} ' spatial has behavior performance below 55% (' num2str(perc_correct) ')']);
+        end
 
         for rr = 1:num_runs
             perc_correct_byrun(ss,mm,rr) = mean(responses(ss,rr, modality_cond1_mask(rr,:)), 'omitnan');
@@ -110,8 +111,14 @@ for ss = 1:n
 
         modality_cond2_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{2}, conditions(ss,:,:)));
         n_cond(ss,(mm*2)) = sum(modality_cond2_mask, 'all');
-        perc_correct_all(ss,(mm*2)) = mean(subj_responses(modality_cond2_mask), 'all', 'omitnan');
+        perc_correct = mean(subj_responses(modality_cond2_mask), 'all', 'omitnan');
+        perc_correct_all(ss,(mm*2)) = perc_correct;
         assert(~isnan(perc_correct_all(ss,(mm*2))) || strcmp(condition_str{2}, 'passive'), 'percent correct calculated as nan, should not happen');
+        
+        if perc_correct <= 0.55
+            disp(['Subj ' subjCode ' condition ' modality_names{mm} ' temporal has behavior performance below 55% (' num2str(perc_correct) ')']);
+        end
+
     end
 
 end

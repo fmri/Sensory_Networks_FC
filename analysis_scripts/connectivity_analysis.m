@@ -5,12 +5,13 @@
 % Tom Possidente - June 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Setup analysis parameters
 resting_state = true;
 hierarchical_clustering = true;
-plot_individual_connmats = false;
+plot_individual_connmats = true;
 save_out = false;
 
 if resting_state
@@ -18,11 +19,12 @@ if resting_state
     subjCodes = {'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'PT', 'PL', 'NS'};
     N = length(subjCodes);
     Ncond = 1; % one condition = resting state
+    ROI_str = 'ROIs_nopVis'; % "ROI_mod" for pVis without DO, "ROI" for pVis with DO
+    pVis_name = 'DO'; % pVis_mod for pVis wihtou DO, pVis for pVis with DO
     conditions = {'rest'};
     ROI_data = cell(N,1);
     %ROI_trial_inds = cell(N,1);
-    fourth_ROI_check = 'ROIs.CO (L)';
-    extra_ROIs_end = 4;
+    first_ROI_check = [ROI_str '.CO (L)'];
 else
     % ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_task_nofmap/results/preprocessing/';
     % %ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_all_preproc_alt_fmap_order/results/preprocessing/';
@@ -40,13 +42,14 @@ end
 %% Setup ROIs
 
 aud_ROIs_use = {'tgPCS', 'cIFSG', 'FO', 'CO', 'cmSFG', 'pAud'};
-vis_ROIs_use = {'sPCS', 'iPCS', 'midIFS', 'pVis'};
+vis_ROIs_use = {'sPCS', 'iPCS', 'midIFS', pVis_name, 'LOT', 'VOT', 'aIPS', 'pIPS'};
 mult_ROIs_use = {'aINS', 'ppreCun', 'preSMA', 'dACC'};
 
 desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
     'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
-    'sPCS (L)', 'iPCS (L)', 'midIFS (L)', 'pVis (L)', 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', 'pVis (R)'}; %,...
-%    'aINS (L)', 'ppreCun (L)', 'preSMA (L)', 'dACC (L)', 'aINS (R)', 'ppreCun (R)', 'preSMA (R)', 'dACC (R)'};
+    'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'LOT (L)', 'VOT (L)', 'aIPS (L)', 'pIPS (L)', ...
+    'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], 'LOT (R)', 'VOT (R)', 'aIPS (R)', 'pIPS (R)', ...
+    'aINS (L)', 'ppreCun (L)', 'preSMA (L)', 'dACC (L)', 'aINS (R)', 'ppreCun (R)', 'preSMA (R)', 'dACC (R)'};
 
 
 %% Get missing ROI data
@@ -59,11 +62,14 @@ files = {dir(ROI_dataDir).name};
 for ss = 1:N
     subjnum = sprintf( '%03d', ss ) ;
     subjfiles = files(contains(files, ['ROI_Subject' subjnum '_Condition']) & ~contains(files, '000'));
-
+    
     condcount = 0;
     for ff = 1:length(subjfiles)
 
         load([ROI_dataDir subjfiles{ff}], 'names', 'data', 'conditionname', 'conditionweights');
+        ROI_names_mask = cellfun(@(x) contains(x,ROI_str), names);
+        names = names(ROI_names_mask);
+        data = data(ROI_names_mask);
 
         if resting_state
             assert(strcmp(conditionname,'rest'), ['Condition name is not "rest" for subj ' num2str(ss)])
@@ -92,12 +98,9 @@ for ss = 1:N
 
         end
 
-        assert( strcmp(names{3},'CSF') & strcmp(names{4}, fourth_ROI_check) , ['Unexpected ROI order for subj: ' num2str(ff)]);
-        data = data(4:end-extra_ROIs_end);
-        %ROI_trial_inds{ss,cond_ind} = ROI_trial_inds{ss,cond_ind}(4:end-extra_ROIs_end);
-        %data2 = data2(4:end-extra_ROIs_end);
-        names = names(4:end-extra_ROIs_end);
-        names_clean = cellfun(@(f) f(6:end), names, 'UniformOutput', false);
+        assert( strcmp(names{1}, first_ROI_check) , ['Unexpected ROI order for subj: ' num2str(ff)]);
+        %ROI_trial_inds{ss,cond_ind} = ROI_trial_inds{ss,cond_ind};
+        names_clean = cellfun(@(f) f(length(ROI_str)+2:end), names, 'UniformOutput', false);
 
         % Reorder ROIs
         [ROIs_match, reorder_inds] = ismember(desired_order, names_clean);
@@ -175,7 +178,7 @@ if hierarchical_clustering
         linkage_cluster = linkage(distance_measure);
 
         figure;
-        dendrogram(linkage_cluster,'Labels',names);
+        [h,t,outperm] = dendrogram(linkage_cluster,'Labels',names);
         title(['Hierarchical Clustering Condition ' conditions{cc}]);
 
     end
@@ -233,10 +236,10 @@ if plot_individual_connmats
     for cc = 1:Ncond
         figure;
         count = 0;
-        for pp1 = 1:4
-            for pp2 = 1:4
+        for pp1 = 1:5
+            for pp2 = 1:5
                 count = count + 1;
-                subplot(4,4,count);
+                subplot(5,5,count);
                 if count <= N
                     heatmap(names, names, connmats_nandiag(:,:,count,cc), 'Colormap', turbo, 'ColorLimits', [min(connmats_nandiag(:,:,count,cc),[], 'all', 'omitnan'),max(connmats_nandiag(:,:,count,cc),[],'all','omitnan')])
                     title(['Conn Mat Subj ' num2str(count) ' condition ' conditions{cc}])

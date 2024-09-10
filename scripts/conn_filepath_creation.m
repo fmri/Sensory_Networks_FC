@@ -12,7 +12,7 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 func_topupapplied = true; % give paths for functionals with fmaps already applied 
-resting_state = true;
+resting_state = false;
 localizer = false;
 
 % Load in subject info

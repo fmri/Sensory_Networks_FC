@@ -9,8 +9,20 @@ ccc;
 
 %% Set up subject info data
 experiment_name = 'spacetime';
+task = 'spacetime'; % localizer or spacetime
+projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 
-dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+if strcmp(task, 'localizer')
+    seq_name = 'x1WayLocalizer';
+    dataDir = [projectDir '/data/unpacked_data_nii_fs_localizer/'];
+    fsd = 'localizer';
+elseif strcmp(task, 'spacetime')
+    seq_name = 'spacetime';
+    dataDir = [projectDir '/data/unpacked_data_nii/'];
+    fsd = 'bold';
+else
+    error(['task variable not recognized. Should be "localizer" or "spacetime", instead it is ' task]);
+end
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
@@ -46,9 +58,9 @@ for ss = 1:N
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     
     % Get run numbers
-    runs = subjDf_cut.('x1WayLocalizerRuns'){subjRow};
+    runs = subjDf_cut.([seq_name 'Runs']){subjRow};
 
-    if isempty(runs)
+    if isempty(runs) && strcmp(task, 'localizer')
         runs = subjDf_cut.('x3WayLocalizerRuns'){subjRow};
     end
 
@@ -59,7 +71,7 @@ for ss = 1:N
     
     % Loop over runs
     for rr = 1:length(runs)
-        runDir = [dataDir subjCode '/localizer/00' num2str(rr) '/'];
+        runDir = [dataDir subjCode '/' fsd '/00' num2str(rr) '/'];
 
         % Load .tsv file
         tsv = readtable([runDir 'f_events.tsv'], "FileType","text");
@@ -67,10 +79,13 @@ for ss = 1:N
         % Convert to freesurfer para format
         mat = tsv{:,:}; % get rid of header row 
         para = [mat(:,1), mat(:,3), mat(:,2)]; % switch columns 2 and 3
-        para(:,2) = db_order(para(:,2));
+        
+        if strcmp(task, 'localizer')
+            para(:,2) = db_order(para(:,2));
+        end
 
         % Save as .para
-        writematrix(para, [runDir 'localizer_condition_timing.para'], 'filetype','text', 'delimiter','\t')
+        writematrix(para, [runDir task '_condition_timing.para'], 'filetype','text', 'delimiter','\t')
 
     end
 

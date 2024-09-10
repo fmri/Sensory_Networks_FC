@@ -28,7 +28,7 @@ annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 annot_verts = verts_ref;
 
 ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
-        'sPCS', 'iPCS', 'midIFS', 'pVis', ... % visual
+        'sPCS', 'iPCS', 'midIFS', 'DO', 'VOT', 'LOT', 'aIPS', 'pIPS' ... % visual
         'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
 N_ROIs = length(ROIs);
 
@@ -114,9 +114,23 @@ for ss = 1:N
                 annot_labels(dummy_vol) = label_curr; % replace 1s with label number in annotation labels variable
             end
         end
+
+        if ~contains('VOT', annot_ctable.struct_names)
+            keyboard;
+        end
+
+        VOT_labelnum = annot_ctable.table(contains(annot_ctable.struct_names, 'VOT'),5);
+        num_verts_VOT = sum(annot_labels == VOT_labelnum);
+        disp(num_verts_VOT)
+        if num_verts_VOT < 100
+            keyboard;
+        end
         
         % Actually write annotation file
-        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs.annot'], annot_verts, annot_labels, annot_ctable);
+        if strcmp(subjCode,'LA')
+            keyboard;
+        end
+        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs_nopVis.annot'], annot_verts, annot_labels, annot_ctable);
 
     end
 

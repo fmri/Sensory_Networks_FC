@@ -26,6 +26,7 @@ targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
+subjCodes = {'AF'}
 n = length(subjCodes);
 
 %% Loop through subjects
@@ -41,7 +42,7 @@ for ss = 1:n
     % Loop through spacetime runs and extract timing for each
     for rr = 1:num_spacetime_runs
 
-        if ~isfile([targetDir, subjCode, '_run', num2str(rr) '.txt'])
+        %if ~isfile([targetDir, subjCode, '_run', num2str(rr) '.txt'])
             timing_path = [runDataDir, 'SpatialTemporal', num2str(rr), '/EVs/'];
             timing_data = nan(length(condition_codes), 3);
             for tt = 1:length(EV_fileNames)
@@ -55,7 +56,7 @@ for ss = 1:n
 
             % Save to tsv file
             writetable(timing_datatbl, [targetDir, subjCode, '_run', num2str(rr)], 'Delimiter', '\t', 'FileType','text');
-        end
+        %end
 
     end
 

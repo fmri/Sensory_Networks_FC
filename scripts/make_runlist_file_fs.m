@@ -9,25 +9,36 @@ ccc;
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
-
+task = 'spacetime'; % localizer or spacetime
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+
+if strcmp(task, 'localizer')
+    seq_name = 'x1WayLocalizer';
+    dataDir = [projectDir '/data/unpacked_data_nii_fs_localizer/'];
+    fsd = 'localizer';
+elseif strcmp(task, 'spacetime')
+    seq_name = 'spacetime';
+    dataDir = [projectDir '/data/unpacked_data_nii/'];
+    fsd = 'bold';
+else
+    error(['task variable not recognized. Should be "localizer" or "spacetime", instead it is ' task]);
+end
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 N = height(subjDf_cut);
-rlf_name = 'localizer_contrasts_runlistfile.txt';
+rlf_name = [task '_contrasts_runlistfile.txt'];
 
 for ss = 1:N
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
 
     % Get functional scan run numbers
-    seq_name = 'x1WayLocalizer';
     func_runs = subjDf_cut.([seq_name, 'Runs']){subjRow};
-    if isempty(func_runs)
-        seq_name = 'x3WayLocalizer';
-        func_runs = subjDf_cut.([seq_name, 'Runs']){subjRow};
+    if isempty(func_runs) && strcmp(task, 'localizer')
+        seq_name_alt = 'x3WayLocalizer';
+        func_runs = subjDf_cut.([seq_name_alt, 'Runs']){subjRow};
     end
 
     if contains(func_runs, '/') % runs with different fieldmaps
@@ -38,7 +49,7 @@ for ss = 1:N
     % create run list file 
     nruns = length(func_runs);
     unix(['for i in $(seq 1 ' num2str(nruns) '); do echo "00$i"; done >> ' ...
-        projectDir '/data/unpacked_data_nii_fs_localizer/' subjCode '/localizer/' rlf_name])
+        dataDir subjCode '/' fsd '/' rlf_name])
 
 end
 
