@@ -190,10 +190,14 @@ disp(['All subjects complete. Run "bash ' save_dir 'run_all_screenshots.sh" from
                 cmdSS = [cmdSS ' -ss ' saveDir '/' subjID '_' contrast '_' viewAngle '_' hemi ss_suffix '.png'];
                 fid = fopen([saveDir '/' subjID '_' contrast '_' hemi '.txt'], 'a');
                 fprintf(fid, '%s\n', cmdSS);
-                cmdQuit = 'freeview -quit';
-                fprintf(fid, '%s\n', cmdQuit);
                 fclose(fid);
             end
+            
+            fid = fopen([saveDir '/' subjID '_' contrast '_' hemi '.txt'], 'a');
+            cmdQuit = 'freeview -quit';
+            fprintf(fid, '%s\n', cmdQuit);
+            fclose(fid);
+
         end
 
 
