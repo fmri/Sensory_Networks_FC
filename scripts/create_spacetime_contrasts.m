@@ -22,11 +22,11 @@ N = length(subjCodes);
 fsaverage = true;
 
 data_dir = [projectDir 'data/unpacked_data_nii/'];
-analysis_name_lh = 'spacetime_contrasts_lh';
-analysis_name_rh = 'spacetime_contrasts_rh';
+analysis_name_lh = 'spacetime_contrasts_lh_newcondfiles';
+analysis_name_rh = 'spacetime_contrasts_rh_newcondfiles';
 TR = 2;
 design_type = 'blocked';
-para_name = 'spacetime_condition_timing.para';
+para_name = 'spacetime_condition_timing_tom.para';
 if fsaverage
     space = 'fsaverage';
 else
@@ -36,13 +36,23 @@ funcstem_lh = ['fmcpr_tu.siemens.sm3.' space '.lh.nii.gz'];
 funcstem_rh = ['fmcpr_tu.siemens.sm3.' space '.rh.nii.gz'];
 rlf_name = 'spacetime_contrasts_runlistfile.txt';
 
-run_mkanalysis = true;
-run_mkcontrast = true;
+run_mkanalysis = false;
+run_mkcontrast = false;
 
 refeventdur = '30';
 nconditions = '10';
 
 % spacetime condition orders
+% 1 = fixation
+% 2 = aP = auditory passive
+% 3 = tP = tactile passive
+% 4 = vP = visual passive
+% 5 = aS = auditory spatial
+% 6 = tS = tactile spatial
+% 7 = vS = visual spatial
+% 8 = aT = auditory temporal
+% 9 = tT = tactile temporal
+% 10 = vT = visual temporal
 
 
 

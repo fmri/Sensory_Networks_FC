@@ -21,12 +21,10 @@ EV_fileNames = {'Fixation_Block.txt', 'Passive_Auditory.txt', 'Passive_Tactile.t
 condition_codes = 1:length(EV_fileNames);
 targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/stim_timing/';
 
-
 %% Load subject info
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = {'AF'}
 n = length(subjCodes);
 
 %% Loop through subjects

@@ -27,6 +27,7 @@ end
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
+subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'SL'}));
 N = length(subjCodes);
 
 % Tom Localizer condition numbers:
@@ -74,7 +75,7 @@ for ss = 1:N
         runDir = [dataDir subjCode '/' fsd '/00' num2str(rr) '/'];
 
         % Load .tsv file
-        tsv = readtable([runDir 'f_events.tsv'], "FileType","text");
+        tsv = readtable([runDir 'f_events_doublecheck.tsv'], "FileType","text");
 
         % Convert to freesurfer para format
         mat = tsv{:,:}; % get rid of header row 
@@ -85,7 +86,7 @@ for ss = 1:N
         end
 
         % Save as .para
-        writematrix(para, [runDir task '_condition_timing.para'], 'filetype','text', 'delimiter','\t')
+        writematrix(para, [runDir task '_condition_timing_tom.para'], 'filetype','text', 'delimiter','\t')
 
     end
 

@@ -41,7 +41,7 @@ func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_d
 not_found = zeros(length(subjCodes),1);
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs.annot'];
+    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs_pVisMod.annot'];
     if ~isfile(subjROIpath)
         not_found(ss) = 1;
     else
@@ -58,11 +58,12 @@ elseif localizer
     subjectCodes = subjCodes; % use all subjs
 else
     subjCodes = subjCodes(~logical(not_found));
+    subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); % these two subjs have different resting state sequences
 end
 
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/' subjCodes{ss} '_ROIs.surf.nii'];
+    subjROIpath = [ROI_path '/' subjCodes{ss} '_ROIs_pVisMod.surf.nii'];
     disp(subjROIpath)
 
 end

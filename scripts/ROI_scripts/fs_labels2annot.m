@@ -28,8 +28,8 @@ annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 annot_verts = verts_ref;
 
 ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
-        'sPCS', 'iPCS', 'midIFS', 'DO', 'VOT', 'LOT', 'aIPS', 'pIPS' ... % visual
-        'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
+    'sPCS', 'iPCS', 'midIFS', 'pVis_mod' ... % visual
+    'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
 N_ROIs = length(ROIs);
 
 fs_number = 163842;
@@ -66,7 +66,7 @@ for ss = 1:N
             end
             subj_labels = subj_labels(~bad_nonrepl);
         end
-        
+
         % Check for missing ROIs
         any_missing = false;
         if length(subj_labels) ~= N_ROIs
@@ -90,7 +90,10 @@ for ss = 1:N
             % Load ROI
             ROI_file = subj_labels{rr};
             label_data = readtable([projectDir '/data/ROIs/' ROI_file], 'FileType','text'); % read ROI data
-            label_vertex_inds = label_data{:,1} + 1; % inds off by one 
+            label_vertex_inds = label_data{:,1} + 1; % inds off by one
+            if length(label_vertex_inds) < 100
+                keyboard;
+            end
 
             % Add struct_name (label name)
             whichROI = cellfun(@(x) contains(ROI_file,x), ROIs); % determine which ROI name is in this file
@@ -100,7 +103,45 @@ for ss = 1:N
             % Add ctable row and update label index to match
             annot_ctable.table(rr+1,:) = ctable_ref.table(rr+1,:); % just keep same canonical label number and color for this ROI
             label_curr = annot_ctable.table(rr+1,5); % Extract the specific label number
-            annot_labels(label_vertex_inds) = label_curr; % replace 0s with label number in annotation labels variable
+
+            % Deal with possible overlap
+            prelabeled_verts = annot_labels(label_vertex_inds);
+            already_labeled = prelabeled_verts ~= 0; % find vertices in this ROI that already have a label
+            already_labeled_vals = prelabeled_verts(already_labeled); % get the label value for verts that have label already
+            if ~isempty(already_labeled_vals)
+                overlapped_ROI_labels = unique(already_labeled_vals);
+                
+                % create overlap safe mask (mask that ensures all previous ROIs do not get overlapped by current ROI)
+                inds = 1:fs_number;
+                label_vertex_mask = ismember(inds, label_vertex_inds); % convert from indices to binary mask
+                overlap_safe_mask = label_vertex_mask';
+                curr_nverts = length(label_vertex_inds);
+                reduced_curr_lab_nverts = curr_nverts;
+                for ii = 1:length(overlapped_ROI_labels)
+                    overlap_safe_mask = overlap_safe_mask & annot_labels~=overlapped_ROI_labels(ii);
+                    reduced_curr_lab_nverts = reduced_curr_lab_nverts - sum(already_labeled_vals==overlapped_ROI_labels(ii));
+                end
+                
+                % Loop through previous ROIs that may get overlapped by current ROI and decide which way to overlap
+                for ii = 1:length(overlapped_ROI_labels)
+                    overlapping_label_nverts = sum(annot_labels==overlapped_ROI_labels(ii));
+                    numoverlap = sum(already_labeled_vals==overlapped_ROI_labels(ii));
+                    reduced_prev_lab_nverts = overlapping_label_nverts - numoverlap;
+                    if reduced_prev_lab_nverts < 100 && reduced_curr_lab_nverts < 100
+                        error(['Subj ' subjCode ' ' hemi ' ' ROI_name ' overlaps with a label that causes both ROIs to be less than 100 vertices. This should not happen, check label files for both ROIs.'])
+                    elseif reduced_prev_lab_nverts < 100 % don't relabel overlap if it will leave the other ROI with < 100 verts
+                        annot_labels(overlap_safe_mask) = label_curr;
+                    elseif reduced_curr_lab_nverts < 100 || ~ismember(ROI_name, {'aINS', 'preSMA', 'ppreCun', 'dACC'}) % do relabel overlap if not doing so willleave the current ROI with < 100 verts ... or if both will survive above 100 verts and current label is not multisensory, replace overlap with current ROI
+                        annot_labels(label_vertex_inds) = label_curr; % replace all indices with current ROI label number
+                    elseif ismember(ROI_name, {'aINS', 'preSMA', 'ppreCun', 'dACC'}) % if current ROI is multisensory, don't relabel overlap
+                        annot_labels(overlap_safe_mask) = label_curr;
+                    else
+                        error('Encountered unexpected condition')
+                    end
+                end
+            else
+                annot_labels(label_vertex_inds) = label_curr; % replace all indices with current ROI label number
+            end
         end
 
         % If there are any missing ROIs, add a dummy ROI to the annotation
@@ -109,28 +150,25 @@ for ss = 1:N
                 annot_ctable.struct_names{N_ROIs_subj+mr+1} = missing_ROIs{mr}; % +1 for 'unknown' name
                 annot_ctable.table(N_ROIs_subj+mr+1,:) = ctable_ref.table(N_ROIs_subj+mr+1,:); % just keep same canonical label number and color for this ROI
                 label_curr = annot_ctable.table(N_ROIs_subj+mr+1,5); % Extract the specific label number
-                dummy_vol = false(1,fs_number); 
+                dummy_vol = false(1,fs_number);
                 dummy_vol(mr) = true; % just one voxel of ROI for dummy value
                 annot_labels(dummy_vol) = label_curr; % replace 1s with label number in annotation labels variable
             end
         end
 
-        if ~contains('VOT', annot_ctable.struct_names)
-            keyboard;
-        end
+        % if ~contains('VOT', annot_ctable.struct_names)
+        %     keyboard;
+        % end
 
-        VOT_labelnum = annot_ctable.table(contains(annot_ctable.struct_names, 'VOT'),5);
-        num_verts_VOT = sum(annot_labels == VOT_labelnum);
-        disp(num_verts_VOT)
-        if num_verts_VOT < 100
-            keyboard;
-        end
-        
+        % VOT_labelnum = annot_ctable.table(contains(annot_ctable.struct_names, 'VOT'),5);
+        % num_verts_VOT = sum(annot_labels == VOT_labelnum);
+        % disp(num_verts_VOT)
+        % if num_verts_VOT < 100
+        %     keyboard;
+        % end
+
         % Actually write annotation file
-        if strcmp(subjCode,'LA')
-            keyboard;
-        end
-        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs_nopVis.annot'], annot_verts, annot_labels, annot_ctable);
+        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs_pVisMod.annot'], annot_verts, annot_labels, annot_ctable);
 
     end
 
