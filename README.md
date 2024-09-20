@@ -13,4 +13,4 @@ Organization:
 - fs_analysis_results: contains results of analysis of data preprocessed using freesurfer
 - archive_code: old scripts/functions no longer used/useful
 - functions: key functions used by scripts
-- plotting_scripts: scripts used to plot information or analysis results
+- scripts: all analysis, plotting, ROI-related, preprocessing and other scripts 
