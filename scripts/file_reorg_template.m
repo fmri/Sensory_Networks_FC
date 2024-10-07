@@ -17,17 +17,17 @@ for ss = 1:length(subjCodes)
     num_runs = sum(contains(dir_contents, '00'));
     for rr = 1:num_runs
         runDir = [subjDir '00' num2str(rr) '/'];
-        eventfile_tom = [runDir '/rp_f.txt'];
+        eventfile_tom = [runDir '/f_events.tsv'];
         eventfile_tom_new = [runDir 'rp_.tsv'];
         unix(['cp ' eventfile_tom ' ' eventfile_tom_new]);
     end
 end
 
 
-% ROIs
+%ROIs
 % ROI_dir = [projectDir 'data/ROIs/'];
 % files = {dir(ROI_dir).name};
-% files_cut = files(contains(files, 'pVis_modrh'));
+% files_cut = files(contains(files, 'ROIs.surf.nii'));
 % 
 % for ff = 1:length(files_cut)
 % 
@@ -35,4 +35,4 @@ end
 %     unix(['rm ' ROI_dir files_cut{ff}]);
 % 
 % end
-% 
+

@@ -35,10 +35,9 @@ else
 end
 
 overwrite = true; % overwrite fmap corrected file even if it exists
-subjCodes = {'NS'};
 
 %% Loop through subjs
-for ss = 1:length(subjCodes)
+parfor ss = 1:length(subjCodes)
     % Set up subj varibles
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));

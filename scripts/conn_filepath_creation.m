@@ -1,7 +1,7 @@
 %%%%
 % The purpose of this script is to print to console the filepaths for all
 % T1s, fieldmaps, and functional runs, so that they can be copy/pasted into
-% Conn Toolbox for easy intialization of data directories
+% Conn Toolbox for easy initialization of data directories
 %
 % Created: Tom Possidente - March 2024
 %%%%
@@ -41,7 +41,7 @@ func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_d
 not_found = zeros(length(subjCodes),1);
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs_pVisMod.annot'];
+    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs.annot'];
     if ~isfile(subjROIpath)
         not_found(ss) = 1;
     else
@@ -58,12 +58,19 @@ elseif localizer
     subjectCodes = subjCodes; % use all subjs
 else
     subjCodes = subjCodes(~logical(not_found));
-    subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); % these two subjs have different resting state sequences
+    subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); %
 end
 
 for ss=1:length(subjCodes)
     
-    subjROIpath = [ROI_path '/' subjCodes{ss} '_ROIs_pVisMod.surf.nii'];
+    subjROIpath = [ROI_path subjCodes{ss} '_ROIs.surf.nii'];
+    disp(subjROIpath)
+
+end
+
+for ss=1:length(subjCodes)
+    
+    subjROIpath = [ROI_path subjCodes{ss} '_grouped_ROIs.surf.nii'];
     disp(subjROIpath)
 
 end

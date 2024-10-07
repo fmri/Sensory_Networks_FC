@@ -27,9 +27,10 @@ annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 % Create vertices for all annot files to use (same number of vertices for all bc fsaverage space)
 annot_verts = verts_ref;
 
-ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
-    'sPCS', 'iPCS', 'midIFS', 'pVis_mod' ... % visual
-    'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
+%ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
+%    'sPCS', 'iPCS', 'midIFS', 'pVis' ... % visual
+%    'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
+ROIs = {'MD_frontal', 'vbiased_frontal', 'pVis', 'abiased_frontal', 'pAud'};
 N_ROIs = length(ROIs);
 
 fs_number = 163842;
@@ -168,7 +169,7 @@ for ss = 1:N
         % end
 
         % Actually write annotation file
-        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_ROIs_pVisMod.annot'], annot_verts, annot_labels, annot_ctable);
+        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_grouped_ROIs.annot'], annot_verts, annot_labels, annot_ctable);
 
     end
 

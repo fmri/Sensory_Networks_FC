@@ -85,7 +85,7 @@ for ss = 1:n
 
         which_column = find(ismember(correct_colnames, behavioral_data.Properties.VariableNames), 1);
         if which_column ~= 1
-            keyboard;
+            %keyboard;
         end
         responses(ss,rr,:) = behavioral_data.(correct_colnames{which_column});
         len_runs(rr+1) = length(behavioral_data.(correct_colnames{which_column}));

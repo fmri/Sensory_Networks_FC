@@ -23,7 +23,7 @@ else % task data
     ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/preprocessing/';
     subjCodes = {'MM'	'PP' 'MK' 'AB' 'AD'	'LA' 'AE' 'TP' 'NM'	'AF' 'AG' 'GG' 'UV'	'PQ' 'KQ' 'LN' 'RT'	'PT' 'PL' 'NS'};
     conditions = {'f' , 'aP', 'tP', 'vP', 'aS', 'tS', 'vS', 'aT', 'tT', 'vT'};
-    ROI_str = 'ROIs'; 
+    ROI_str = 'grouped_ROIs'; 
     reject_conditions = {{}, {}, {}, {}, {'LN', 'GG', 'TP'}, {}, {}, {'RT', 'LA'}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
 end
 
@@ -31,22 +31,17 @@ N = length(subjCodes);
 Ncond = length(conditions);
 ROI_data = cell(N,Ncond);
 pVis_name = 'pVis'; % pVis_mod for pVis wihout DO, pVis for pVis with DO
-first_ROI_check = [ROI_str '.CO (L)'];
+first_ROI_check = [ROI_str '.MD_frontal (L)'];
 
 %% Setup ROIs
-aud_ROIs_use = {'tgPCS', 'cIFSG', 'FO', 'CO', 'cmSFG', 'pAud'};
-vis_ROIs_use = {'sPCS', 'iPCS', 'midIFS', pVis_name};
-mult_ROIs_use = {'aINS', 'preSMA', 'dACC'};
+aud_ROIs_use = {'abiased_frontal', 'pAud'};
+vis_ROIs_use = {'vbiased_frontal', pVis_name};
+mult_ROIs_use = {'MD_frontal'};
 
-desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
-    'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
-    'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], ...
-    'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-    'aINS (L)', 'preSMA (L)', 'dACC (L)', 'aINS (R)', 'preSMA (R)', 'dACC (R)'};
-
-
-%% Get missing ROI data
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
+desired_order = {'abiased_frontal (L)' 'pAud (L)', 'abiased_frontal (R)', 'pAud (R)',...
+    'vbiased_frontal (L)', [pVis_name ' (L)'], ...
+    'vbiased_frontal (R)', [pVis_name ' (R)'], ...
+    'MD_frontal (L)', 'MD_frontal (R)'};
 
 %% Get ROI data
 
@@ -126,13 +121,7 @@ for ss = 1:N
                 ROI2 = data{rr2};
                 ROI2_name = replace([subjCodes{ss} '_' desired_order{rr2}], ' (L)', '_lh');
                 ROI2_name = replace(ROI2_name, ' (R)', '_rh');
-                if ismember(ROI2_name, missing_ROIs) || ismember(ROI1_name, missing_ROIs) % if subj is missing ROI, connmat is nan
-                    connmats(rr1,rr2,ss,cc) = NaN;
-                    pvals(rr1,rr2,ss,cc) = NaN;
-                    disp(['Subj ' num2str(ss) ' (' subjID ') missing ROIs: ' missing_ROIs{ismember(missing_ROIs,ROI2_name)} missing_ROIs{ismember(missing_ROIs,ROI1_name)}]);
-                else
-                    [connmats(rr1,rr2,ss,cc), pvals(rr1,rr2,ss,cc)] = corr(ROI1, ROI2);
-                end
+                [connmats(rr1,rr2,ss,cc), pvals(rr1,rr2,ss,cc)] = corr(ROI1, ROI2);
             end
         end
     end
