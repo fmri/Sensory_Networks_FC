@@ -8,20 +8,38 @@
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
+%% Intialize which data we are using
+data_use = 'localizer'; % Choices: 'spacetime' or 'localizer'
+disp(['Calculating PSCs for ' upper(data_use) ' data']);
+
+switch data_use
+    case 'spacetime'
+        task = 'spacetime';
+        subjdata_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
+        contrasts = {'sV-pV', 'tV-pV', 'sA-pA', 'tA-pA', 'pV-f', 'pA-f'};
+        reject_contrast = {{}, {'RT', 'LA'}, {'LN', 'GG', 'TP'}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
+        contrast_fpath_strs = {'bold', 'spacetime_contrasts_', '_newcondfiles'};
+    case 'localizer'
+        task = 'x1WayLocalizer';
+        subjdata_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+        contrasts = {'vA-vP', 'aA-aP', 'f-aP', 'f-vP'};
+        reject_contrast = {{}, {}, {}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
+        contrast_fpath_strs = {'localizer', 'localizer_contrasts_', ''};
+    otherwise 
+        error('data_use variable not recognized - should be either "localizer" or "spacetime"')
+end
+
 %% Load subject info
 subjDf = load_subjInfo();
-subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
+subjDf_cut = subjDf(~strcmp(subjDf.([task 'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}));
 N = length(subjCodes);
 
 %% Initialize key variables
-subjdata_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
 ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 annot_file_suffix = '_ROIs.annot';
 
-contrasts = {'sV-pV', 'tV-pV', 'sA-pA', 'tA-pA', 'pV-f', 'pA-f'};
-reject_contrast = {{}, {'RT', 'LA'}, {'LN', 'GG', 'TP'}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
 N_contrasts = length(contrasts);
 
 ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
@@ -31,78 +49,71 @@ N_ROIs = length(ROIs);
 load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
 
 hemis = {'lh', 'rh'};
-Nruns = 6;
-missing_runs_subjs = {'LA', 'PQ'};
-good_runs = {[1,4], [1,2,4]}; % corresponds to good runs for missing_runs_subjs
 
-psc_results = nan(N, 2, N_contrasts, N_ROIs, Nruns); % subjs x hemis x contrasts x ROIs x runs = 20 x 2 x 4 x 14 x 6
+psc_results = nan(N, 2, N_contrasts, N_ROIs); % subjs x hemis x contrasts x ROIs = 20 x 2 x 4 x 14
 
 %% Loop through subj/hemisphere/contrast/ROI and calculate % signal change in ROI
 
 for ss = 1:N % for subj
 
     subjCode = subjCodes{ss};
-    if ~ismember(subjCode, missing_runs_subjs)
-        runDir = {dir([subjdata_dir subjCode '/bold/']).name};
-        nruns = sum(contains(runDir, '00'));
-        run_inds = 1:nruns;
-    else
-        missing_mask = ismember(subjCode, missing_runs_subjs);
-        run_inds = good_runs{missing_mask};
-    end
-    for rr = 1:length(run_inds)
-        run_ind = num2str(run_inds(rr));
-        for hh = 1:2 % for hemisphere
-            hemi = hemis{hh};
 
-            % load subj ROIs
-            annot_fpath = [ROI_dir hemi '.' subjCode annot_file_suffix];
-            [annot_verts, annot_labels, annot_ctable] = read_annotation(annot_fpath);
+    for hh = 1:2 % for hemisphere
+        hemi = hemis{hh};
 
-            % Make sure all ROIs exist in annot file
-            assert( all(ismember(ROIs, annot_ctable.struct_names)), ['Annotation file for subj ' subjCode ' ' hemi ' does not contain all specified ROIs']);
+        % load subj ROIs
+        annot_fpath = [ROI_dir hemi '.' subjCode annot_file_suffix];
+        [annot_verts, annot_labels, annot_ctable] = read_annotation(annot_fpath);
 
-            for cc = 1:N_contrasts
-                contrast = contrasts{cc};
+        % Make sure all ROIs exist in annot file
+        assert( all(ismember(ROIs, annot_ctable.struct_names)), ['Annotation file for subj ' subjCode ' ' hemi ' does not contain all specified ROIs']);
 
-                % Check for subjs with rejected contrasts
-                if ismember(subjCode, reject_contrast{cc})
-                    psc_results(ss, hh, cc, :, rr) = nan;
+        for cc = 1:N_contrasts
+            contrast = contrasts{cc};
+
+            % Check for subjs with rejected contrasts
+            if ismember(subjCode, reject_contrast{cc})
+                psc_results(ss, hh, cc, :) = nan;
+                continue;
+            end
+
+            % load subj contrast percent signal change (psc) data
+            contrast_fpath = [subjdata_dir subjCode '/' contrast_fpath_strs{1} '/' contrast_fpath_strs{2} hemi contrast_fpath_strs{3} '/' contrast '/cespct.nii.gz'];
+            if ~isfile(contrast_fpath)
+                disp(['Contrast file not found for subj ' subjCode ' contrast ' contrast ' - SKIPPING'])
+                continue
+            end
+            psc_data = MRIread(contrast_fpath);
+
+            for roi = 1:N_ROIs % for ROI
+
+                ROI = ROIs{roi};
+
+                if ismember([subjCode '_' ROI '_' hemi], missing_ROIs)
+                    psc_results(ss, hh, cc, roi) = nan;
                     continue;
                 end
 
-                % load subj contrast percent signal change (psc) data
-                contrast_fpath = [subjdata_dir subjCode '/bold/spacetime_contrasts_' hemi '_newcondfiles_run' run_ind '/' contrast '/cespct.nii.gz'];
-                psc_data = MRIread(contrast_fpath);
+                ROI_index = find(ismember(annot_ctable.struct_names, ROI));
+                ROI_label = annot_ctable.table(ROI_index,5);
+                ROI_mask = annot_labels == ROI_label;
+                assert(sum(ROI_mask)>=100, ['Subj ' subjCode ' ' hemi ' ' ROI ' is below 100 vertices']);
 
-                for roi = 1:N_ROIs % for ROI
+                % Get mean psc data from ROI mask
+                psc_results(ss,hh,cc,roi) = mean(psc_data.vol(ROI_mask)); 
+                assert(~isnan(psc_results(ss,hh,cc,roi)), ['PSC for subj ' subjCode ' ' hemi ' ' ROI ' computed as NaN'])
 
-                    ROI = ROIs{roi};
-
-                    if ismember([subjCode '_' ROI '_' hemi], missing_ROIs)
-                        psc_results(ss, hh, cc, roi, rr) = nan;
-                        continue;
-                    end
-
-                    ROI_index = find(ismember(annot_ctable.struct_names, ROI));
-                    ROI_label = annot_ctable.table(ROI_index,5);
-                    ROI_mask = annot_labels == ROI_label;
-                    assert(sum(ROI_mask)>=100, ['Subj ' subjCode ' ' hemi ' ' ROI ' is below 100 vertices']);
-
-                    % Get mean psc data from ROI mask
-                    psc_results(ss,hh,cc,roi,rr) = mean(psc_data.vol(ROI_mask)); %%%% MAKE SURE THESE INDS LINE UP CORRECTLY
-                    assert(~isnan(psc_results(ss,hh,cc,roi,rr)), ['PSC for subj ' subjCode ' ' hemi ' ' ROI ' computed as NaN'])
-
-                end % end ROI
-            end % end contrast
-        end % end hemisphere
-    end % end run
+            end % end ROI
+        end % end contrast
+    end % end hemisphere
 end % end subj
 
 
 %% Average results over subjs
-%save('PSC_results.mat', 'psc_results', 'subjCodes', 'ROIs', 'contrasts');
-psc_results = squeeze(mean(psc_results, 5, 'omitnan'));
+if strcmp(data_use,'localizer')
+    psc_results(:,:,3:4,:) = -psc_results(:,:,3:4,:); % reverse contrast for f-vP and f-aP 
+end
+save('PSC_results.mat', 'psc_results', 'subjCodes', 'ROIs', 'contrasts');
 psc_subjavg = squeeze(mean(psc_results, 1, 'omitnan'));
 psc_subjhemiavg = squeeze(mean(psc_results, [1,2], 'omitnan'));
 psc_subjhemiavg_tbl = array2table(psc_subjhemiavg', 'VariableNames', contrasts, 'RowNames', ROIs);

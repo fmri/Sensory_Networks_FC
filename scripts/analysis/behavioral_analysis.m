@@ -16,6 +16,7 @@ taskname = 'spacetime';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
+subjCodes = subjCodes(~ismember(subjCodes,{'AH', 'SL', 'RR', 'AI'}));
 n = length(subjCodes);
 
 %% Loop through subjs and get % correct
@@ -39,7 +40,7 @@ end
 for ss = 1:n
 
     subjCode = subjCodes{ss};
-    row_ind = strcmp(subjCode,subjCodes);
+    row_ind = strcmp(subjCode,subjDf_cut.subjCode);
     spacetime_date = subjDf_cut.([taskname 'Date']){row_ind};
     if isempty(spacetime_date) && strcmp(taskname, 'x1WayLocalizer')
         spacetime_date = subjDf_cut.('x3WayLocalizerDate'){row_ind};
@@ -187,6 +188,11 @@ diff_in_means_detectable = 0.546*pooled_SD;
 % currently. Interaction effects likely require a larger difference in
 % means
 
+%%
+LME_design = perc_correct_all(:,1:4);
+LME_design = LME_design(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}),:);
+LME_design.subject = [1:20]';
+
 
 %% Actually run the 2 way repeated measures ANOVA
 design_tbl = table([1,0,1,0,1,0]', [0,0,1,1,2,2]', 'VariableNames', {'task', 'modality'});
@@ -198,7 +204,7 @@ results = ranova(rm,'WithinModel','task*modality')
 design_tbl = table([1,0,1,0]', [0,0,1,1]', 'VariableNames', {'task', 'modality'});
 design_tbl.task = categorical(design_tbl.task);
 design_tbl.modality = categorical(design_tbl.modality);
-rm = fitrm(perc_correct_all([1:9,11,13:20],1:4), "visual_spatial,visual_temporal,auditory_spatial,auditory_temporal~1", WithinDesign=design_tbl);
+rm = fitrm(perc_correct_all(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}),1:4), "visual_spatial,visual_temporal,auditory_spatial,auditory_temporal~1", WithinDesign=design_tbl);
 results = ranova(rm,'WithinModel','task*modality')
 
 % design_tbl = table([1,0,1,0]', [0,0,1,1]', 'VariableNames', {'task', 'modality'});

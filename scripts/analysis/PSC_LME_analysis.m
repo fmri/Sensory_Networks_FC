@@ -1,0 +1,106 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The purpose of this script is to perform linear fixed effects modeling for
+% percent signal change for the different task contrasts
+% Tom Possidente - September 2024
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
+ccc;
+
+
+%% Set script variables
+modalities_use = {'auditory', 'visual'}; % auditory and/or visual
+domains_use = {'passive'}; % temporal and/or spatial, or passive | for localizer: active or passive
+reference_category = 'modality';
+use_ROItypes = false; % groups ROIs by their type (visual, auditory, MD)
+include_MD = true; %  include MD ROIs or not
+recruitment_variable = true; % add the recruitment variable to the table
+posterior_only = false; 
+localizer_data = true;
+
+%% Load and format data for LME table funciton
+[psc_results, perc_correct_all, hemis, modality_out, domain_out, ROIs, bad_subjs] = ...
+    format_psc_data(modalities_use, domains_use, use_ROItypes, include_MD, localizer_data);
+
+make_categorical = false;
+LME_table = create_LME_table(psc_results, perc_correct_all, hemis, modality_out, domain_out, ROIs, make_categorical, bad_subjs);
+
+if recruitment_variable && ~localizer_data
+    recruitment = ( ismember(LME_table.modality,'visual') & ismember(LME_table.domain,'temporal') ) | ( ismember(LME_table.modality,'auditory') & ismember(LME_table.domain,'spatial') );
+    LME_table.recruitment = recruitment;
+    LME_table.recruitment = categorical(LME_table.recruitment);
+end
+
+if posterior_only
+    LME_table = LME_table(ismember(LME_table.ROItype, {'pAud','pVis'}),:);
+else
+    LME_table = LME_table(~ismember(LME_table.ROItype, {'pAud','pVis'}),:);
+end
+
+
+%% Find smallest effect and make that the reference
+% ROItypes = unique(LME_table.ROItype);
+% mean_PSCs = nan(length(ROItypes),1);
+% for cc = 1:length(ROItypes)
+%     ROItype = ROItypes{cc};
+%     in_category_mask = cell2mat(cellfun(@(x) isequal(x, ROItype), LME_table.ROItype, 'UniformOutput',false));
+%     new_table = LME_table(in_category_mask,:);
+%     categories = unique(new_table.(reference_category));
+%     assert(length(categories)==2);
+%     cat1_mask = cell2mat(cellfun(@(x) isequal(x, categories{1}), new_table.(reference_category), 'UniformOutput',false));
+%     mean_PSCs(cc) = mean(new_table.PSC(cat1_mask))-mean(new_table.PSC(~cat1_mask));
+% end
+% [min_val, min_ind] = min(abs(mean_PSCs));
+% reference = ROItypes{min_ind};
+% other_inds_ordered = 1:length(ROItypes);
+% other_inds_ordered = other_inds_ordered(other_inds_ordered~=min_ind);
+% disp(['Reference ROI type set to ' reference ' with average PSC difference of ' num2str(min_val)]);
+
+LME_table.perc_correct = zscore(LME_table.perc_correct);
+LME_table.subject = categorical(LME_table.subject);
+LME_table.hemisphere = categorical(LME_table.hemisphere);
+LME_table.domain = categorical(LME_table.domain);
+LME_table.modality = categorical(LME_table.modality);
+LME_table.ROItype = categorical(LME_table.ROItype);
+
+
+%% Run LME model
+% For passive model
+% lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
+%    ' + (1 + modality + ROItype | hemisphere)'])
+
+% For modality model (combined auditory and visual model)
+% lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
+%     ' + (1 + modality + ROItype | hemisphere) + (1 + modality + ROItype | perc_correct) + (1 + modality + ROItype | domain)'])
+% 
+% % For domain auditory or visual model
+% lme = fitglme(LME_table, ['PSC ~ 1 + domain * ROItype + (1 + domain + ROItype | subject) ' ...
+%    ' + (1 + domain + ROItype | hemisphere) + (1 + domain + ROItype | perc_correct) + (1 + domain + ROItype | modality)'])
+
+
+% For full domain and modality model
+% lme = fitglme(LME_table, ['PSC ~ 1 + domain * ROItype * modality + (1 + domain + ROItype + modality | subject) ' ...
+%    ' + (1 + domain + ROItype + modality | hemisphere) + (1 + domain + ROItype + modality | perc_correct)'])
+
+% recruitment model
+% LME_table_MD = LME_table(ismember(LME_table.ROItype,'MDROI'),:);
+% lme = fitglme(LME_table_MD, ['PSC ~ 1 + recruitment + (1 + recruitment | subject) ' ...
+%    ' + (1 + recruitment | hemisphere) + (1 + recruitment| perc_correct)'])
+% LME_table_MD = LME_table(ismember(LME_table.ROItype,{'dACC', 'preSMA', 'aINS'}),:);
+% lme = fitglme(LME_table_MD, ['PSC ~ 1 + recruitment + (1 + recruitment + ROItype | subject) ' ...
+%    ' + (1 + recruitment + ROItype | hemisphere) + (1 + recruitment + ROItype | perc_correct)'])
+
+% localizer data
+lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
+   ' + (1 + modality + ROItype | hemisphere)'])
+
+emm = emmeans(lme,'unbalanced');
+emm.table
+save('PSCs_localizer_passive_modality.mat', 'emm', 'lme');
+%sortrows(emm.table,'Row','descend')
+plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
+title('Auditory Spatial - Auditory Temporal')
+
+
+
+

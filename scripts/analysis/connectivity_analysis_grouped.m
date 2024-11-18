@@ -9,10 +9,12 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Setup analysis parameters
-resting_state = false;
+resting_state = true;
 hierarchical_clustering = true;
 plot_individual_connmats = false;
 save_out = false;
+bootstrap_hca = true;
+bootstrap_iters = 10000;
 
 if resting_state
     ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/preprocessing/';
@@ -128,17 +130,29 @@ for ss = 1:N
 end
 
 %% Connectivity group
-connmat_group = mean(connmats, 3, 'omitnan');
+% convert to Z scores here before averaging, then convert back to corrs (r)
+connmats_z = atanh(connmats);
+connmat_group_z = mean(connmats_z, 3, 'omitnan');
+connmat_group = (exp(2.*connmat_group_z) - 1) ./ (exp(2.*connmat_group_z) + 1); % inverse fisher transform
 
 %% Calculate hierarchical clustering
 if hierarchical_clustering
     for cc = 1:Ncond
         distance_measure = 1-abs(connmat_group(:,:,1,cc));
-        linkage_cluster = linkage(distance_measure);
+        distance_measure(1:1+N_ROIs:end) = 0; % Make diagonal distance zero
+        linkage_cluster = linkage(distance_measure, 'average');
+        inconsistency = inconsistent(linkage_cluster);
+        [clusters, cluster_txt] = linkage_output_extract(linkage_cluster, names);
+        if bootstrap_hca
+            tic;
+            cluster_prob = HCA_bootstrap(connmats_z(:,:,:,cc), bootstrap_iters, names, true);
+            toc;
+        end
 
         figure;
         [h,t,outperm] = dendrogram(linkage_cluster,'Labels',names);
         title(['Hierarchical Clustering Condition ' conditions{cc}]);
+        ylabel('Cluster Distance');
     end
 end
 
