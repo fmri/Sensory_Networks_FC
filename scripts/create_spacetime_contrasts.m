@@ -22,8 +22,8 @@ N = length(subjCodes);
 fsaverage = true;
 
 data_dir = [projectDir 'data/unpacked_data_nii/'];
-analysis_name_lh = 'spacetime_contrasts_lh_newcondfiles';
-analysis_name_rh = 'spacetime_contrasts_rh_newcondfiles';
+analysis_name_lh = 'spacetime_contrasts_lh_polyfit2hrf1';
+analysis_name_rh = 'spacetime_contrasts_rh_polyfit2hrf1';
 TR = 2;
 design_type = 'blocked';
 para_name = 'spacetime_condition_timing_tom.para';
@@ -36,8 +36,8 @@ funcstem_lh = ['fmcpr_tu.siemens.sm3.' space '.lh.nii.gz'];
 funcstem_rh = ['fmcpr_tu.siemens.sm3.' space '.rh.nii.gz'];
 rlf_name = 'spacetime_contrasts_runlistfile.txt';
 
-run_mkanalysis = false;
-run_mkcontrast = false;
+run_mkanalysis = true;
+run_mkcontrast = true;
 
 refeventdur = '30';
 nconditions = '10';
@@ -67,15 +67,25 @@ nconditions = '10';
 % and derivatives)
 
 if run_mkanalysis
+    % unix(['mkanalysis-sess -a ' analysis_name_lh ' -funcstem ' funcstem_lh ...
+    %     ' -surface ' space ' lh -fsd bold -event-related -paradigm ' para_name ...
+    %     ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
+    %     ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+    % 
+    % unix(['mkanalysis-sess -a ' analysis_name_rh ' -funcstem ' funcstem_rh ...
+    %     ' -surface ' space ' rh -fsd bold -event-related -paradigm ' para_name ...
+    %     ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
+    %     ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+
     unix(['mkanalysis-sess -a ' analysis_name_lh ' -funcstem ' funcstem_lh ...
         ' -surface ' space ' lh -fsd bold -event-related -paradigm ' para_name ...
         ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
-        ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+        ' -polyfit 2 -spmhrf 1 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
 
     unix(['mkanalysis-sess -a ' analysis_name_rh ' -funcstem ' funcstem_rh ...
         ' -surface ' space ' rh -fsd bold -event-related -paradigm ' para_name ...
         ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
-        ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+        ' -polyfit 2 -spmhrf 1 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
 end
 
 

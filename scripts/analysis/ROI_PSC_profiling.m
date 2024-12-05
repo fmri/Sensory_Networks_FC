@@ -30,16 +30,29 @@ domain_modality_lme = lme;
 domain_modality_emm = emmeans(domain_modality_lme,'unbalanced');
 domain_modality_pscs = sortrows([domain_modality_emm.table; post_dommod_pscs], 'Row');
 
+load([path_base 'PSCs_localizer_passive_modality.mat']);
+loc_passive_lme = lme;
+loc_passive_emm = emm;
+loc_passive_pscs = sortrows(loc_passive_emm.table, "Row");
+
+load([path_base 'PSCs_localizer_active_modality.mat']);
+loc_active_lme = lme;
+loc_active_emm = emm;
+loc_active_pscs = sortrows(loc_active_emm.table, "Row");
+
 load([path_base, 'MD_recruitment_PSC.mat']);
 recruitment_emm = emm.table;
 
 ROIs = sort(cellstr(unique(passive_pscs.ROItype)));
 
 %% Extract PSCs by ROI for each condition
-
+visual_drive_loc = loc_passive_pscs.Estimated_Marginal_Mean(ismember(loc_passive_pscs.modality, 'visual'));
+auditory_drive_loc = loc_passive_pscs.Estimated_Marginal_Mean(ismember(loc_passive_pscs.modality, 'auditory'));
 visual_drive = passive_pscs.Estimated_Marginal_Mean(ismember(passive_pscs.modality, 'visual'));
 auditory_drive = passive_pscs.Estimated_Marginal_Mean(ismember(passive_pscs.modality, 'auditory'));
 
+visual_active_loc = loc_active_pscs.Estimated_Marginal_Mean(ismember(loc_active_pscs.modality, 'visual'));
+auditory_active_loc = loc_active_pscs.Estimated_Marginal_Mean(ismember(loc_active_pscs.modality, 'auditory'));
 visual_spatial = domain_modality_pscs.Estimated_Marginal_Mean(ismember(domain_modality_pscs.modality, 'visual') & ismember(domain_modality_pscs.domain, 'spatial'));
 visual_temporal = domain_modality_pscs.Estimated_Marginal_Mean(ismember(domain_modality_pscs.modality, 'visual') & ismember(domain_modality_pscs.domain, 'temporal'));
 auditory_spatial = domain_modality_pscs.Estimated_Marginal_Mean(ismember(domain_modality_pscs.modality, 'auditory') & ismember(domain_modality_pscs.domain, 'spatial'));
@@ -94,7 +107,7 @@ end
 sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 sigdiff_contrast = wald_psc_emmeans(post_dommod_lme, post_dommod_emm);
 
-%% Plot
+%% Plot spacetime spider plots
 spiderplot_data = [visual_drive, visual_spatial, auditory_spatial, auditory_drive, auditory_temporal, visual_temporal];
 spiderplot_data(spiderplot_data<0) = 0;
 spiderplot_data = spiderplot_data./max(spiderplot_data,[],2);
@@ -110,6 +123,36 @@ for rr = 1:length(ROIs)
     s.LegendVisible = {'off'};
     s.Color = colors(rr,:);
     title(ROIs{rr});
+end
+
+%% Plot localizer and spacetime 4pt spider plots 
+ROI_inds_loc = ~ismember(ROIs, {'pAud', 'pVis'});
+ROIs_loc = ROIs(ROI_inds_loc);
+
+spiderplot_data_loc = [visual_drive_loc, visual_active_loc, auditory_drive_loc, auditory_active_loc];
+spiderplot_spatial = [visual_drive, visual_spatial, auditory_drive, auditory_spatial];
+spiderplot_temporal = [visual_drive, visual_temporal, auditory_drive, auditory_temporal];
+% spacetime_maxes = max(cat(2, spiderplot_temporal(ROI_inds_loc,:), spiderplot_spatial(ROI_inds_loc,:)),[],2); % normalize spatial and temporal task PSCs together 
+% spiderplot_data_all = cat(3, spiderplot_data_loc./max(spiderplot_data_loc,[],2), spiderplot_spatial(ROI_inds_loc,:)./spacetime_maxes, ...
+%                        spiderplot_temporal(ROI_inds_loc,:)./spacetime_maxes);
+spiderplot_data_all = cat(3, spiderplot_data_loc, spiderplot_spatial(ROI_inds_loc,:), spiderplot_temporal(ROI_inds_loc,:));
+spiderplot_data_all = spiderplot_data_all./max(spiderplot_data_all,[],[2,3]);
+
+spiderplot_data_all(spiderplot_data_all<0) = 0;
+minmax = [0,1];
+ax_lims = [repelem(minmax(1),4); repelem(minmax(2),4)];
+%colors = [repmat([0 0.4470 0.7410],4,1); repmat([0.8500 0.3250 0.0980],6,1); repmat([0.4940 0.1840 0.5560],3,1)];
+colors = [repmat([0 0.4470 0.7410],3,1); repmat([0.8500 0.3250 0.0980],5,1); repmat([0.4940 0.1840 0.5560],3,1)];
+colors = colors([4,5,9,6,7,9,1,2,10,3,8],:);
+for rr = 1:length(ROIs_loc)
+    figure;
+    s = spider_plot_class(squeeze(spiderplot_data_all(rr,:,:))', 'axeslimits', ax_lims, 'axesshadedlimits', {ax_lims});
+    s.AxesLabels = {'visual drive', 'visual active', 'auditory drive', 'auditory active'};
+    %s.FillOption = {'on'};
+    %s.LegendVisible = {'off'};
+    s.Color = colors(rr,:);
+    title(ROIs_loc{rr});
+    s.LegendLabels = {'Localizer', 'Spatial', 'Temporal'};
 end
 
 

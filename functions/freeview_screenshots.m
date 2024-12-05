@@ -43,7 +43,7 @@ if nargin <= 10 || isempty(recon_dir)
 end
 
 if nargin <= 11 || isempty(analysis_name)
-    analysis_name = 'localizer_contrasts';
+    analysis_name = {'localizer_contrasts', ''};
 end
 
 if nargin <= 12 || isempty(stat_file)
@@ -74,8 +74,8 @@ viewAngles = {'lateral', 'medial', 'posterior'}; % could add dorsal / ventral
 
 labelOutline = 'false'; % true / false
 annotOutline = 'true';
-lh_analysisName = [analysis_name '_lh'];
-rh_analysisName = [analysis_name '_rh'];
+lh_analysisName = [analysis_name{1} '_lh_' analysis_name{2}];
+rh_analysisName = [analysis_name{1} '_rh_' analysis_name{2}];
 
 if isfile([save_dir '/run_all_screenshots.sh'])
     disp('run_all_screenshots.sh already exists in the save_dir, pausing execution. Either exit the script or press continue to delete and replace the file.')

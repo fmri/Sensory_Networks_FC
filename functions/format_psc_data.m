@@ -12,13 +12,13 @@ if ~localizer_data
     subjCodes_pcorrect = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); % cut rejected subjs from subjCodes as well
     task_str = 'spacetime';
     psc_fname = 'PSC_results.mat';
-    modality_order  = {'visual', 'visual', 'auditory', 'auditory', 'visual', 'auditory'};
-    domain_order = {'spatial', 'temporal', 'spatial', 'temporal', 'passive', 'passive'};
+    modality_order  = {'visual', 'visual', 'auditory', 'auditory', 'visual', 'auditory', 'v-a', 'a-v'};
+    domain_order = {'spatial', 'temporal', 'spatial', 'temporal', 'passive', 'passive', 'passive', 'passive'};
 else
     task_str = 'x1WayLocalizer';
     psc_fname = 'PSC_results_localizer.mat';
-    modality_order  = {'visual','auditory', 'auditory', 'visual'};
-    domain_order = {'active', 'active', 'passive', 'passive'};
+    modality_order  = {'visual','auditory', 'auditory', 'visual', 'v-a', 'a-v'};
+    domain_order = {'active', 'active', 'passive', 'passive', 'passive', 'passive'};
 end
 
 %% Load subject info
@@ -94,7 +94,7 @@ end
 
 %% Create LME table
 hemis = {'lh','rh'};
-if ~localizer_data
+if ~localizer_data && ~all(ismember(domain_order(domain_mask), 'passive'))
     perc_correct_all = perc_correct_all(:,c_mask); % extract % correct data from only conditions being used
 else
     perc_correct_all = nan(N,N_conds-sum(~c_mask));

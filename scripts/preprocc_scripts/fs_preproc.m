@@ -22,7 +22,7 @@ subjCodes = subjCodes(~ismember(subjCodes,{'RR', 'AH', 'SL'}));
 
 N = length(subjCodes);
 
-task = 'spacetime'; % localizer, spacetime, or rest
+task = 'rest'; % localizer, spacetime, or rest
 
 switch task
     case 'spacetime'
@@ -51,7 +51,6 @@ end
 %% Loop through subjs
 smooth = 3; %mm
 parfor ss = 1:N
-
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     unix(['echo "' subjCode '" > ' data_dir subjCode '/subjectname']); % create subjectname txt file for fs
@@ -96,6 +95,8 @@ parfor ss = 1:N
                 else
                     topup_path = [data_dir subjCode '/bold/sub-' subjCode 'runs' num2str(FMruns(3)) num2str(FMruns(4)) '_fmapTopupOut'];
                 end
+            elseif strcmp(task, 'rest')
+                topup_path = [data_dir subjCode '/bold/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_rsfmapTopupOut'];
             else
                 topup_path = [data_dir subjCode '/bold/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_fmapTopupOut'];
             end
@@ -128,8 +129,6 @@ parfor ss = 1:N
     disp(['Finished subj ' subjCode]);
 
 end
-
-
 
 
 

@@ -9,14 +9,15 @@ ccc;
 
 
 %% Set script variables
-modalities_use = {'auditory', 'visual'}; % auditory and/or visual
-domains_use = {'passive'}; % temporal and/or spatial, or passive | for localizer: active or passive
+modalities_use = {'visual', 'auditory'}; % 'auditory' and/or 'visual' or 'v-a' for passive
+domains_use = {'temporal'}; % temporal and/or spatial, or passive | for localizer: active or passive
 reference_category = 'modality';
 use_ROItypes = false; % groups ROIs by their type (visual, auditory, MD)
 include_MD = true; %  include MD ROIs or not
 recruitment_variable = true; % add the recruitment variable to the table
-posterior_only = false; 
-localizer_data = true;
+posterior_only = false; % use only posterior ROIs
+localizer_data = false; % localizer data instead of spacetime data
+vis_aud_wm_2contrast = true; % create double contrast of visWM-visPassive - audWM-audPassive from PSCs
 
 %% Load and format data for LME table funciton
 [psc_results, perc_correct_all, hemis, modality_out, domain_out, ROIs, bad_subjs] = ...
@@ -37,6 +38,9 @@ else
     LME_table = LME_table(~ismember(LME_table.ROItype, {'pAud','pVis'}),:);
 end
 
+if vis_aud_wm_2contrast
+    LME_table = vis_aud_2contrast(LME_table);
+end
 
 %% Find smallest effect and make that the reference
 % ROItypes = unique(LME_table.ROItype);
@@ -56,7 +60,7 @@ end
 % other_inds_ordered = other_inds_ordered(other_inds_ordered~=min_ind);
 % disp(['Reference ROI type set to ' reference ' with average PSC difference of ' num2str(min_val)]);
 
-LME_table.perc_correct = zscore(LME_table.perc_correct);
+%LME_table.perc_correct = zscore(LME_table.perc_correct);
 LME_table.subject = categorical(LME_table.subject);
 LME_table.hemisphere = categorical(LME_table.hemisphere);
 LME_table.domain = categorical(LME_table.domain);
@@ -68,6 +72,9 @@ LME_table.ROItype = categorical(LME_table.ROItype);
 % For passive model
 % lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
 %    ' + (1 + modality + ROItype | hemisphere)'])
+%lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere)')
+
+lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere) + (1 + ROItype | perc_correct)')
 
 % For modality model (combined auditory and visual model)
 % lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
@@ -91,16 +98,29 @@ LME_table.ROItype = categorical(LME_table.ROItype);
 %    ' + (1 + recruitment + ROItype | hemisphere) + (1 + recruitment + ROItype | perc_correct)'])
 
 % localizer data
-lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
-   ' + (1 + modality + ROItype | hemisphere)'])
+% lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
+%    ' + (1 + modality + ROItype | hemisphere)'])
 
 emm = emmeans(lme,'unbalanced');
 emm.table
-save('PSCs_localizer_passive_modality.mat', 'emm', 'lme');
+save('PSCs_spacetime_temporal_v_a.mat', 'emm', 'lme');
 %sortrows(emm.table,'Row','descend')
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
-title('Auditory Spatial - Auditory Temporal')
+plot_psc_emmeans(emm.table([10,7,8,11,4,1,2,5,3,9,6],:));
+title('Spacetime | Visual Temporal WM - Auditory Temporal WM');
 
 
 
+
+
+%%
+N_cond = height(emm.table);
+sigdiff_tbl = table();
+for cc = 1:N_cond
+    contrast = zeros(1,N_cond);
+    contrast(cc) = 1;
+    res_table = contrasts_wald(lme, emm, contrast);
+    sigdiff_tbl = [sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
+end
+sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 

@@ -19,7 +19,7 @@ N = length(subjCodes);
 
 %% Create lookup table for ROIs and corresponding colors
 ROIs = ["aINS", "preSMA", "ppreCun", "dACC", ... % multisensory
-    "sPCS", "iPCS", "midIFS", "pVis_mod",... % visual
+    "sPCS", "iPCS", "midIFS", "pVis",... % visual
     "tgPCS", "cIFSG", "pAud", "CO", "FO", "cmSFG"]'; % auditory
 N_ROIs = length(ROIs);
 color = [[0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; ... % blue
@@ -34,7 +34,7 @@ ctable = table(ROIs, color(:,1), color(:,2), color(:,3), 'VariableNames', {'ROI'
 %% Set ROI and contrast lists
 %contrast_list = {'A-P', 'V-A'};
 AV_A_P_ROIs = ["aINS", "preSMA", "ppreCun", "dACC"];
-sV_pV_ROIs = ["sPCS", "iPCS", "midIFS", "pVis_mod"];
+sV_pV_ROIs = ["sPCS", "iPCS", "midIFS", "pVis"];
 tA_pA_ROIs = ["tgPCS", "cIFSG", "pAud", "CO", "FO", "cmSFG"];
 
 lh_ROI_paths = cell(N, 3);
@@ -121,8 +121,8 @@ end
 %% Actually run freeview_screenshots()
 func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
 func_folder = 'bold';
-analysis_name = 'spacetime_contrasts';
+analysis_name = {'spacetime_contrasts', 'polyfit2hrf1'};
 saveDir = '/projectnb/somerslab/tom/projects/spacetime_network/figures_images/spacetime_contrasts/';
 freeview_screenshots(subjCodes, contrasts, lh_ROI_paths, rh_ROI_paths, ctable, [], saveDir, func_path, func_folder, [], ...
     analysis_name, [], [], '0.5');
-crop_ppt_fv_images(subjCodes, contrasts, [], saveDir, 'spacetime_contrasts.pptx')
+crop_ppt_fv_images(subjCodes, contrasts, [], saveDir, 'spacetime_contrasts_polyfit2hrf1_1203.pptx')

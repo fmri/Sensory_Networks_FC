@@ -9,21 +9,21 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Intialize which data we are using
-data_use = 'localizer'; % Choices: 'spacetime' or 'localizer'
+data_use = 'spacetime'; % Choices: 'spacetime' or 'localizer'
 disp(['Calculating PSCs for ' upper(data_use) ' data']);
 
 switch data_use
     case 'spacetime'
         task = 'spacetime';
         subjdata_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
-        contrasts = {'sV-pV', 'tV-pV', 'sA-pA', 'tA-pA', 'pV-f', 'pA-f'};
-        reject_contrast = {{}, {'RT', 'LA'}, {'LN', 'GG', 'TP'}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
+        contrasts = {'sV-pV', 'tV-pV', 'sA-pA', 'tA-pA', 'pV-f', 'pA-f', 'vP-aP', 'aP-vP'};
+        reject_contrast = {{}, {'RT', 'LA'}, {'LN', 'GG', 'TP'}, {}, {}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
         contrast_fpath_strs = {'bold', 'spacetime_contrasts_', '_newcondfiles'};
     case 'localizer'
         task = 'x1WayLocalizer';
         subjdata_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
-        contrasts = {'vA-vP', 'aA-aP', 'f-aP', 'f-vP'};
-        reject_contrast = {{}, {}, {}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
+        contrasts = {'vA-vP', 'aA-aP', 'f-aP', 'f-vP', 'vP-aP', 'aP-vP'};
+        reject_contrast = {{}, {}, {}, {}, {}, {}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
         contrast_fpath_strs = {'localizer', 'localizer_contrasts_', ''};
     otherwise 
         error('data_use variable not recognized - should be either "localizer" or "spacetime"')
@@ -80,8 +80,11 @@ for ss = 1:N % for subj
             % load subj contrast percent signal change (psc) data
             contrast_fpath = [subjdata_dir subjCode '/' contrast_fpath_strs{1} '/' contrast_fpath_strs{2} hemi contrast_fpath_strs{3} '/' contrast '/cespct.nii.gz'];
             if ~isfile(contrast_fpath)
-                disp(['Contrast file not found for subj ' subjCode ' contrast ' contrast ' - SKIPPING'])
-                continue
+                contrast_fpath = [subjdata_dir subjCode '/' contrast_fpath_strs{1} '/' contrast_fpath_strs{2} hemi '_xtra_contrasts_NoyceRep/' contrast '/cespct.nii.gz'];
+                if ~isfile(contrast_fpath)
+                    disp(['Contrast file not found for subj ' subjCode ' contrast ' contrast ' - SKIPPING'])
+                    continue
+                end
             end
             psc_data = MRIread(contrast_fpath);
 
