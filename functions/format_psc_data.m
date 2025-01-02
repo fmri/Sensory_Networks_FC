@@ -11,7 +11,7 @@ if ~localizer_data
     perc_correct_all(:,5:6) = nan(size(perc_correct_all,1),2); % add 2 columns of nans for passive conditions for which there is no task (and therefore no % correct data)
     subjCodes_pcorrect = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); % cut rejected subjs from subjCodes as well
     task_str = 'spacetime';
-    psc_fname = 'PSC_results.mat';
+    psc_fname = 'PSC_results_no_replacment_ROIs.mat'; %%%%%%%%%%%%%%%%
     modality_order  = {'visual', 'visual', 'auditory', 'auditory', 'visual', 'auditory', 'v-a', 'a-v'};
     domain_order = {'spatial', 'temporal', 'spatial', 'temporal', 'passive', 'passive', 'passive', 'passive'};
 else

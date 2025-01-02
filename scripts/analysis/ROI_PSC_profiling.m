@@ -15,7 +15,7 @@ post_passive_lme = lme;
 post_passive_emm = emm;
 post_passive_pscs = sortrows(post_passive_emm.table, "Row");
 
-load([path_base 'passive_pscs.mat']);
+load([path_base 'passive_pscs_noreplacements.mat']); %%%%%%%%%%%
 passive_lme = lme;
 passive_emm = emm;
 passive_pscs = sortrows([passive_emm.table; post_passive_pscs], "Row");
@@ -25,7 +25,7 @@ post_dommod_lme = lme;
 post_dommod_emm = emm;
 post_dommod_pscs = sortrows(post_dommod_emm.table, "Row");
 
-load([path_base, 'perROI_full_domain_modality_LME.mat']);
+load([path_base, 'perROI_full_domain_modality_noreplacement.mat']); %%%%%%%%%%%%%
 domain_modality_lme = lme;
 domain_modality_emm = emmeans(domain_modality_lme,'unbalanced');
 domain_modality_pscs = sortrows([domain_modality_emm.table; post_dommod_pscs], 'Row');

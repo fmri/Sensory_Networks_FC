@@ -10,6 +10,7 @@ ccc;
 
 %% Intialize which data we are using
 data_use = 'spacetime'; % Choices: 'spacetime' or 'localizer'
+use_replacement_ROIs = false; 
 disp(['Calculating PSCs for ' upper(data_use) ' data']);
 
 switch data_use
@@ -47,6 +48,7 @@ ROIs = {'aINS', 'preSMA', 'ppreCun', 'dACC', ... % multisensory
     'tgPCS', 'cIFSG', 'pAud', 'CO', 'FO', 'cmSFG'}; % auditory
 N_ROIs = length(ROIs);
 load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
 
 hemis = {'lh', 'rh'};
 
@@ -89,7 +91,7 @@ for ss = 1:N % for subj
             psc_data = MRIread(contrast_fpath);
 
             for roi = 1:N_ROIs % for ROI
-
+                
                 ROI = ROIs{roi};
 
                 if ismember([subjCode '_' ROI '_' hemi], missing_ROIs)
@@ -97,13 +99,18 @@ for ss = 1:N % for subj
                     continue;
                 end
 
+                if ~use_replacement_ROIs && ismember([subjCode '_' ROI '_' hemi], replacement_ROIs)
+                    psc_results(ss,hh,cc,roi) = nan;
+                    continue;
+                end
+
                 ROI_index = find(ismember(annot_ctable.struct_names, ROI));
                 ROI_label = annot_ctable.table(ROI_index,5);
-                ROI_mask = annot_labels == ROI_label;
-                assert(sum(ROI_mask)>=100, ['Subj ' subjCode ' ' hemi ' ' ROI ' is below 100 vertices']);
+                vertex_inds = find(annot_labels == ROI_label); % subtract one because the annot file vertex inds start at 0 while indexing in matlab starts at 1
+                assert(length(vertex_inds)>=100, ['Subj ' subjCode ' ' hemi ' ' ROI ' is below 100 vertices']);
 
                 % Get mean psc data from ROI mask
-                psc_results(ss,hh,cc,roi) = mean(psc_data.vol(ROI_mask)); 
+                psc_results(ss,hh,cc,roi) = mean(psc_data.vol(vertex_inds)); 
                 assert(~isnan(psc_results(ss,hh,cc,roi)), ['PSC for subj ' subjCode ' ' hemi ' ' ROI ' computed as NaN'])
 
             end % end ROI
@@ -116,7 +123,7 @@ end % end subj
 if strcmp(data_use,'localizer')
     psc_results(:,:,3:4,:) = -psc_results(:,:,3:4,:); % reverse contrast for f-vP and f-aP 
 end
-save('PSC_results.mat', 'psc_results', 'subjCodes', 'ROIs', 'contrasts');
+save('PSC_results_no_replacment_ROIs.mat', 'psc_results', 'subjCodes', 'ROIs', 'contrasts');
 psc_subjavg = squeeze(mean(psc_results, 1, 'omitnan'));
 psc_subjhemiavg = squeeze(mean(psc_results, [1,2], 'omitnan'));
 psc_subjhemiavg_tbl = array2table(psc_subjhemiavg', 'VariableNames', contrasts, 'RowNames', ROIs);
@@ -192,16 +199,16 @@ hold on;
 handles = {};
 ROI_count = 1;
 for mm = 1:length(ROIs_per_modality)
-    ROI_inds = ROI_count:ROI_count+ROIs_per_modality(mm)-1;
-    modality_spatial_temporal = squeeze(spatial_temporal(:,:,ROI_inds));
+    vertex_inds = ROI_count:ROI_count+ROIs_per_modality(mm)-1;
+    modality_spatial_temporal = squeeze(spatial_temporal(:,:,vertex_inds));
     mean_modality_st = mean(modality_spatial_temporal, 1, 'omitnan');
-    modality_visual_auditory = squeeze(visual_auditory(:,:,ROI_inds));
+    modality_visual_auditory = squeeze(visual_auditory(:,:,vertex_inds));
     mean_modality_va = mean(modality_visual_auditory, 1, 'omitnan');
     coords = [mean_modality_va(:), mean_modality_st(:)];
     handles{mm} = scatter(coords(:,1), coords(:,2), 100, modality_colors{mm}, modality_shapes{mm});
     hold on;
     ROI_count = ROI_count + ROIs_per_modality(mm);
-    disptable = table(repelem(ROIs(ROI_inds),2)', coords(:,1), coords(:,2), 'VariableNames', {'ROI', 'v-a', 's-t'});
+    disptable = table(repelem(ROIs(vertex_inds),2)', coords(:,1), coords(:,2), 'VariableNames', {'ROI', 'v-a', 's-t'});
     disp(disptable);
 end
 xlabel('Visual-Auditory (PSC)');
@@ -222,13 +229,13 @@ hold on;
 handles = {};
 ROI_count = 1;
 for mm = 1:length(ROIs_per_modality)
-    ROI_inds = ROI_count:ROI_count+ROIs_per_modality(mm)-1;
-    modality_visual_auditory_passive = visual_auditory_passive(:,:,ROI_inds);
+    vertex_inds = ROI_count:ROI_count+ROIs_per_modality(mm)-1;
+    modality_visual_auditory_passive = visual_auditory_passive(:,:,vertex_inds);
     mean_modality_va_passive = squeeze(mean(modality_visual_auditory_passive, 1, 'omitnan'));
     handles{mm} = scatter(mean_modality_va_passive(:), zeros(length(mean_modality_va_passive(:)),1), 100, modality_colors{mm}, modality_shapes{mm});
     hold on;
     ROI_count = ROI_count + ROIs_per_modality(mm);
-    disptable = table(repelem(ROIs(ROI_inds),2)', mean_modality_va_passive(:), 'VariableNames', {'ROI', 'pV-pA'});
+    disptable = table(repelem(ROIs(vertex_inds),2)', mean_modality_va_passive(:), 'VariableNames', {'ROI', 'pV-pA'});
     disp(disptable);
 end
 xlabel('Visual-Auditory (PSC)');

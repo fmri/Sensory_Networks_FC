@@ -9,14 +9,14 @@ ccc;
 
 
 %% Set script variables
+localizer_data = true; % localizer data instead of spacetime data
 modalities_use = {'visual', 'auditory'}; % 'auditory' and/or 'visual' or 'v-a' for passive
-domains_use = {'temporal'}; % temporal and/or spatial, or passive | for localizer: active or passive
-reference_category = 'modality';
+domains_use = {'active'}; % temporal and/or spatial, or passive | for localizer: active or passive
+% reference_category = 'domain';
 use_ROItypes = false; % groups ROIs by their type (visual, auditory, MD)
 include_MD = true; %  include MD ROIs or not
 recruitment_variable = true; % add the recruitment variable to the table
 posterior_only = false; % use only posterior ROIs
-localizer_data = false; % localizer data instead of spacetime data
 vis_aud_wm_2contrast = true; % create double contrast of visWM-visPassive - audWM-audPassive from PSCs
 
 %% Load and format data for LME table funciton
@@ -70,11 +70,9 @@ LME_table.ROItype = categorical(LME_table.ROItype);
 
 %% Run LME model
 % For passive model
-% lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
-%    ' + (1 + modality + ROItype | hemisphere)'])
-%lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere)')
-
-lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere) + (1 + ROItype | perc_correct)')
+ % lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
+ %    ' + (1 + modality + ROItype | hemisphere)'])
+lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere)')
 
 % For modality model (combined auditory and visual model)
 % lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
@@ -103,7 +101,7 @@ lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROI
 
 emm = emmeans(lme,'unbalanced');
 emm.table
-save('PSCs_spacetime_temporal_v_a.mat', 'emm', 'lme');
+save('PSCs_localizer_active_v_a_noreplacements.mat', 'emm', 'lme');
 %sortrows(emm.table,'Row','descend')
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 plot_psc_emmeans(emm.table([10,7,8,11,4,1,2,5,3,9,6],:));

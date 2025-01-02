@@ -1,3 +1,7 @@
+
+addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+ccc;
+
 experiment_name = 'spacetime';
 
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
@@ -17,9 +21,8 @@ for ss = 1:length(subjCodes)
     num_runs = sum(contains(dir_contents, '00'));
     for rr = 1:num_runs
         runDir = [subjDir '00' num2str(rr) '/'];
-        eventfile_tom = [runDir '/f_events.tsv'];
-        eventfile_tom_new = [runDir 'rp_.tsv'];
-        unix(['cp ' eventfile_tom ' ' eventfile_tom_new]);
+        eventfile = [runDir '/spacetime_condition_timing.para'];
+        unix(['rm ' eventfile ]);
     end
 end
 
