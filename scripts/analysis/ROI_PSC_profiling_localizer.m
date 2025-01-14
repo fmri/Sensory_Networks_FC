@@ -10,12 +10,12 @@ ccc;
 %% Load PSC means/SEs
 path_base = '/projectnb/somerslab/tom/projects/spacetime_network/data/PSCs/';
 
-load([path_base 'PSCs_localizer_passive_modality.mat']);
+load([path_base 'emm_lme_PSCs_localizer_passive.mat']);
 loc_passive_lme = lme;
 loc_passive_emm = emm;
 loc_passive_pscs = sortrows(loc_passive_emm.table, "Row");
 
-load([path_base 'PSCs_localizer_active_modality.mat']);
+load([path_base 'emm_lme_PSCs_localizer_active.mat']);
 loc_active_lme = lme;
 loc_active_emm = emm;
 loc_active_pscs = sortrows(loc_active_emm.table, "Row");
@@ -41,19 +41,23 @@ for cc = 1:N_cond_passive
     passive_sigdiff_tbl = [passive_sigdiff_tbl; {loc_passive_emm.table.Row{cc}, loc_passive_emm.table{cc,"Estimated_Marginal_Mean"}, loc_passive_emm.table{cc,"SE"}, res_table.pVal}];
 end
 passive_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
+passive_sigdiff_tbl = sortrows(passive_sigdiff_tbl,'pVal');
 passive_sigdiff_contrast = wald_psc_emmeans(loc_passive_lme, loc_passive_emm);
+passive_sigdiff_contrast = sortrows(passive_sigdiff_contrast,'pval');
 
 % active conditions
 N_cond = height(loc_active_emm.table);
-sigdiff_tbl = table();
+active_sigdiff_tbl = table();
 for cc = 1:N_cond
     contrast = zeros(1,N_cond);
     contrast(cc) = 1;
     res_table = contrasts_wald(loc_active_lme, loc_active_emm, contrast);
-    sigdiff_tbl = [sigdiff_tbl; {loc_active_emm.table.Row{cc}, loc_active_emm.table{cc,"Estimated_Marginal_Mean"}, loc_active_emm.table{cc,"SE"}, res_table.pVal}];
+    active_sigdiff_tbl = [active_sigdiff_tbl; {loc_active_emm.table.Row{cc}, loc_active_emm.table{cc,"Estimated_Marginal_Mean"}, loc_active_emm.table{cc,"SE"}, res_table.pVal}];
 end
-sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
-sigdiff_contrast = wald_psc_emmeans(loc_active_lme, loc_active_emm);
+active_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
+active_sigdiff_tbl = sortrows(active_sigdiff_tbl,'pVal');
+active_sigdiff_contrast = wald_psc_emmeans(loc_active_lme, loc_active_emm);
+active_sigdiff_contrast = sortrows(active_sigdiff_contrast,'pval');
 
 
 %% Plot

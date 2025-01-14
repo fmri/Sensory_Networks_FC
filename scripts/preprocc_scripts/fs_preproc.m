@@ -19,10 +19,11 @@ subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes,{'RR', 'AH', 'SL'}));
+subjCodes = {'AH', 'SL'};
 
 N = length(subjCodes);
 
-task = 'rest'; % localizer, spacetime, or rest
+task = 'spacetime'; % localizer, spacetime, or rest
 
 switch task
     case 'spacetime'
@@ -50,7 +51,7 @@ end
 
 %% Loop through subjs
 smooth = 3; %mm
-parfor ss = 1:N
+for ss = 1:N
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     unix(['echo "' subjCode '" > ' data_dir subjCode '/subjectname']); % create subjectname txt file for fs

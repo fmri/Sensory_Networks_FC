@@ -1,22 +1,34 @@
 function [psc_results, perc_correct_all, hemis, modality_out, domain_out, ROIs, bad_subjs] = ...
-                    format_psc_data(modalities_use, domains_use, use_ROItypes, include_MD, localizer_data)
+                    format_psc_data(modalities_use, domains_use, use_ROItypes, include_MD, localizer_data, probabilistic)
 %FORMAT_PSC_DATA 
 %
 %
 
 %% Load percent correct data
 if ~localizer_data
-    load('/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/behavioral_percent_correct_data.mat', 'perc_correct_all', 'subjCodes')
-    perc_correct_all = table2array(perc_correct_all(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}),1:4)); % cut out bad subjs and tactile % correct data
-    perc_correct_all(:,5:6) = nan(size(perc_correct_all,1),2); % add 2 columns of nans for passive conditions for which there is no task (and therefore no % correct data)
-    subjCodes_pcorrect = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); % cut rejected subjs from subjCodes as well
     task_str = 'spacetime';
-    psc_fname = 'PSC_results_no_replacment_ROIs.mat'; %%%%%%%%%%%%%%%%
+    if probabilistic'
+        psc_fname = 'PSC_results_probabilistic_no_replacements.mat';
+        fullsubj_reject = {'AI', 'SL', 'RR'};
+    else
+        fullsubj_reject = {'AI', 'SL', 'RR', 'AH'};
+        psc_fname = 'PSC_results_no_replacment_ROIs.mat'; 
+    end
+    load('/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/behavioral_percent_correct_data.mat', 'perc_correct_all', 'subjCodes')
+    perc_correct_all = table2array(perc_correct_all(~ismember(subjCodes, fullsubj_reject),1:4)); % cut out bad subjs and tactile % correct data
+    perc_correct_all(:,5:6) = nan(size(perc_correct_all,1),2); % add 2 columns of nans for passive conditions for which there is no task (and therefore no % correct data)
+    subjCodes_pcorrect = subjCodes(~ismember(subjCodes, fullsubj_reject)); % cut rejected subjs from subjCodes as well
     modality_order  = {'visual', 'visual', 'auditory', 'auditory', 'visual', 'auditory', 'v-a', 'a-v'};
     domain_order = {'spatial', 'temporal', 'spatial', 'temporal', 'passive', 'passive', 'passive', 'passive'};
 else
+    if probabilistic
+        psc_fname = 'PSC_results_localizer_probabilistic_no_replacements.mat';
+        fullsubj_reject = {'RR'}; % can keep AH if doing probabilistic (only localizer runs were bad so there are no individual ROIs, but can use the probabilistic)
+    else
+        psc_fname = 'PSC_results_localizer_no_replacements.mat';
+        fullsubj_reject = {'AH', 'RR', 'SL'};
+    end
     task_str = 'x1WayLocalizer';
-    psc_fname = 'PSC_results_localizer.mat';
     modality_order  = {'visual','auditory', 'auditory', 'visual', 'v-a', 'a-v'};
     domain_order = {'active', 'active', 'passive', 'passive', 'passive', 'passive'};
 end
@@ -25,7 +37,7 @@ end
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([task_str 'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}));
+subjCodes = subjCodes(~ismember(subjCodes, fullsubj_reject));
 N = length(subjCodes);
 if ~localizer_data 
     assert(all(isequal(subjCodes,subjCodes_pcorrect))); % make sure same subjCodes in same order

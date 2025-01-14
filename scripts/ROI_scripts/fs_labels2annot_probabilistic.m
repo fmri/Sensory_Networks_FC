@@ -57,7 +57,7 @@ for hh = 1:length(hemis)
     for rr = 1:N_ROIs
         % Load ROI
         ROI_data = prob_ROI_data{rr,hh};
-        label_vertex_inds = ROI_data.Var1 + 1;
+        label_vertex_inds = ROI_data.Var1+1;
 
         % Add struct_name (label name)
         ROI_name = ROIs{rr};

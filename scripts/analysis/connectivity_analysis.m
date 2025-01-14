@@ -9,25 +9,32 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Setup analysis parameters
-resting_state = true;
-hierarchical_clustering = true;
+use_data = 'localizer'; % 'rest', 'localizer', or 'spacetime'
+hierarchical_clustering = false;
 plot_individual_connmats = false;
 save_out = false;
 bootstrap_hca = true;
 bootstrap_iters = 10000;
 
-if resting_state
-    ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/preprocessing/';
-    subjCodes = {'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'PT', 'PL', 'NS'};
-    conditions = {'rest'};
-    ROI_str = 'ROIs'; % "ROI_mod" for pVis without DbanesO, "ROI" for pVis with DO
-    reject_conditions = {{}};
-else % task data
-    ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/preprocessing/';
-    subjCodes = {'MM'	'PP' 'MK' 'AB' 'AD'	'LA' 'AE' 'TP' 'NM'	'AF' 'AG' 'GG' 'UV'	'PQ' 'KQ' 'LN' 'RT'	'PT' 'PL' 'NS'};
-    conditions = {'f' , 'aP', 'tP', 'vP', 'aS', 'tS', 'vS', 'aT', 'tT', 'vT'};
-    ROI_str = 'ROIs'; 
-    reject_conditions = {{}, {}, {}, {}, {'LN', 'GG', 'TP'}, {}, {}, {'RT', 'LA'}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
+switch use_data
+    case 'rest'
+        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/preprocessing/';
+        subjCodes = {'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'PT', 'PL', 'NS'};
+        conditions = {'rest'};
+        ROI_str = 'ROIs'; % "ROI_mod" for pVis without DbanesO, "ROI" for pVis with DO
+        reject_conditions = {{}};
+    case 'localizer'
+        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/preprocessing/';
+        subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
+        conditions = {'1', '2', '3', '4', '5', '6', '7'}; % corresponds to: {'f', 'aP', 'tP', 'vP', 'aA', 'tA', 'vA'};
+        ROI_str = 'ROIs'; % "ROI_mod" for pVis without DO, "ROI" for pVis with DO
+        reject_conditions = {{},{},{},{},{},{},{}};
+    case 'spacetime'
+        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/preprocessing/';
+        subjCodes = {'MM'	'PP' 'MK' 'AB' 'AD'	'LA' 'AE' 'TP' 'NM'	'AF' 'AG' 'GG' 'UV'	'PQ' 'KQ' 'LN' 'RT'	'PT' 'PL' 'NS'};
+        conditions = {'f' , 'aP', 'tP', 'vP', 'aS', 'tS', 'vS', 'aT', 'tT', 'vT'};
+        ROI_str = 'ROIs';
+        reject_conditions = {{}, {}, {}, {}, {'LN', 'GG', 'TP'}, {}, {}, {'RT', 'LA'}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
 end
 
 N = length(subjCodes);
@@ -50,6 +57,8 @@ desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAu
 
 %% Get missing ROI data
 load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
+missing_ROIs = [missing_ROIs'; replacement_ROIs];
 
 %% Get ROI data
 
@@ -58,7 +67,7 @@ files = {dir(ROI_dataDir).name};
 for ss = 1:N
     subjnum = sprintf( '%03d', ss ) ;
     subjfiles = files(contains(files, ['ROI_Subject' subjnum '_Condition']) & ~contains(files, '000'));
-    
+
     condcount = 0;
     for ff = 1:length(subjfiles)
 
@@ -67,25 +76,25 @@ for ss = 1:N
         names = names(ROI_names_mask);
         data = data(ROI_names_mask);
 
-        if resting_state
-            assert(strcmp(conditionname,'rest'), ['Condition name is not "rest" for subj ' num2str(ss)])
-            condcount = condcount + 1;
-            cond_ind = 1;
-        else
-            if ~ismember(conditionname, conditions)
-                disp(['Subj ' num2str(ss) ' has unrecognized condition name ' conditionname ' ...skipping...'])
-                continue
-            else
+        switch use_data
+            case 'rest'
+                assert(strcmp(conditionname,'rest'), ['Condition name is not "rest" for subj ' num2str(ss)])
                 condcount = condcount + 1;
-                [~,cond_ind] = ismember(conditionname, conditions);
-            end
+                cond_ind = 1;
+            case {'localizer', 'spacetime'}
+                if ~ismember(conditionname, conditions)
+                    disp(['Subj ' num2str(ss) ' has unrecognized condition name ' conditionname ' ...skipping...'])
+                    continue
+                else
+                    condcount = condcount + 1;
+                    [~,cond_ind] = ismember(conditionname, conditions);
+                end
 
-            % Index for condition data only (boxcar filter)
-            conditionweight = conditionweights{2};
-            conditionweight(conditionweight>0) = 1; % could get rid of this line to make it a tapered mask
-            data = cellfun(@(x) x.*conditionweight, data, 'UniformOutput',false); % multiply condition on/off by ROI data to get condition data only
-            data = cellfun(@(x) x(abs(x)>0), data, 'UniformOutput',false);
-
+                % Index for condition data only (boxcar filter)
+                conditionweight = conditionweights{2};
+                conditionweight(conditionweight>0) = 1; % could get rid of this line to make it a tapered mask
+                data = cellfun(@(x) x.*conditionweight, data, 'UniformOutput',false); % multiply condition on/off by ROI data to get condition data only
+                data = cellfun(@(x) x(abs(x)>0), data, 'UniformOutput',false);
         end
 
         assert( strcmp(names{1}, first_ROI_check) , ['Unexpected ROI order for subj: ' num2str(ff)]);
@@ -99,10 +108,14 @@ for ss = 1:N
 
     end
 
-    if resting_state
-        assert(condcount==1, ['Unexpected number of conditions for subj ' num2str(ss)]);
-    else
-        assert(condcount==10, ['Unexpected number of conditions for subj ' num2str(ss)]);
+    switch use_data
+        case 'rest'
+            assert(condcount==1, ['Unexpected number of conditions for subj ' num2str(ss)]);
+        case 'localizer'
+            assert(condcount==7, ['Unexpected number of conditions for subj ' num2str(ss)]);
+        case 'spacetime'
+            assert(condcount==10, ['Unexpected number of conditions for subj ' num2str(ss)]);
+
     end
 
 end
@@ -133,7 +146,7 @@ for ss = 1:N
                     connmats(rr1,rr2,ss,cc) = NaN;
                     pvals(rr1,rr2,ss,cc) = NaN;
                     disp(['Subj ' num2str(ss) ' (' subjID ') missing ROIs: ' missing_ROIs{ismember(missing_ROIs,ROI2_name)} missing_ROIs{ismember(missing_ROIs,ROI1_name)}]);
-                elseif rr2==rr1
+                elseif rr2==rr1 || isempty(ROI1) || isempty(ROI2) % skip if assessing self-connectivity, or if there is no data for that condition in that subj and ROI
                     continue
                 else
                     [connmats(rr1,rr2,ss,cc), pvals(rr1,rr2,ss,cc)] = corr(ROI1, ROI2);
@@ -146,13 +159,13 @@ end
 %% Connectivity group
 % convert to Z scores here before averaging, then convert back to corrs (r)
 connmats_z = atanh(connmats);
-connmat_group_z = mean(connmats_z, 3, 'omitnan');
+connmat_group_z = squeeze(mean(connmats_z, 3, 'omitnan'));
 connmat_group = (exp(2.*connmat_group_z) - 1) ./ (exp(2.*connmat_group_z) + 1); % inverse fisher transform
 
 %% Calculate hierarchical clustering
 if hierarchical_clustering
     for cc = 1:Ncond
-        distance_measure = 1-abs(connmat_group(:,:,1,cc));
+        distance_measure = 1-abs(connmat_group(:,:,cc));
         distance_measure(1:1+N_ROIs:end) = 0; % Make diagonal distance zero
         linkage_cluster = linkage(distance_measure, 'average');
         inconsistency = inconsistent(linkage_cluster);
@@ -164,7 +177,7 @@ if hierarchical_clustering
         end
 
         figure;
-        [h,t,outperm] = dendrogram(linkage_cluster, 5,'Labels',names);
+        [h,t,outperm] = dendrogram(linkage_cluster, 26,'Labels',names);
         title(['Hierarchical Clustering Condition ' conditions{cc}]);
         ylabel('Cluster Distance');
     end
@@ -174,13 +187,13 @@ end
 
 % Make main diagonal NaN (they are really 1 but that would mess up the colormap limits
 connmat_group_nandiag = NaN(size(connmat_group));
-for mm = 1:size(connmat_group,4)
-    connmat_group_nandiag(:,:,1,mm) = connmat_group(:,:,1,mm) - diag(diag(connmat_group(:,:,1,mm))) + diag(NaN(size(connmat_group,1),1));
+for mm = 1:size(connmat_group,3)
+    connmat_group_nandiag(:,:,mm) = connmat_group(:,:,mm) - diag(diag(connmat_group(:,:,mm))) + diag(NaN(size(connmat_group,1),1));
 end
 
 for cc = 1:Ncond
     figure;
-    heatmap(names, names, connmat_group_nandiag(:,:,1,cc), 'Colormap', turbo, 'ColorLimits', [min(connmat_group_nandiag(),[], 'all'),max(connmat_group_nandiag,[],'all')], 'FontSize',16)
+    heatmap(names, names, connmat_group_nandiag(:,:,cc), 'Colormap', turbo, 'ColorLimits', [min(connmat_group_nandiag(),[], 'all'),max(connmat_group_nandiag,[],'all')], 'FontSize',16)
     title(['Group Average Conn Mat | Condition ' conditions{cc}]);
 end
 
@@ -192,19 +205,30 @@ end
 %     title(['Group Average Conn Mat 2 | Condition ' conditions{cc}])
 % end
 
-%% Plot group level connectivity difference matrices 
-if ~resting_state
-    ztrans_connmat_group = atanh(connmat_group_nandiag);% fisher z-transoform the rs
-    diffs1 = [2,4, 5,8,  7,10, 5,7];
-    diffs2 = [1,1, 2,2 , 4,4,  8,10];
-        conditions = {'Fixation' , 'Passive_Auditory', 'Passive_Tactile', 'Passive_Visual', 'Spatial_Auditory',...
-            'Spatial_Tactile', 'Spatial_Visual', 'Temporal_Auditory', 'Temporal_Tactile', 'Temporal_Visual'};
-    for cc = 1:length(diffs1)
-        figure;
-        diff = ztrans_connmat_group(:,:,1,diffs1(cc))-ztrans_connmat_group(:,:,1,diffs2(cc));
-        heatmap(names, names,  diff, 'Colormap', turbo, 'ColorLimits', [min(diff(),[], 'all'),max(diff,[],'all')], 'FontSize',16)
-        title([conditions{diffs1(cc)} '-' conditions{diffs2(cc)}])
-    end
+%% Plot group level connectivity difference matrices
+switch use_data
+    case 'localizer'
+        %ztrans_connmat_group = atanh(connmat_group_nandiag);% fisher z-transoform the rs
+        diffs1 = [7,4, 7,5,  4,2];
+        diffs2 = [5,2, 4,2 , 1,1];
+        for cc = 1:length(diffs1)
+            figure;
+            diff = connmat_group_nandiag(:,:,diffs1(cc))-connmat_group_nandiag(:,:,diffs2(cc));
+            %diff = (exp(2.*diff_z) - 1) ./ (exp(2.*diff_z) + 1); % inverse fisher transform
+            heatmap(names, names,  diff, 'Colormap', turbo, 'ColorLimits', [min(diff(),[], 'all'),max(diff,[],'all')], 'FontSize',16)
+            title([conditions{diffs1(cc)} '-' conditions{diffs2(cc)}])
+        end
+    case 'spacetime'
+        ztrans_connmat_group = atanh(connmat_group_nandiag);% fisher z-transoform the rs
+        diffs1 = [2,4, 5,8,  7,10, 5,7];
+        diffs2 = [1,1, 2,2 , 4,4,  8,10];
+        for cc = 1:length(diffs1)
+            figure;
+            diff_z = ztrans_connmat_group(:,:,diffs1(cc))-ztrans_connmat_group(:,:,diffs2(cc));
+            diff = (exp(2.*diff_z) - 1) ./ (exp(2.*diff_z) + 1); % inverse fisher transform
+            heatmap(names, names,  diff, 'Colormap', turbo, 'ColorLimits', [min(diff(),[], 'all'),max(diff,[],'all')], 'FontSize',16)
+            title([conditions{diffs1(cc)} '-' conditions{diffs2(cc)}])
+        end
 end
 
 %% Plot individual connectivity matrices

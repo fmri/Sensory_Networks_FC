@@ -25,7 +25,7 @@ else
 end
 
 
-task = 'aA-aP'; 
+task = 'vA-aA'; 
 if strcmp(task, 'auditory')
     ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_auditory_allROIs/';
     compare_conditions = [6,9]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
@@ -78,7 +78,7 @@ elseif strcmp(task,'recruitment')
     perc_correct_all = [perc_correct_all; perc_correct_all];
 elseif strcmp(task, 'vA-aA')
     ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/gPPI/';
-    compare_conditions = [7,5]; % 1 = f, 2 = aP, 3 = tP, 4 = vP, 5 = aA, 6 = tA, 7 = vA
+    compare_conditions = [7,5];
     skip_subjs = reject_subjs;
     title_str = 'vA-aA';
     task1_perc_ind = nan;
@@ -88,13 +88,6 @@ elseif strcmp(task, 'vA-vP')
     compare_conditions = [7,4];
     skip_subjs = reject_subjs;
     title_str = 'vA-vP';
-    task1_perc_ind = nan;
-    task2_perc_ind = nan;
-elseif strcmp(task, 'aA-aP')
-    ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/gPPI/';
-    compare_conditions = [5,2];
-    skip_subjs = reject_subjs;
-    title_str = 'aA-aP';
     task1_perc_ind = nan;
     task2_perc_ind = nan;
 else
@@ -197,10 +190,10 @@ for ss = 1:Nsubjs*recruitment_adj
                 end
                 ROItype_order = sort({ROI1_type, ROI2_type});
                 connection_type = [ROItype_order{1} '<->' ROItype_order{2}];
-                beta_diff1 = beta_diffs(rr1,rr2,ss);
-                if rr1 > rr2 % only count each occurance once 
-                    beta_diff_mean = mean([beta_diff1, beta_diffs(rr2,rr1,ss)]); % take mean of both a->b and b->a bc gPPI isn't directional and we should only use one value per connection
-                    data_table = [data_table; {beta_diff_mean, subjID, hemi1, hemi2, connection_type, task_pcorrect_diff}];
+                beta_diff = beta_diffs(rr1,rr2,ss);
+                if rr1 > rr2
+                    beta_diff2 = beta_diffs(rr2,rr1,ss);
+                    data_table = [data_table; {mean([beta_diff, beta_diff2]), subjID, hemi1, hemi2, connection_type, task_pcorrect_diff}];
                 end
             end
         end
@@ -209,11 +202,26 @@ end
 
 data_table.Properties.VariableNames = {'beta_diff', 'subject', 'hemisphere1', 'hemisphere2', 'connection_type', 'task_pcorrect_diff'};
 
+%% Find connection type with smallest mean beta_diff (to use as reference in LME)
+% connection_types = unique(data_table.connection_type);
+% mean_betadiffs = nan(length(connection_types),1);
+% for cc = 1:length(connection_types)
+%     connection_type = connection_types{cc};
+%     in_category_mask = cell2mat(cellfun(@(x) isequal(x, connection_type), data_table.connection_type, 'UniformOutput',false));
+%     mean_betadiffs(cc) = mean(data_table.beta_diff(in_category_mask));
+% end
+% [min_val, min_ind] = min(abs(mean_betadiffs));
+% reference_conntype = connection_types{min_ind};
+% other_inds_ordered = 1:15;
+% other_inds_ordered = other_inds_ordered(other_inds_ordered~=min_ind);
+
 %% Change to categorical data types
 data_table.subject = categorical(data_table.subject);
 data_table.hemisphere1 = categorical(data_table.hemisphere1);
 data_table.hemisphere2 = categorical(data_table.hemisphere2);
 data_table.connection_type = categorical(data_table.connection_type);
+% data_table.connection_type = reordercats(data_table.connection_type, [min_ind, other_inds_ordered]);
+% disp(['Reference connection type set to ' reference_conntype ' with average beta difference of ' num2str(min_val)]);
 
 %% Fit LME
 tic;
@@ -236,7 +244,7 @@ save(['gPPI_LME_results_localizer_' task '.mat'], 'lme', 'emm'); %%% CHANGE ME
 
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 title(title_str);
-%res_table = wald_psc_emmeans(lme, emm);
+res_table = wald_psc_emmeans(lme, emm);
 
 %% Sig testing
 N_cond = height(emm.table);

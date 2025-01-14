@@ -17,8 +17,8 @@ subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 [~, ROI_labels{1}, ROI_info{1}] = read_annotation('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/lh.probabilistic_ROIs.annot');
 [~, ROI_labels{2}, ROI_info{2}] = read_annotation('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/rh.probabilistic_ROIs.annot'); 
-cortex_RAS{1} = readtable([ROI_path 'lh_inflated_wholecortex.label'], 'FileType', 'text');
-cortex_RAS{2} = readtable([ROI_path 'rh_inflated_wholecortex.label'], 'FileType', 'text');
+cortex_label_data{1} = readtable([ROI_path 'lh_inflated_wholecortex.label'], 'FileType', 'text');
+cortex_label_data{2} = readtable([ROI_path 'rh_inflated_wholecortex.label'], 'FileType', 'text');
 
 %% Loop through ROIs and subjs to extract data
 localizer = true;
@@ -64,8 +64,8 @@ for rr = 1:length(ROI_list)
         % extract probabilistic ROI
         ROI = ROI_list{rr};
         ROI_label_num = ROI_info{hh}.table(ismember(ROI_info{hh}.struct_names, ROI),5);
-        vertex_inds = find(ismember(ROI_labels{hh},ROI_label_num))-1; % off by one due to vertex inds starting at 0 but indexing starting at 1
-        prob_ROI = cortex_RAS{hh}(ismember(cortex_RAS{hh}{:,1},vertex_inds), :);
+        vertex_nums = find(ismember(ROI_labels{hh},ROI_label_num))-1; % off by one due to vertex nums starting at 0 but indexing starting at 1
+        prob_ROI = cortex_label_data{hh}(ismember(cortex_label_data{hh}{:,1},vertex_nums), :);
 
         if rr<=10
             RAS_coords{rr,hh} = prob_ROI;
@@ -146,8 +146,8 @@ for rr = 1:length(ROI_list)
 end
 
 %% Save out results
-save('probROI_sensory_WM_tstats_localizer.mat', 'ROI_groupavg_tstats_MD', 'ROI_groupavg_tstats', 'RAS_coords_MD', 'RAS_coords', 'tstats_act', 'tstats_pass', ...
-                                      'tstats_pass_MD', 'tstats_act_MD', 'ROI_list', 'subjCodes', 'hemis', 'active_contrast_list', 'passive_contrast_list')
+%save('probROI_sensory_WM_tstats_localizer.mat', 'ROI_groupavg_tstats_MD', 'ROI_groupavg_tstats', 'RAS_coords_MD', 'RAS_coords', 'tstats_act', 'tstats_pass', ...
+%                                      'tstats_pass_MD', 'tstats_act_MD', 'ROI_list', 'subjCodes', 'hemis', 'active_contrast_list', 'passive_contrast_list')
 
 %% Plot ROI Gradients
 for rr = 1:N_ROIs

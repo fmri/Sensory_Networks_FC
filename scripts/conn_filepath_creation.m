@@ -13,7 +13,7 @@ ccc;
 
 func_topupapplied = true; % give paths for functionals with fmaps already applied 
 resting_state = false;
-localizer = false;
+localizer = true;
 
 % Load in subject info
 subjDf = load_subjInfo();
@@ -21,17 +21,21 @@ if resting_state
     data_dir = 'rest';
     experiment_name = 'rest';
     subjInds = ~strcmp(subjDf.([experiment_name,'Runs']),'');
+    reject_subjs = {'MM', 'PP'};
 elseif localizer
     data_dir = 'localizer';
     experiment_name = 'x1WayLocalizer';
     subjInds = ~( strcmp(subjDf.([experiment_name,'Runs']),'') & strcmp(subjDf.('x3WayLocalizerRuns'),'') );
+    reject_subjs = {'RR', 'AH', 'SL'};
 else
     data_dir = 'bold';
     experiment_name = 'spacetime';
     subjInds = ~strcmp(subjDf.([experiment_name,'Runs']),'');
+    reject_subjs = {'RR', 'AH', 'SL', 'AI'};
 end
 subjDf_cut = subjDf(subjInds,:);
 subjCodes = subjDf_cut.subjCode;
+subjCodes = subjCodes(~ismember(subjCodes, reject_subjs));
 
 ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 struct_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/';
@@ -50,17 +54,7 @@ for ss=1:length(subjCodes)
 end
 disp(['No ROIs: ' string(subjCodes(logical(not_found)))' ])
 
-% Change subjCodes to reflect only subjs with ROIs
-if resting_state
-    subjCodes = subjCodes(~logical(not_found));
-    subjCodes = subjCodes(~ismember(subjCodes, {'PP','MM'})); % these two subjs have different resting state sequences
-elseif localizer
-    subjectCodes = subjCodes; % use all subjs
-else
-    subjCodes = subjCodes(~logical(not_found));
-    subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'})); %
-end
-
+% print ROI path
 for ss=1:length(subjCodes)
     
     subjROIpath = [ROI_path subjCodes{ss} '_ROIs.surf.nii'];
@@ -68,12 +62,12 @@ for ss=1:length(subjCodes)
 
 end
 
-for ss=1:length(subjCodes)
-    
-    subjROIpath = [ROI_path subjCodes{ss} '_grouped_ROIs.surf.nii'];
-    disp(subjROIpath)
-
-end
+% for ss=1:length(subjCodes)
+% 
+%     subjROIpath = [ROI_path subjCodes{ss} '_grouped_ROIs.surf.nii'];
+%     disp(subjROIpath)
+% 
+% end
 
 % Print T1 paths
 for ss=1:length(subjCodes)
@@ -107,7 +101,6 @@ for ss=1:length(subjCodes)
     end
     runs = str2num(runs);
     runs_all{ss} = runs;
-        
     for ii=1:length(runs)
         subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/' prefix 'f' suffix];
         if ~isfile(subjDirFunc)
@@ -130,66 +123,66 @@ for ss=1:length(subjCodes)
         disp(realignment_filepath)
     end
 end
-
-% Print QC files (art_regression_timeseries_auf_topupApplied.mat)
-for ss=1:length(subjCodes)
-    subjCode = subjCodes{ss};
-    for ii=1:length(runs_all{ss})
-        QC_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/art_regression_timeseries_auf_topupApplied.mat'];
-        assert(isfile(QC_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' QC file not found'])
-        disp(QC_filepath)
-    end
-end
-
-% Print scrubbing files (art_regression_outliers_auf_topupApplied.mat)
-for ss=1:length(subjCodes)
-    subjCode = subjCodes{ss};
-    for ii=1:length(runs_all{ss})
-        scrub_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/art_regression_outliers_auf_topupApplied.mat'];
-        assert(isfile(scrub_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' scrubbing file not found'])
-        disp(scrub_filepath)
-    end
-end
+% 
+% % Print QC files (art_regression_timeseries_auf_topupApplied.mat)
+% for ss=1:length(subjCodes)
+%     subjCode = subjCodes{ss};
+%     for ii=1:length(runs_all{ss})
+%         QC_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/art_regression_timeseries_auf_topupApplied.mat'];
+%         assert(isfile(QC_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' QC file not found'])
+%         disp(QC_filepath)
+%     end
+% end
+% 
+% % Print scrubbing files (art_regression_outliers_auf_topupApplied.mat)
+% for ss=1:length(subjCodes)
+%     subjCode = subjCodes{ss};
+%     for ii=1:length(runs_all{ss})
+%         scrub_filepath = [func_path '/' subjCode '/' data_dir '/00' num2str(ii) '/art_regression_outliers_auf_topupApplied.mat'];
+%         assert(isfile(scrub_filepath), ['Subj ' subjCode ' run ' num2str(ii) ' scrubbing file not found'])
+%         disp(scrub_filepath)
+%     end
+% end
 
 % Print fieldmap paths
-for ss=1:length(subjCodes)
-    subjCode = subjCodes{ss};
-    subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
-    experiment_date = subjDf_cut.([experiment_name,'Date']){subjRow};
-    FMruns = subjDf_cut.([experiment_name, 'FM']){subjRow};
-
-    if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
-        FMruns = replace(FMruns, '/', ','); % still take all fieldmaps
-    end
-
-    FMruns = str2num(FMruns);
-    num_pairs = length(FMruns)/2;
-
-    if num_pairs ~= 1 % if there is more than 1 pair of fieldmaps, things get more complicated
-        if strcmp(subjCode, 'NS') % This subj has 1st run with 1st parir of FMs then next 3 runs with 2nd pair of FMs
-            subjDirFM1 = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
-            disp(subjDirFM1)
-            subjDirFM234 = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
-                num2str(FMruns(3)) num2str(FMruns(4)) '_fmapMag.nii.gz'];
-            disp(subjDirFM234)
-            disp(subjDirFM234)
-            disp(subjDirFM234)
-        else
-            error('More than 2 echo fieldmaps detected, should not happen')
-        end
-
-    else
-        for ii = 1:length(runs_all{ss}) % print a fieldmap filepath for every functional run
-            assert(isfile([func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz']), ['Subj ' subjCode ' runs ' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) ' Fieldmap file not found'])
-            subjDirFM = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
-                num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
-            disp(subjDirFM)
-        end
-    end
-
-
-
-end
+% for ss=1:length(subjCodes)
+%     subjCode = subjCodes{ss};
+%     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
+%     experiment_date = subjDf_cut.([experiment_name,'Date']){subjRow};
+%     FMruns = subjDf_cut.([experiment_name, 'FM']){subjRow};
+% 
+%     if contains(FMruns, '/') % different spacetime runs may have different fieldmaps
+%         FMruns = replace(FMruns, '/', ','); % still take all fieldmaps
+%     end
+% 
+%     FMruns = str2num(FMruns);
+%     num_pairs = length(FMruns)/2;
+% 
+%     if num_pairs ~= 1 % if there is more than 1 pair of fieldmaps, things get more complicated
+%         if strcmp(subjCode, 'NS') && ~resting_state && ~localizer % This subj has 1st run with 1st parir of FMs then next 3 runs with 2nd pair of FMs
+%             subjDirFM1 = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
+%                 num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
+%             disp(subjDirFM1)
+%             subjDirFM234 = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
+%                 num2str(FMruns(3)) num2str(FMruns(4)) '_fmapMag.nii.gz'];
+%             disp(subjDirFM234)
+%             disp(subjDirFM234)
+%             disp(subjDirFM234)
+%         else
+%             error('More than 2 echo fieldmaps detected, should not happen')
+%         end
+% 
+%     else
+%         for ii = 1:length(runs_all{ss}) % print a fieldmap filepath for every functional run
+%             assert(isfile([func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
+%                 num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz']), ['Subj ' subjCode ' runs ' ...
+%                 num2str(FMruns(1)) num2str(FMruns(2)) ' Fieldmap file not found'])
+%             subjDirFM = [func_path '/' subjCode '/bold/sub-' subjCode 'runs' ...
+%                 num2str(FMruns(1)) num2str(FMruns(2)) '_fmapMag.nii.gz'];
+%             disp(subjDirFM)
+%         end
+%     end
+% 
+% 
+% 
+% end

@@ -15,14 +15,15 @@ subjectsDir_trg = [projectDir, 'data/unpacked_data_nii/'];
 %% Loop over subjs
 for ss = 1:length(subjCodes)
     subjCode = subjCodes{ss};
-    subjDir = [subjectsDir_trg subjCode '/bold/'];
+    subjDir = [subjectsDir_trg subjCode '/localizer/'];
 
     dir_contents = {dir(subjDir).name};
     num_runs = sum(contains(dir_contents, '00'));
     for rr = 1:num_runs
         runDir = [subjDir '00' num2str(rr) '/'];
-        eventfile = [runDir '/spacetime_condition_timing.para'];
-        unix(['rm ' eventfile ]);
+        eventfile = [runDir '/f_events.tsv'];
+        eventfile_new = [runDir '/uf_topupApplied_events.tsv'];
+        unix(['cp ' eventfile ' ' eventfile_new]);
     end
 end
 

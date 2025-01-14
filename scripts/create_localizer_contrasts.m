@@ -22,8 +22,8 @@ N = length(subjCodes);
 fsaverage = true;
 
 data_dir = [projectDir 'data/unpacked_data_nii_fs_localizer/'];
-analysis_name_lh = 'localizer_contrasts_lh'; %%%%%%%%%%%%%%
-analysis_name_rh = 'localizer_contrasts_rh'; %%%%%%%%%%%%%%
+analysis_name_lh = 'localizer_contrasts_lh'; 
+analysis_name_rh = 'localizer_contrasts_rh';
 TR = 2;
 design_type = 'blocked';
 para_name = 'localizer_condition_timing.para';
@@ -34,10 +34,10 @@ else
 end
 funcstem_lh = ['fmcpr_tu.siemens.sm5.' space '.lh.nii.gz'];
 funcstem_rh = ['fmcpr_tu.siemens.sm5.' space '.rh.nii.gz'];
-rlf_name = 'localizer_contrasts_runlistfile.txt'; %%%%%%%%%%%%%%%%
+rlf_name = 'localizer_contrasts_runlistfile.txt'; 
 
-run_mkanalysis = true;
-run_mkcontrast = true;
+run_mkanalysis = false;
+run_mkcontrast = false;
 use_3way_contrasts = false; 
 
 if use_3way_contrasts == true

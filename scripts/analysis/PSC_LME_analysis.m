@@ -9,19 +9,21 @@ ccc;
 
 
 %% Set script variables
-localizer_data = true; % localizer data instead of spacetime data
-modalities_use = {'visual', 'auditory'}; % 'auditory' and/or 'visual' or 'v-a' for passive
-domains_use = {'active'}; % temporal and/or spatial, or passive | for localizer: active or passive
-% reference_category = 'domain';
+localizer_data = false; % localizer data instead of spacetime data
+use_probabilistic_ROIs = false;
+modalities_use = {'visual', 'auditory'}; % 'auditory' and/or 'visual' or 'v-a' 
+domains_use = {'spatial', 'temporal'}; % temporal and/or spatial, or passive | for localizer: active or passive
 use_ROItypes = false; % groups ROIs by their type (visual, auditory, MD)
 include_MD = true; %  include MD ROIs or not
 recruitment_variable = true; % add the recruitment variable to the table
 posterior_only = false; % use only posterior ROIs
-vis_aud_wm_2contrast = true; % create double contrast of visWM-visPassive - audWM-audPassive from PSCs
+vis_aud_wm_2contrast = false; % create double contrast of visWM-visPassive - audWM-audPassive from PSCs
+
+% reference_category = 'domain';
 
 %% Load and format data for LME table funciton
 [psc_results, perc_correct_all, hemis, modality_out, domain_out, ROIs, bad_subjs] = ...
-    format_psc_data(modalities_use, domains_use, use_ROItypes, include_MD, localizer_data);
+    format_psc_data(modalities_use, domains_use, use_ROItypes, include_MD, localizer_data, use_probabilistic_ROIs);
 
 make_categorical = false;
 LME_table = create_LME_table(psc_results, perc_correct_all, hemis, modality_out, domain_out, ROIs, make_categorical, bad_subjs);
@@ -35,7 +37,7 @@ end
 if posterior_only
     LME_table = LME_table(ismember(LME_table.ROItype, {'pAud','pVis'}),:);
 else
-    LME_table = LME_table(~ismember(LME_table.ROItype, {'pAud','pVis'}),:);
+    %LME_table = LME_table(~ismember(LME_table.ROItype, {'pAud','pVis'}),:);
 end
 
 if vis_aud_wm_2contrast
@@ -70,9 +72,9 @@ LME_table.ROItype = categorical(LME_table.ROItype);
 
 %% Run LME model
 % For passive model
- % lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
- %    ' + (1 + modality + ROItype | hemisphere)'])
-lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere)')
+% lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
+%    ' + (1 + modality + ROItype | hemisphere)'])
+%lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROItype | hemisphere)')
 
 % For modality model (combined auditory and visual model)
 % lme = fitglme(LME_table, ['PSC ~ 1 + modality * ROItype + (1 + modality + ROItype | subject) ' ...
@@ -84,8 +86,10 @@ lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROI
 
 
 % For full domain and modality model
-% lme = fitglme(LME_table, ['PSC ~ 1 + domain * ROItype * modality + (1 + domain + ROItype + modality | subject) ' ...
-%    ' + (1 + domain + ROItype + modality | hemisphere) + (1 + domain + ROItype + modality | perc_correct)'])
+tic
+lme = fitglme(LME_table, ['PSC ~ 1 + domain * ROItype * modality + (1 + domain + ROItype + modality | subject) ' ...
+   ' + (1 + domain + ROItype + modality | hemisphere) + (1 + domain + ROItype + modality | perc_correct)'])
+toc
 
 % recruitment model
 % LME_table_MD = LME_table(ismember(LME_table.ROItype,'MDROI'),:);
@@ -101,11 +105,11 @@ lme = fitglme(LME_table, 'PSC ~ 1 * ROItype + (1 + ROItype | subject) + (1 + ROI
 
 emm = emmeans(lme,'unbalanced');
 emm.table
-save('PSCs_localizer_active_v_a_noreplacements.mat', 'emm', 'lme');
+save('emm_lme_PSCs_norepl_modalitydomain.mat', 'emm', 'lme');
 %sortrows(emm.table,'Row','descend')
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
-plot_psc_emmeans(emm.table([10,7,8,11,4,1,2,5,3,9,6],:));
-title('Spacetime | Visual Temporal WM - Auditory Temporal WM');
+%plot_psc_emmeans(emm.table([10,7,8,11,4,1,2,5,3,9,6],:));
+%title('Spacetime | Visual Temporal WM - Auditory Temporal WM');
 
 
 

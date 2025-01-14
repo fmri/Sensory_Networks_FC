@@ -10,6 +10,8 @@ ccc;
 %% Set up subject info data
 experiment_name = 'spacetime';
 task = 'spacetime'; % localizer or spacetime
+tsv_fname = 'f_events_taskswitch_PST.tsv'; % f_events.tsv
+para_fname = 'taskswitch_spacetime_conditions_PST.para'; % [task '_condition_timing.para']
 projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 
 if strcmp(task, 'localizer')
@@ -27,7 +29,7 @@ end
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'SL'}));
+subjCodes = subjCodes(~ismember(subjCodes, {'RR'}));
 N = length(subjCodes);
 
 % Tom Localizer condition numbers:
@@ -75,7 +77,7 @@ for ss = 1:N
         runDir = [dataDir subjCode '/' fsd '/00' num2str(rr) '/'];
 
         % Load .tsv file
-        tsv = readtable([runDir 'f_events_doublecheck.tsv'], "FileType","text");
+        tsv = readtable([runDir tsv_fname], "FileType","text");
 
         % Convert to freesurfer para format
         mat = tsv{:,:}; % get rid of header row 
@@ -86,7 +88,7 @@ for ss = 1:N
         end
 
         % Save as .para
-        writematrix(para, [runDir task '_condition_timing_tom.para'], 'filetype','text', 'delimiter','\t')
+        writematrix(para, [runDir para_fname], 'filetype','text', 'delimiter','\t')
 
     end
 

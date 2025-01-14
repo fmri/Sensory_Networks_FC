@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% The purpose of this script is to make task contrasts out of the
+%%% The purpose of this script is to make task switching contrasts out of the
 %%% freesurfer preprocessed spacetime task data surfaces.
-%%% Tom Possidente - September 2024
+%%% Tom Possidente - January 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
@@ -16,14 +16,15 @@ projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'AH', 'SL'}));
+subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'SL'}));
+subjCodes = {'AH'}
 N = length(subjCodes);
 
 fsaverage = true;
 
 data_dir = [projectDir 'data/unpacked_data_nii/'];
-analysis_name_lh = 'spacetime_contrasts_lh_polyfit2hrf1';
-analysis_name_rh = 'spacetime_contrasts_rh_polyfit2hrf1';
+analysis_name_lh = 'spacetime_contrasts_lh_newcondfiles';
+analysis_name_rh = 'spacetime_contrasts_rh_newcondfiles';
 TR = 2;
 design_type = 'blocked';
 para_name = 'spacetime_condition_timing_tom.para';
@@ -67,25 +68,25 @@ nconditions = '10';
 % and derivatives)
 
 if run_mkanalysis
-    % unix(['mkanalysis-sess -a ' analysis_name_lh ' -funcstem ' funcstem_lh ...
-    %     ' -surface ' space ' lh -fsd bold -event-related -paradigm ' para_name ...
-    %     ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
-    %     ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
-    % 
-    % unix(['mkanalysis-sess -a ' analysis_name_rh ' -funcstem ' funcstem_rh ...
-    %     ' -surface ' space ' rh -fsd bold -event-related -paradigm ' para_name ...
-    %     ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
-    %     ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
-
     unix(['mkanalysis-sess -a ' analysis_name_lh ' -funcstem ' funcstem_lh ...
         ' -surface ' space ' lh -fsd bold -event-related -paradigm ' para_name ...
         ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
-        ' -polyfit 2 -spmhrf 1 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+        ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
 
     unix(['mkanalysis-sess -a ' analysis_name_rh ' -funcstem ' funcstem_rh ...
         ' -surface ' space ' rh -fsd bold -event-related -paradigm ' para_name ...
         ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
-        ' -polyfit 2 -spmhrf 1 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+        ' -polyfit 1 -spmhrf 0 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+
+    % unix(['mkanalysis-sess -a ' analysis_name_lh ' -funcstem ' funcstem_lh ...
+    %     ' -surface ' space ' lh -fsd bold -event-related -paradigm ' para_name ...
+    %     ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
+    %     ' -polyfit 2 -spmhrf 1 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
+    % 
+    % unix(['mkanalysis-sess -a ' analysis_name_rh ' -funcstem ' funcstem_rh ...
+    %     ' -surface ' space ' rh -fsd bold -event-related -paradigm ' para_name ...
+    %     ' -nconditions ' nconditions ' -refeventdur ' refeventdur ' -TR ' num2str(TR) ...
+    %     ' -polyfit 2 -spmhrf 1 -mcextreg -runlistfile ' rlf_name ' -per-run -force'])
 end
 
 

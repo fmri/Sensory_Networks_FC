@@ -17,13 +17,13 @@ ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'RR', 'PP', 'MM'})); % rejected subjs
+subjCodes = subjCodes(~ismember(subjCodes, {'RR'})); % rejected subjs
 N = length(subjCodes);
 
 %% Initialize variables
-data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
 t_thresh = 2;
-contrasts = {'f-vP', 'f-aP', 'f-tP' 'vA-vP', 'aA-aP', 'tA-tP'}; 
+contrasts = {'ts_visual-f', 'ts_auditory-f', 'ts_tactile-f', 'ts_visual-ts_audtact', 'ts_auditory-ts_vistact', 'ts_tactile-ts_visaud'}; 
 N_contrasts = length(contrasts);
 hemis = {'lh', 'rh'};
 N_hemis = length(hemis);
@@ -45,11 +45,8 @@ for cc = 1:N_contrasts
 
             cortex_label = lhrh_cortex_label{hh};
             hemi = hemis{hh};
-            tstat_path = [data_dir subjCode '/localizer/localizer_contrasts_' hemi '/' contrast '/t.nii.gz'];
+            tstat_path = [data_dir subjCode '/bold/taskswitch_VAT_spacetime_contrasts_' hemi '_polyfit2hrf1/' contrast '/t.nii.gz'];
             tstat_data = MRIread(tstat_path);
-            if ismember(contrasts{cc}, {'f-vP', 'f-aP', 'f-tP'})
-                tstat_data.vol = -tstat_data.vol; % reverse contrast for interpretability
-            end
             binarized_tstat_data = tstat_data.vol >= t_thresh;
             label_inds = find(binarized_tstat_data) - 1;
             label_rows = cortex_label(ismember(cortex_label.Var1, label_inds),:);
@@ -62,7 +59,7 @@ for cc = 1:N_contrasts
         prob_ROI_label{cc,hh} = unique_rows;
 
         % Save label files with different thresholds
-        for tt = 3:max(counts)-1
+        for tt = 3:11
             label_fname = [ROI_dir hemi '_' contrast '_cortex_probabilistic_thresh' num2str(tt) '.label'];
             label = unique_rows(counts>=tt,:);
             label_file = fopen(label_fname,'w');

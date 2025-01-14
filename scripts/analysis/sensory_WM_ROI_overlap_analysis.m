@@ -9,165 +9,96 @@
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
-%% Load in tstat data
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/probROI_sensory_WM_sigstats_localizer.mat', ...
-    'ROI_groupavg_tstats_MD', 'ROI_groupavg_tstats', 'RAS_coords_MD', 'RAS_coords', 'tstats_act', ...
-    'tstats_pass', 'tstats_pass_MD', 'tstats_act_MD', 'ROI_list', 'subjCodes', 'hemis', ...
-    'active_contrast_list', 'passive_contrast_list');
-% I saved these with the wrong variable names, so switch to correct names
-sigstats_WM = tstats_act;
-sigstats_sensory = tstats_pass;
-sigstats_WM_MD = tstats_act_MD;
-sigstats_sensory_MD = tstats_pass_MD;
+%% Load Subj Codes
+reject_subjs = {'RR', 'AH', 'SL', 'AI'};
+subjDf = load_subjInfo();
+subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
+subjCodes = subjDf_cut.subjCode;
+subjCodes = subjCodes(~ismember(subjCodes, reject_subjs));
 
-N_subjs = length(subjCodes);
-N_ROIs = length(ROI_list);
+%% Intialize Key Variables
+data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+t_thresh = 2;
+contrasts = {'f-vP', 'f-aP', 'f-tP' 'vA-vP', 'aA-aP', 'tA-tP'};
+contrast_sets = {[1,4], [2,5], [3,6], [1,2,3], [4,5,6], [1,2,3,4,5,6]};
+hemis = {'lh', 'rh'};
+N = length(subjCodes);
+N_contrasts = length(contrasts);
+N_contrastsets = length(contrast_sets);
+N_hemis = length(hemis);
+N_vertices = 163842;
 
-%% Initialize Variables
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
-overlap = nan(N_subjs, N_ROIs-3, 2, 3); % subjs x ROIs x hemis x [percent active, percent passive, percent overlap]
-overlap_MD = nan(N_subjs, N_ROIs-10, 2, 3, 2); % multiple demand ROIs will have 2 overlaps, one for auditory, one for visual
-sigthresh = 0.05;
+intersect_probs = zeros(N_vertices, N_hemis, N_contrastsets);
+N_exclusives = sum(cell2mat(cellfun(@(x) length(x), contrast_sets, 'UniformOutput', false))); % each contrast in each contrast set will have an exclusive map
+exclusion_probs = zeros(N_vertices, N_hemis, N_exclusives); 
 
-%% Loop through subjs and find overlap % of significant WM and sensory regions within ROI
-% %-log10(p)
-count = 0;
-bad_count = 0;
+lh_cortex_label = readtable([ROI_dir 'lh_inflated_wholecortex.label'], 'FileType','text');
+rh_cortex_label = readtable([ROI_dir 'rh_inflated_wholecortex.label'], 'FileType','text');
+lhrh_cortex_label = {lh_cortex_label, rh_cortex_label};
 
-for rr = 1:N_ROIs
-    for hh = 1:2
+%% Loop through subjs
+    
+for ss = 1:N
+    subjCode = subjCodes{ss};
+    for hh = 1:N_hemis
+        hemi = hemis{hh};
+        contrast_data = nan(N_vertices, N_contrasts);
 
-        if rr<=10
-            ROI_RAS_coords = RAS_coords{rr,hh};
-            N_subjs_ROI = size(sigstats_sensory{rr,hh},2);
-        else
-            ROI_RAS_coords = RAS_coords_MD{rr-10,hh};
-            N_subjs_ROI = size(sigstats_sensory_MD{rr-10,hh},2);
-        end
-
-        for ss = 1:N_subjs_ROI
-            ROI_code = [subjCodes{ss} '_' ROI_list{rr} '_' hemis{hh}];
-            if ismember(ROI_code, replacement_ROIs) || ismember(ROI_code, missing_ROIs)
-                continue;
+        % collect all contrasts tstat>thresh data
+        for cc = 1:N_contrasts
+            contrast = contrasts{cc};
+            tstat_path = [data_dir subjCode '/localizer/localizer_contrasts_' hemi '/' contrast '/t.nii.gz'];
+            if ~isfile(tstat_path)
+                disp([subjCode ' ' hemi ' ' contrast ' tstat file does not exist, skipping...' ]);
+                continue
             end
-            if rr<=10
-                count = count + 1;
-                sensory_sig = sigstats_sensory{rr,hh}(:,ss) > -log10(sigthresh);
-                WM_sig = sigstats_WM{rr,hh}(:,ss) > -log10(sigthresh);
-                total_sig = sum(sensory_sig) + sum(WM_sig);
-
-                if sum(sensory_sig)==0
-                    bad_count = bad_count + 1;
-                    disp(['subj ' num2str(ss) ' ' ROI_list{rr} ' ' hemis{hh} ' has no significant sensory vertices' ])
-                    continue
-                end
-
-                if sum(WM_sig)==0
-                    bad_count = bad_count + 1;
-                    disp(['subj ' num2str(ss) ' ' ROI_list{rr} ' ' hemis{hh} ' has no significant WM vertices' ])
-                    continue
-                end
-
-                overlap(ss,rr,hh,1) = sum(sensory_sig)*2 / total_sig;
-                overlap(ss,rr,hh,2) = sum(sensory_sig & WM_sig)*2 / total_sig;
-                overlap(ss,rr,hh,3) = sum(WM_sig)*2 / total_sig;
-            else
-                % Visual
-                count = count + 1;
-                sensory_sig = sigstats_sensory_MD{rr-10 ,hh, 1}(:,ss) > -log10(sigthresh);
-                WM_sig = sigstats_WM_MD{rr-10,hh, 1}(:,ss) > -log10(sigthresh);
-                total_sig = sum(sensory_sig) + sum(WM_sig);
-
-                if sum(sensory_sig)==0
-                    bad_count = bad_count + 1;
-                    disp(['subj ' num2str(ss) ' ' ROI_list{rr} ' ' hemis{hh} ' has no significant sensory vertices' ])
-                    continue
-                end
-
-                if sum(WM_sig)==0
-                    bad_count = bad_count + 1;
-                    disp(['subj ' num2str(ss) ' ' ROI_list{rr} ' ' hemis{hh} ' has no significant WM vertices' ])
-                    continue
-                end
-
-                overlap_MD(ss,rr-10,hh,1,1) = sum(sensory_sig)*2 / total_sig;
-                overlap_MD(ss,rr-10,hh,2,1) = sum(sensory_sig & WM_sig)*2 / total_sig;
-                overlap_MD(ss,rr-10,hh,3,1) = sum(WM_sig)*2 / total_sig;
-
-                % Auditory
-                count = count + 1;
-                sensory_sig = sigstats_sensory_MD{rr-10 ,hh, 2}(:,ss) > -log10(sigthresh);
-                WM_sig = sigstats_WM_MD{rr-10,hh, 2}(:,ss) > -log10(sigthresh);
-                total_sig = sum(sensory_sig) + sum(WM_sig);
-
-                if sum(sensory_sig)==0
-                    bad_count = bad_count + 1;
-                    disp(['subj ' num2str(ss) ' ' ROI_list{rr} ' ' hemis{hh} ' has no significant sensory vertices' ])
-                    continue
-                end
-
-                if sum(WM_sig)==0
-                    bad_count = bad_count + 1;
-                    disp(['subj ' num2str(ss) ' ' ROI_list{rr} ' ' hemis{hh} ' has no significant WM vertices' ])
-                    continue
-                end
-
-                overlap_MD(ss,rr-10,hh,1,2) = sum(sensory_sig)*2 / total_sig;
-                overlap_MD(ss,rr-10,hh,2,2) = sum(sensory_sig & WM_sig)*2 / total_sig;
-                overlap_MD(ss,rr-10,hh,3,2) = sum(WM_sig)*2 / total_sig;
-
+            tstat_data = MRIread(tstat_path);
+            if ismember(contrasts{cc}, {'f-vP', 'f-aP', 'f-tP'})
+                tstat_data.vol = -tstat_data.vol; % reverse contrast for interpretability
             end
-
+            contrast_data(:,cc) = tstat_data.vol >= t_thresh;
         end
-    end
-end
-
-
-%% Plot
-
-for rr = 1:N_ROIs
-
-    if rr<=10
-        sensory_perc = overlap(:,rr,:,1);
-        overlap_perc = overlap(:,rr,:,2);
-        WM_perc = overlap(:,rr,:,3);
         
-        disp([ROI_list{rr} ' DICE: ' num2str(mean(overlap_perc(:),1,'omitnan'))] );
+        % Loop through contrast sets and get intersections/exclusions
+        for ff = 1:N_contrastsets
+            set = contrast_sets{ff};
+            if any( all(isnan(contrast_data(:,set)),1) ) % if any of the contrasts in this set do not exist, skip this contrast set
+                continue
+            end
+            intersect_probs(:,hh,ff) = intersect_probs(:,hh,ff) + ( sum(contrast_data(:,set),2)==length(set) );
+            exclusions = find_exclusive_regions(contrast_data(:,set));
+        end
 
-        figure;
-        histogram(overlap_perc(:),5);
-        title([ROI_list{rr} ' overlap']);
-        xlim([0,1]);
-
-    else
-        % Visual
-        sensory_perc = overlap_MD(:,rr-10,:,1,1);
-        overlap_perc = overlap_MD(:,rr-10,:,2,1);
-        WM_perc = overlap_MD(:,rr-10,:,3,1);
-
-        figure;
-        histogram(overlap_perc(:),5);
-        title([ROI_list{rr} ' visual overlap']);
-        xlim([0,1]);
-
-        disp([ROI_list{rr} ' visual DICE: ' num2str(mean(overlap_perc(:),1,'omitnan'))] );
-
-        % Auditory
-        sensory_perc = overlap_MD(:,rr-10,:,1,2);
-        overlap_perc = overlap_MD(:,rr-10,:,2,2);
-        WM_perc = overlap_MD(:,rr-10,:,3,2);
-
-        figure;
-        histogram(overlap_perc(:),5);
-        title([ROI_list{rr} ' auditory overlap']);
-        xlim([0,1]);
-
-        disp([ROI_list{rr} ' auditory DICE: ' num2str(mean(overlap_perc(:),1,'omitnan'))] );
+        % cortex_label = lhrh_cortex_label{hh};
+        % label_inds = find(binarized_tstat_data) - 1;
+        % label_rows = cortex_label(ismember(cortex_label.Var1, label_inds),:);
+        % nrows = size(all_subj_labels, 1);
+        % all_subj_labels(nrows+1:nrows+size(label_rows,1),:) = table2array(label_rows);
 
     end
-
 end
+
+
+
+% [unique_rows,~,ind] = unique(all_subj_labels,'rows');
+% counts = histc(ind,unique(ind)); % count occurences of each vertex
+% unique_rows(:,5) = counts;
+% prob_ROI_label{cc,hh} = unique_rows;
+% 
+% % Save label files with different thresholds
+% for tt = 3:max(counts)-1
+%     label_fname = [ROI_dir hemi '_' contrast '_cortex_probabilistic_thresh' num2str(tt) '.label'];
+%     label = unique_rows(counts>=tt,:);
+%     label_file = fopen(label_fname,'w');
+%     fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label,1)) '\n']);
+%     writematrix(label, label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+%     fclose(label_file);
+% end
+
+
+
+
 
 
 
