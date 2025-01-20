@@ -10,8 +10,8 @@ ccc;
 
 %% Setup analysis parameters
 use_data = 'localizer'; % 'rest', 'localizer', or 'spacetime'
-hierarchical_clustering = false;
-plot_individual_connmats = false;
+hierarchical_clustering = true;
+plot_individual_connmats = true;
 save_out = false;
 bootstrap_hca = true;
 bootstrap_iters = 10000;
@@ -26,13 +26,13 @@ switch use_data
     case 'localizer'
         ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/preprocessing/';
         subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
-        conditions = {'1', '2', '3', '4', '5', '6', '7'}; % corresponds to: {'f', 'aP', 'tP', 'vP', 'aA', 'tA', 'vA'};
+        conditions = {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'}; %Note this is a different order than the conditions in the tsv or para files, this is because Conn saves the conditions in a particular order (which is different from the order you in the condition files for some reason)
         ROI_str = 'ROIs'; % "ROI_mod" for pVis without DO, "ROI" for pVis with DO
         reject_conditions = {{},{},{},{},{},{},{}};
     case 'spacetime'
         ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/preprocessing/';
         subjCodes = {'MM'	'PP' 'MK' 'AB' 'AD'	'LA' 'AE' 'TP' 'NM'	'AF' 'AG' 'GG' 'UV'	'PQ' 'KQ' 'LN' 'RT'	'PT' 'PL' 'NS'};
-        conditions = {'f' , 'aP', 'tP', 'vP', 'aS', 'tS', 'vS', 'aT', 'tT', 'vT'};
+        conditions = {'f' , 'aP', 'tP', 'vP', 'aS', 'tS', 'vS', 'aT', 'tT', 'vT'}; % I don't think this is the correct order of conditions - conn saves the order weird so double check
         ROI_str = 'ROIs';
         reject_conditions = {{}, {}, {}, {}, {'LN', 'GG', 'TP'}, {}, {}, {'RT', 'LA'}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
 end
@@ -209,8 +209,8 @@ end
 switch use_data
     case 'localizer'
         %ztrans_connmat_group = atanh(connmat_group_nandiag);% fisher z-transoform the rs
-        diffs1 = [7,4, 7,5,  4,2];
-        diffs2 = [5,2, 4,2 , 1,1];
+        diffs1 = [6,4, 6, 3,1];
+        diffs2 = [3,1, 4, 7,7];   % {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'};
         for cc = 1:length(diffs1)
             figure;
             diff = connmat_group_nandiag(:,:,diffs1(cc))-connmat_group_nandiag(:,:,diffs2(cc));

@@ -20,8 +20,24 @@ subjCodes = subjCodes(~ismember(subjCodes, reject_subjs));
 data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
 ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 t_thresh = 2;
+subj_thresh = 5; % threshold for number of subjs to make probabilistic ROI
 contrasts = {'f-vP', 'f-aP', 'f-tP' 'vA-vP', 'aA-aP', 'tA-tP'};
 contrast_sets = {[1,4], [2,5], [3,6], [1,2,3], [4,5,6], [1,2,3,4,5,6]};
+
+% Create label filenames for each contrast set intersection and exclusive
+count = 1;
+for cc = 1:length(contrast_sets)
+    name_suffix = cell2mat(cellfun(@(x) [x '+'], contrasts(contrast_sets{cc}), 'UniformOutput', false));
+    intersect_names{cc} = ['intersect_' name_suffix(1:end-1)];
+    for ee = 1:length(contrast_sets{cc})
+        contrast_set_curr = contrast_sets{cc};
+        all_except_current = contrasts(contrast_set_curr(contrast_set_curr ~= contrast_set_curr(ee)));
+        name_suffix = cell2mat(cellfun(@(x) ['_exclude_' x], all_except_current, 'UniformOutput', false))
+        exclusive_names{count} = [contrasts{contrast_set_curr(ee)} name_suffix];
+        count = count + 1;
+    end
+end
+
 hemis = {'lh', 'rh'};
 N = length(subjCodes);
 N_contrasts = length(contrasts);
@@ -61,40 +77,59 @@ for ss = 1:N
         end
         
         % Loop through contrast sets and get intersections/exclusions
+        count = 1;
         for ff = 1:N_contrastsets
             set = contrast_sets{ff};
             if any( all(isnan(contrast_data(:,set)),1) ) % if any of the contrasts in this set do not exist, skip this contrast set
+                count = count + length(set);
                 continue
             end
             intersect_probs(:,hh,ff) = intersect_probs(:,hh,ff) + ( sum(contrast_data(:,set),2)==length(set) );
-            exclusions = find_exclusive_regions(contrast_data(:,set));
-        end
+            set_inds = count:count+length(set)-1;
+            exclusion_probs(:,hh,set_inds) = squeeze(exclusion_probs(:,hh,set_inds)) + find_exclusive_regions(contrast_data(:,set));
+            count = count + length(set);
+        end 
 
-        % cortex_label = lhrh_cortex_label{hh};
-        % label_inds = find(binarized_tstat_data) - 1;
-        % label_rows = cortex_label(ismember(cortex_label.Var1, label_inds),:);
-        % nrows = size(all_subj_labels, 1);
-        % all_subj_labels(nrows+1:nrows+size(label_rows,1),:) = table2array(label_rows);
+
 
     end
 end
 
+% Loop through sets and make probabilistic ROIs
+for ff = 1:N_contrastsets
+    set = contrast_sets{ff};
+    set_inds = count:count+length(set)-1;
+    for hh = 1:N_hemis
 
+        % Make intersection label files
+        intersect_prob = intersect_probs(:,hh,ff);
+        cortex_label = lhrh_cortex_label{hh};
+        label_inds = find(intersect_prob >= subj_thresh) - 1; % subtract 1 to make inds line up with label inds
+        label = cortex_label(ismember(cortex_label.Var1, label_inds),:);
+        label{:,5} = intersect_prob(intersect_prob >= subj_thresh);
+        
+        label_fname = [ROI_dir hemis{hh} '_' intersect_names{ff} '_probabilistic_thresh' num2str(subj_thresh) '.label'];
+        label_file = fopen(label_fname,'w');
+        fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label,1)) '\n']);
+        writematrix(table2array(label), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+        fclose(label_file);
 
-% [unique_rows,~,ind] = unique(all_subj_labels,'rows');
-% counts = histc(ind,unique(ind)); % count occurences of each vertex
-% unique_rows(:,5) = counts;
-% prob_ROI_label{cc,hh} = unique_rows;
-% 
-% % Save label files with different thresholds
-% for tt = 3:max(counts)-1
-%     label_fname = [ROI_dir hemi '_' contrast '_cortex_probabilistic_thresh' num2str(tt) '.label'];
-%     label = unique_rows(counts>=tt,:);
-%     label_file = fopen(label_fname,'w');
-%     fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label,1)) '\n']);
-%     writematrix(label, label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
-%     fclose(label_file);
-% end
+        % Make exclusion label files
+        for ee = 1:length(exclusive_names)
+            exclusion_prob = exclusion_probs(:,hh,ee);
+            label_inds = find(exclusion_prob >= subj_thresh) - 1; % subtract 1 to make inds line up with label inds
+            label = cortex_label(ismember(cortex_label.Var1, label_inds),:);
+            label{:,5} = exclusion_prob(exclusion_prob >= subj_thresh);
+            
+            label_fname = [ROI_dir hemis{hh} '_' exclusive_names{ee} '_probabilistic_thresh' num2str(subj_thresh) '.label'];
+            label_file = fopen(label_fname,'w');
+            fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label,1)) '\n']);
+            writematrix(table2array(label), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+            fclose(label_file);
+        end
+
+    end
+end
 
 
 
