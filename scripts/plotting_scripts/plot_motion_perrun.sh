@@ -8,5 +8,5 @@ cd /projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii
 
 for ss in ${subjIDs[@]}
 do
-	plot-twf-sess -mc -s $ss -d ./ -fsd bold
+	plot-twf-sess -mc -s $ss -d ./ -fsd rest
 done

@@ -6,7 +6,7 @@ function niifilename = conn_annot2nii_mod(varargin)
 %
 
 
-FORCEREDO=false; % forces creation of target file even if it already exists
+FORCEREDO=true; % forces creation of target file even if it already exists
 
 if nargin==1&&ischar(varargin{1}), roifiles=varargin;
 elseif nargin==1&&iscell(varargin{1}), roifiles=varargin{1};

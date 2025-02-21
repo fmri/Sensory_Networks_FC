@@ -1,5 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% The purpose of this script is to
+% The purpose of this script is to perform non parametric permutation
+% testing on the LME models used to assess connectivity changes
 % Tom Possidente - October 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -7,49 +8,54 @@ addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'
 ccc;
 
 %%
-base_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/';
-load([base_dir 'MD_recruitment_PSC.mat'], 'emm', 'lme', 'LME_table_MD');
-N = length(unique(LME_table_MD.subject));
+base_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/LME_results/';
+load([base_dir 'gPPI_LME_results_localizer_vA-aA.mat'], 'emm', 'lme', 'data_table');
+N = length(unique(data_table.subject));
 
 %%
+connection_inds = [2:9 11 12 14 15];
 original_tstats = lme.Coefficients.tStat;
-tstat_recruitment = original_tstats(2);
+tstats_tested = original_tstats(connection_inds);
+tested_names = lme.Coefficients.Name(connection_inds);
 
-original_coef_names = lme.Coefficients.Name;
-iterations = 5000;
-
-null_dist_tstats = nan(iterations, 1);
+iterations = 1000;
+null_dist_tstats = nan(iterations, length(tstats_tested));
 
 tic;
-for ii = 1:iterations
+parfor ii = 1:iterations
     permuted_table = table();
 
-    % Shuffle recruitment labels for each subject
+    % Shuffle labels for each subject
     for ss = 1:N
-        subj_data = LME_table_MD(LME_table_MD.subject == categorical(ss),:);
+        subj_data = data_table(data_table.subject == categorical(ss),:);
         num_obs = height(subj_data);
         perm_inds = randperm(num_obs)';
-        subj_data.recruitment = subj_data.recruitment(perm_inds);
+        subj_data.connection_type = subj_data.connection_type(perm_inds);
         permuted_table = [permuted_table; subj_data];
     end
     try
-        perm_lme = fitglme(permuted_table, ['PSC ~ 1 + recruitment + (1 + recruitment | subject) ' ...
-            ' + (1 + recruitment | hemisphere) + (1 + recruitment| perc_correct)']);
-        null_dist_tstats(ii,:) = perm_lme.Coefficients.tStat(2);
+        tic
+        perm_lme = fitglme(permuted_table, ['beta_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
+            ' + (1 + connection_type | hemispheres)']);
+        toc
+        null_dist_tstats(ii,:) = perm_lme.Coefficients.tStat(connection_inds);
+        parsave(['null_dist_iter' num2str(ii) '.mat'], perm_lme.Coefficients.tStat(connection_inds));
     catch e
         disp(e)
         disp('error in LME')
+        parsave(['error_' num2str(ii) 'mat'],e);
     end
+    disp(['Iteration ' num2str(ii) ' finished']);
+
 end
 
 toc
+save('LME_permutation_nulldist_vA_aA.mat', "null_dist_tstats");
 
-null_dist_tstats_max_pos = max(null_dist_tstats,[],2);
-%null_dist_tstats_max_neg = min(null_dist_tstats,[],2);
-%null_dist_tstats_max_abs = max(abs(null_dist_tstats),[],2);
 
-pval_ROItype = (sum(tstat_recruitment < null_dist_tstats_max_pos)+1) / iterations
+null_dist_tstats_max_abs = max(abs(null_dist_tstats),[],2);
 
+pvals = (sum(tstats_tested < null_dist_tstats_max_pos)+1) / iterations;
 
 
 

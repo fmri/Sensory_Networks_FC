@@ -130,8 +130,6 @@ for rr = 1:length(ROIs)
 end
 
 %% Plot localizer and spacetime 4pt spider plots 
-ROI_inds_loc = ~ismember(ROIs, {'pAud', 'pVis'});
-ROIs_loc = ROIs(ROI_inds_loc);
 
 spiderplot_data_loc = [visual_drive_loc, visual_active_loc, auditory_drive_loc, auditory_active_loc];
 spiderplot_spatial = [visual_drive, visual_spatial, auditory_drive, auditory_spatial];
@@ -139,7 +137,7 @@ spiderplot_temporal = [visual_drive, visual_temporal, auditory_drive, auditory_t
 % spacetime_maxes = max(cat(2, spiderplot_temporal(ROI_inds_loc,:), spiderplot_spatial(ROI_inds_loc,:)),[],2); % normalize spatial and temporal task PSCs together 
 % spiderplot_data_all = cat(3, spiderplot_data_loc./max(spiderplot_data_loc,[],2), spiderplot_spatial(ROI_inds_loc,:)./spacetime_maxes, ...
 %                        spiderplot_temporal(ROI_inds_loc,:)./spacetime_maxes);
-spiderplot_data_all = cat(3, spiderplot_data_loc, spiderplot_spatial(ROI_inds_loc,:), spiderplot_temporal(ROI_inds_loc,:));
+spiderplot_data_all = cat(3, spiderplot_data_loc, spiderplot_spatial, spiderplot_temporal);
 spiderplot_data_all = spiderplot_data_all./max(spiderplot_data_all,[],[2,3]);
 
 spiderplot_data_all(spiderplot_data_all<0) = 0;
@@ -159,4 +157,22 @@ for rr = 1:length(ROIs_loc)
     s.LegendLabels = {'Localizer', 'Spatial', 'Temporal'};
 end
 
+%% Plot localizer spider plots only
+
+spiderplot_data_loc = [visual_drive_loc, visual_active_loc, auditory_drive_loc, auditory_active_loc];
+spiderplot_data_loc = spiderplot_data_loc./max(spiderplot_data_loc,[],2);
+spiderplot_data_loc(spiderplot_data_loc<0) = 0;
+minmax = [0,1];
+ax_lims = [repelem(minmax(1),4); repelem(minmax(2),4)];
+colors = [0 0.4470 0.7410; 0.8500 0.3250 0.0980; 0.4940 0.1840 0.5560];
+colors = colors([2,2,3,2,2,3,1,1,2,1,3,1,2],:);
+for rr = 1:length(ROIs)
+    figure;
+    s = spider_plot_class(spiderplot_data_loc(rr,:), 'axeslimits', ax_lims, 'axesshadedlimits', {ax_lims});
+    s.AxesLabels = {'visual drive', 'visual active', 'auditory drive', 'auditory active'};
+    s.FillOption = {'on'};
+    s.LegendVisible = {'off'};
+    s.Color = colors(rr,:);
+    title(ROIs{rr});
+end
 

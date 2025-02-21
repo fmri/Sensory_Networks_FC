@@ -18,12 +18,11 @@ path_topup_fmparams = '/projectnb/somerslab/tom/projects/spacetime_network/data/
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes,{'RR', 'AH', 'SL'}));
-subjCodes = {'AH', 'SL'};
+subjCodes = subjCodes(~ismember(subjCodes,{'RR', 'AH'}));
 
 N = length(subjCodes);
 
-task = 'spacetime'; % localizer, spacetime, or rest
+task = 'rest'; % localizer, spacetime, or rest
 
 switch task
     case 'spacetime'
@@ -51,7 +50,7 @@ end
 
 %% Loop through subjs
 smooth = 3; %mm
-for ss = 1:N
+parfor ss = 1:N
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     unix(['echo "' subjCode '" > ' data_dir subjCode '/subjectname']); % create subjectname txt file for fs
@@ -102,7 +101,7 @@ for ss = 1:N
                 topup_path = [data_dir subjCode '/bold/sub-' subjCode 'runs' num2str(FMruns(1)) num2str(FMruns(2)) '_fmapTopupOut'];
             end
 
-            
+
 
             % Apply topup to funcitonal scans
             path_func = [data_dir subjCode '/' fsd '/00' num2str(ff) '/fmcpr.nii.gz'];

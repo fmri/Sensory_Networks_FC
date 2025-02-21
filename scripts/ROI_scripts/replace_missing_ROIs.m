@@ -88,10 +88,12 @@ for ss = 1:N % loop subjs
             
             new_ROI = table2array(prob_ROI(ismember(prob_ROI.Var1, top_100_tbl.vertex_ind),:));
             new_ROI_label_fpath = [ROI_dir subjCode '_' ROI '_replacement.label'];
-            label_file = fopen(new_ROI_label_fpath,'w');
-            fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(new_ROI,1)) '\n']);
-            writematrix(new_ROI, new_ROI_label_fpath, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
-            fclose(label_file);
+            if ~isfile(new_ROI_label_fpath)
+                label_file = fopen(new_ROI_label_fpath,'w');
+                fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(new_ROI,1)) '\n']);
+                writematrix(new_ROI, new_ROI_label_fpath, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+                fclose(label_file);
+            end
 
         end
     end

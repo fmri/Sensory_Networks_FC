@@ -11,9 +11,10 @@ addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
-func_topupapplied = true; % give paths for functionals with fmaps already applied 
-resting_state = false;
-localizer = true;
+supramodal_ROIs = true; % give annot paths to supramodal ROI set instead of full vbias, abias, posterior, MD set
+func_topupapplied = true; % give paths for functionals with fmaps already applied
+resting_state = true;
+localizer = false;
 
 % Load in subject info
 subjDf = load_subjInfo();
@@ -21,12 +22,12 @@ if resting_state
     data_dir = 'rest';
     experiment_name = 'rest';
     subjInds = ~strcmp(subjDf.([experiment_name,'Runs']),'');
-    reject_subjs = {'MM', 'PP'};
+    reject_subjs = {'RR','AH','PQ','RT','SL','MM'}; % PQ no subthreshold motion runs, RT no rs runs at all
 elseif localizer
     data_dir = 'localizer';
     experiment_name = 'x1WayLocalizer';
     subjInds = ~( strcmp(subjDf.([experiment_name,'Runs']),'') & strcmp(subjDf.('x3WayLocalizerRuns'),'') );
-    reject_subjs = {'RR', 'AH', 'SL'};
+    reject_subjs = {'RR', 'AH', 'SL', 'AI'};
 else
     data_dir = 'bold';
     experiment_name = 'spacetime';
@@ -44,8 +45,11 @@ func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_d
 % Print ROI annot paths for ROI selection
 not_found = zeros(length(subjCodes),1);
 for ss=1:length(subjCodes)
-    
-    subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs.annot'];
+    if supramodal_ROIs
+        subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_avsm_ROIs.annot'];
+    else
+        subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs.annot'];
+    end
     if ~isfile(subjROIpath)
         not_found(ss) = 1;
     else
@@ -56,10 +60,12 @@ disp(['No ROIs: ' string(subjCodes(logical(not_found)))' ])
 
 % print ROI path
 for ss=1:length(subjCodes)
-    
-    subjROIpath = [ROI_path subjCodes{ss} '_ROIs.surf.nii'];
+    if supramodal_ROIs
+        subjROIpath = [ROI_path subjCodes{ss} '_avsm_ROIs.surf.nii'];
+    else
+        subjROIpath = [ROI_path subjCodes{ss} '_ROIs.surf.nii'];
+    end
     disp(subjROIpath)
-
 end
 
 % for ss=1:length(subjCodes)
