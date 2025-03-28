@@ -1,4 +1,4 @@
-# spacetime_network
+# Sensory Networks Functional Connectivity
 Tom Possidente 
 tposside@bu.edu
 Somers Lab - BU
