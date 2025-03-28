@@ -17,6 +17,7 @@ subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes, reject_subjs));
 n_subj = length(subjCodes);
+badlist = {};
 
 %% Set key variables
 ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
@@ -26,7 +27,7 @@ hemis = {'lh', 'rh'};
 t_thresh = 2;
 t_thresh_2 = 2;
 
-supramodal_ROIs = {'sPCS', 'iPCS', 'midFSG', 'aINS', 'preSMA', 'dACC', 'aIPS', 'pIPS'};
+supramodal_ROIs = {'sPCS', 'iPCS', 'midFSG', 'aINS', 'preSMA', 'dACC'} %'aIPS', 'pIPS'};
 n_ROIs = length(supramodal_ROIs);
 
 probROI_data = cell(n_ROIs, 2);
@@ -41,6 +42,7 @@ end
 
 %% Loop through subjs and create ROIs
 num_imperfect_ROIs = 0;
+num_0_ROIs = 0;
 num_bad_ROIs = 0;
 lengths = nan(n_subj, n_ROIs, 2);
 for ss = 1:n_subj
@@ -61,7 +63,11 @@ for ss = 1:n_subj
             intersection_verts = (vA_vP_inROI > t_thresh) & (vA_vP_inROI > t_thresh) & (abs(V_A_inROI) < t_thresh_2);
 
             if sum(sum(intersection_verts)<100)
+                if sum(intersection_verts)==0
+                    num_0_ROIs = num_0_ROIs + 1;
+                end
                 num_imperfect_ROIs = num_imperfect_ROIs + 1;
+                badlist{end+1} = [subjCodes{ss} '_sm_' supramodal_ROIs{rr} '_' hemis{hh}];
                 thresh_alt = t_thresh;
                 thresh_alt_2 = t_thresh_2;
                 while sum(intersection_verts)<100
@@ -73,12 +79,10 @@ for ss = 1:n_subj
                     intersection_verts = (vA_vP_inROI > thresh_alt) & (vA_vP_inROI > thresh_alt) & (abs(V_A_inROI) < thresh_alt_2);
                 end
                 disp([subjCodes{ss} ' ' hemis{hh} ' ' supramodal_ROIs{rr} ' needed a t=' num2str(thresh_alt) ', t2= ' num2str(thresh_alt_2) ' threshold to produce a 100 vertex ROI'])
-                if any(vA_vP_inROI(intersection_verts)<0) | any(vA_vP_inROI(intersection_verts)<0) | any(abs(V_A_inROI(intersection_verts)) > 4)
+                if any(vA_vP_inROI(intersection_verts)<0) | any(vA_vP_inROI(intersection_verts)<0)
                     num_bad_ROIs = num_bad_ROIs + 1;
                     disp([num2str(sum(vA_vP_inROI(intersection_verts)<0)) ' vA-vP vertices have a t-stat below 0']);
                     disp([num2str(sum(aA_aP_inROI(intersection_verts)<0)) ' aA-aP vertices have a t-stat below 0']);
-                    disp([num2str(sum( abs(V_A_inROI(intersection_verts))>4)) ' |V-A| vertices have a t-stat above 4']);
-
                 end
             end
 
@@ -86,11 +90,11 @@ for ss = 1:n_subj
             label_table = probROI(intersection_verts_inds,:);
             
             % Make label file
-            label_fname = [ROI_dir subjCodes{ss} '_' hemis{hh} '_sm_' supramodal_ROIs{rr} '2.label'];
-            label_file = fopen(label_fname,'w');
-            fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label_table,1)) '\n']);
-            writematrix(table2array(label_table), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
-            fclose(label_file);
+            % label_fname = [ROI_dir subjCodes{ss} '_' hemis{hh} '_sm_' supramodal_ROIs{rr} '2.label'];
+            % label_file = fopen(label_fname,'w');
+            % fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label_table,1)) '\n']);
+            % writematrix(table2array(label_table), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+            % fclose(label_file);
 
         end
 

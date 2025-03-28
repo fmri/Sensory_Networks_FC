@@ -9,7 +9,7 @@ addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
 %% Intialize which data we are using
-data_use = 'spacetime'; % Choices: 'spacetime' or 'localizer'
+data_use = 'localizer'; % Choices: 'spacetime' or 'localizer'
 use_replacement_ROIs = false; 
 use_probabilistic_ROIs = false; % if false, uses individualized ROIs
 disp(['Calculating PSCs for ' upper(data_use) ' data']);

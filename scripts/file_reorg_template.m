@@ -22,7 +22,7 @@ for ss = 1:length(subjCodes)
     for rr = 1:num_runs
         runDir = [subjDir '00' num2str(rr) '/'];
         eventfile = [runDir '/f_events.tsv'];
-        eventfile_new = [runDir '/uf_topupApplied_events.tsv'];
+        eventfile_new = [runDir '/sauf_topupApplied.surf_events.tsv'];
         unix(['cp ' eventfile ' ' eventfile_new]);
     end
 end

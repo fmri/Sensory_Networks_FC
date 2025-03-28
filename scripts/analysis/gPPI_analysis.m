@@ -7,17 +7,20 @@
 
 addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
 ccc;
+%% Load missing ROIs
+load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/spacetime_network/data/replacement_ROI_list.mat', 'replacement_ROIs');
 
 %% Setup analysis parameters
-supramodal_ROIs = false;
+ROI_set = 3; % 1 = original sensory biased + 3 MDs, 2 = posteriors + 6MDs, 3 = sensory biased + 6 MDs
 localizer = true;
 use_replacement_ROIs = true;
 plot_individual_betamaps = true;
 save_out = false;
 
 if localizer
-    reject_subjs = {'AH', 'SL', 'RR', 'AI'};
-    subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
+    reject_subjs = {'AH', 'SL', 'RR'};
+    subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
 else
     subjCodes = {'MM'	'PP' 'MK' 'AB' 'AD'	'LA' 'AE' 'TP' 'NM'	'AF' 'AG' 'GG' 'UV'	'PQ' 'KQ' 'LN' 'RT'	'PT' 'PL' 'NS'};
     reject_subjs = {'AH', 'SL', 'RR', 'AI'};
@@ -77,10 +80,19 @@ if ~localizer
     end
 else
     conditions = {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'}; % Note this is a different order than the conditions in the tsv or para files, this is because Conn saves the conditions in a particular order (which is different from the order you in the condition files for some reason)
-    if supramodal_ROIs
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/avsm_gPPI/';
-    else
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/gPPI_3sm/';
+    switch ROI_set
+        case 1
+            ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/sm_gPPI_21/';
+            nROIs = 13*2;
+            missing_ROIs = [missing_ROIs'; replacement_ROIs];
+        case 2
+            ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/gPPI_3sm_21/';
+            nROIs = 8*2;
+            missing_ROIs = []; 
+        case 3
+            ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/avsm_gPPI/';
+            nROIs = 16*2;
+            missing_ROIs = []; 
     end
     skip_subjs = reject_subjs;
     title_str = task;
@@ -90,24 +102,8 @@ else
     task2_perc_ind = nan;
 end
 
-
-
 Nsubjs = length(subjCodes);
-if supramodal_ROIs
-    nROIs = 16*2;
-else
-    nROIs = 13*2; % 13 ROIs per hemisphere
-end
 betas = nan(nROIs,nROIs,Nsubjs,2);
-
-%% Load missing ROIs
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
-if supramodal_ROIs
-    missing_ROIs = []; % no missing ROIs in supramodal ROIs
-else
-    missing_ROIs = [missing_ROIs'; replacement_ROIs];
-end
 
 %% Load gPPI betas
 load([ROI_dataDir 'resultsROI_Condition' sprintf('%03d', compare_conditions(1)) '.mat'], 'Z', 'names');
@@ -147,30 +143,55 @@ end
 %% Plot mean beta matrices
 mean_beta_diffs = mean(beta_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
-if supramodal_ROIs
-    desired_order = {'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)',...
-        'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)',...
-        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)',...
-        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', 'sPCS (R)', 'iPCS (R)', 'midIFS (R)',...
-        'pVis (L)', 'pAud (L)', 'pVis (R)', 'pAud (R)'};
-    ROI_str = 'sm_ROIs';
-    reject_str = {'sm_ROIs2', 'avsm_ROIs'};
-    ROI_str_mod = 5;
-else
-    desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
-        'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
-        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], ...
-        'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)'};
-    ROI_str_mod = 2;
-    reject_str = {'sm_ROIs2', 'avsm_ROIs'};
-    ROI_str = 'ROIs';
+switch ROI_set
+    case 1
+        desired_order = {'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)',...
+            'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)',...
+            'pVis (L)', 'pAud (L)', 'pVis (R)', 'pAud (R)'};
+        ROI_str = 'sm_ROIs';
+        reject_str = {'sm_ROIs2', 'avsm_ROIs'};
+        ROI_str_mod = 5;
+        vbias_ROIs = {'sPCS', 'iPCS', 'midIFS'};
+        abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO'};
+        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC'};
+        pVis_ROIs = {'pVis'};
+        pAud_ROIs = {'pAud'};
+    case 2
+        desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
+            'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
+            'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], ...
+            'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
+            'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)'};
+        ROI_str_mod = 2;
+        reject_str = {'sm_ROIs2', 'avsm_ROIs'};
+        ROI_str = 'ROIs';
+        vbias_ROIs = {};
+        abias_ROIs = {};
+        pVis_ROIs = {'pVis'};
+        pAud_ROIs = {'pAud'};
+        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
+    case 3
+        desired_order = {
+                'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
+                'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
+                'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
+                'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
+                'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+        ROI_str_mod = 5;
+        reject_str = {'sm_ROIs2'};
+        ROI_str = 'avsm_ROIs'; 
+        vbias_ROIs = {'sPCS', 'iPCS'};
+        abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
+        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
+        pVis_ROIs = {'pVis'};
+        pAud_ROIs = {};
 end
 
 for nn = 1:length(cond1_names)
     name_preclean = strsplit(cond1_names{nn},'.');
     names_clean{nn} = name_preclean{2};
 end
+
 [ROIs_match, reorder_inds] = ismember(desired_order, names_clean);
 names_plot = names_clean(reorder_inds);
 mean_beta_diffs = mean_beta_diffs(reorder_inds, reorder_inds);
@@ -179,11 +200,6 @@ figure;
 heatmap(names_plot, names_plot, mean_beta_diffs); colormap turbo; title(task);
 
 %% Build design matrix for LME
-vbias_ROIs = {'sPCS', 'iPCS', 'midIFS'};
-abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO'};
-mult_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC'};
-sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
-
 hemis = repelem({'lh', 'rh'},nROIs/2);
 
 data_table = table();
@@ -201,73 +217,45 @@ for ss = 1:Nsubjs
     for rr1 = 1:nROIs
         ROI1 = names{rr1};
         hemi1 = hemis{rr1};
-        if supramodal_ROIs
-            if ismember(ROI1, abias_ROIs)
-                ROI1_type = 'abias';
-            elseif ismember(ROI1, vbias_ROIs)
-                ROI1_type = 'vbias';
-            elseif ismember(ROI1, sm_ROIs)
-                ROI1_type = 'supramodal';
-            elseif strcmp(ROI1, 'pVis')
-                ROI1_type = 'pVis';
-            elseif strcmp(ROI1, 'pAud')
-                ROI1_type = 'pAud';
-            else
-                error('ROI type unknown');
-            end
+        ROI1 = names{rr1};
+        hemi1 = hemis{rr1};
+        if ismember(ROI1, abias_ROIs)
+            ROI1_type = 'abias';
+        elseif ismember(ROI1, vbias_ROIs)
+            ROI1_type = 'vbias';
+        elseif ismember(ROI1, sm_ROIs)
+            ROI1_type = 'supramodal';
+        elseif ismember(ROI1, pVis_ROIs)
+            ROI1_type = 'pVis';
+        elseif ismember(ROI1, pAud_ROIs)
+            ROI1_type = 'pAud';
         else
-            if ismember(ROI1, abias_ROIs)
-                ROI1_type = 'abias';
-            elseif ismember(ROI1, vbias_ROIs)
-                ROI1_type = 'vbias';
-            elseif ismember(ROI1, mult_ROIs)
-                ROI1_type = 'supramodal';
-            elseif strcmp(ROI1, 'pVis')
-                ROI1_type = 'pVis';
-            elseif strcmp(ROI1, 'pAud')
-                ROI1_type = 'pAud';
-            else
-                error('ROI type unknown');
-            end
+            error('ROI type unknown');
         end
         for rr2 = 1:nROIs
             if rr1 ~= rr2 % don't include same ROI to itself
                 ROI2 = names{rr2};
                 hemi2 = hemis{rr2};
-                if supramodal_ROIs
-                    if ismember(ROI2, abias_ROIs)
-                        ROI2_type = 'abias';
-                    elseif ismember(ROI2, vbias_ROIs)
-                        ROI2_type = 'vbias';
-                    elseif ismember(ROI2, sm_ROIs)
-                        ROI2_type = 'supramodal';
-                    elseif strcmp(ROI2, 'pVis')
-                        ROI2_type = 'pVis';
-                    elseif strcmp(ROI2, 'pAud')
-                        ROI2_type = 'pAud';
-                    else
-                        error('ROI type unknown');
-                    end
+                if ismember(ROI2, sm_ROIs)
+                    ROI2_type = 'supramodal';
+                elseif ismember(ROI2, abias_ROIs)
+                    ROI2_type = 'abias';
+                elseif ismember(ROI2, vbias_ROIs)
+                    ROI2_type = 'vbias';
+                elseif ismember(ROI2, pVis_ROIs)
+                    ROI2_type = 'pVis';
+                elseif ismember(ROI2, pAud_ROIs)
+                    ROI2_type = 'pAud';
                 else
-                    if ismember(ROI2, abias_ROIs)
-                        ROI2_type = 'abias';
-                    elseif ismember(ROI2, vbias_ROIs)
-                        ROI2_type = 'vbias';
-                    elseif ismember(ROI2, mult_ROIs)
-                        ROI2_type = 'supramodal';
-                    elseif strcmp(ROI2, 'pVis')
-                        ROI2_type = 'pVis';
-                    elseif strcmp(ROI2, 'pAud')
-                        ROI2_type = 'pAud';
-                    else
-                        error('ROI type unknown');
-                    end
+                    error('ROI type unknown');
                 end
+
                 ROItype_order = sort({ROI1_type, ROI2_type});
                 connection_type = [ROItype_order{1} '<->' ROItype_order{2}];
                 beta_diff1 = beta_diffs(rr1,rr2,ss);
                 beta_vis1 = betas(rr1,rr2,ss,1);
                 beta_aud1 = betas(rr1,rr2,ss,2);
+
                 if rr1 > rr2 % only count each occurance once
                     hemi12 = [hemi1 '_' hemi2];
                     beta_diff_mean = mean([beta_diff1, beta_diffs(rr2,rr1,ss)], 'omitnan'); % take mean of both a->b and b->a bc gPPI isn't directional and we should only use one value per connection
@@ -321,10 +309,10 @@ end
 
 % Set Axis properties
 set(gca,'xticklabel',connection_types(inds));
-ylim([-0.2 0.2])
+%ylim([-0.2 0.2])
 ylabel('Mean PPI beta')
 xlabel('Connection Type');
-grid on;
+%grid on;
 legend({'Visual WM', 'Auditory WM'});
 title('Change in connectivity during visual and auditory working memory')
 set(gca, 'FontSize', 18)
@@ -355,7 +343,7 @@ toc
 
 emm = emmeans(lme,'unbalanced');
 emm.table
-save(['gPPI_LME_results_localizer_' task '.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
+save(['gPPI_LME_results_localizer_' task 'avsm.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
 
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 title(title_str);

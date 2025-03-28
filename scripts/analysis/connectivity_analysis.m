@@ -11,9 +11,9 @@ ccc;
 %% Setup analysis parameters
 use_data = 'rest'; % 'rest', 'localizer', or 'spacetime'
 use_replacements = true; % whether to use or skip 15% replacement ROIs
-ROI_set = 1; % 1 or 2 
+ROI_set = 3; % 1 or 2 o 3
 hierarchical_clustering = true;
-plot_individual_connmats = true;
+plot_individual_connmats = false;
 save_out = false;
 bootstrap_hca = true;
 bootstrap_iters = 10000;
@@ -23,7 +23,6 @@ switch use_data
         ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/preprocessing/';
         subjCodes = {'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'KQ', 'LN', 'PT', 'PL', 'NS'};
         conditions = {'rest'};
-        ROI_str = 'ROIs'; % "ROI_mod" for pVis without DO, "ROIs" for pVis with DO
         reject_conditions = {{}};
     case 'localizer'
         ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/preprocessing/';
@@ -39,18 +38,10 @@ switch use_data
         reject_conditions = {{}, {}, {}, {}, {'LN', 'GG', 'TP'}, {}, {}, {'RT', 'LA'}, {}, {}}; % These subjs had below 55% accuracy on these tasks and should be rejected from analysis in those conditions
 end
 
-N = length(subjCodes);
-Ncond = length(conditions);
-ROI_data = cell(N,Ncond);
-pVis_name = 'pVis'; % pVis_mod for pVis wihout DO, pVis for pVis with DO
-first_ROI_check = [ROI_str '.CO (L)'];
-
 %% Setup ROIs
+pVis_name = 'pVis'; % pVis_mod for pVis wihout DO, pVis for pVis with DO
+
 if ROI_set == 1
-    aud_ROIs_use = {'tgPCS', 'cIFSG', 'FO', 'CO', 'cmSFG', 'pAud'};
-    vis_ROIs_use = {'sPCS', 'iPCS', 'midIFS', pVis_name};
-    mult_ROIs_use = {'aINS', 'preSMA', 'dACC'};
-    
     desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
         'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
         'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], ...
@@ -58,20 +49,34 @@ if ROI_set == 1
         'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)'};
     ROI_str_mod = 2;
     reject_str = {'sm_ROIs2', 'avsm_ROIs'};
+    ROI_str = 'ROIs'; 
+
 elseif ROI_set == 2
-    aud_ROIs_use = {'pAud'};
-    vis_ROIs_use = {pVis_name};
-    mult_ROIs_use = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midSFG'};
-    
     desired_order = {'pAud (L)', 'pAud (R)',...
         [pVis_name ' (L)'], [pVis_name ' (R)'], ...
         'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
         'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
     ROI_str_mod = 5;
     reject_str = {'sm_ROIs2', 'avsm_ROIs'};
+    ROI_str = 'ROIs'; %
+elseif ROI_set == 3
+    desired_order = {
+        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
+        'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
+        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
+        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
+        'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+    ROI_str_mod = 5;
+    reject_str = {'sm_ROIs2'};
+    ROI_str = 'avsm_ROIs'; 
 else
     error('ROI set beyond 1 or 2 have not been set up');
 end
+
+N = length(subjCodes);
+Ncond = length(conditions);
+ROI_data = cell(N,Ncond);
+first_ROI_check = [ROI_str '.CO (L)'];
 
 
 %% Get missing ROI data
@@ -188,19 +193,22 @@ connmat_group = (exp(2.*connmat_group_z) - 1) ./ (exp(2.*connmat_group_z) + 1); 
 %% Calculate hierarchical clustering
 if hierarchical_clustering
     for cc = 1:Ncond
-        distance_measure = 1-abs(connmat_group_z(:,:,cc));
+        distance_measure = 1-abs(connmat_group(:,:,cc));
         distance_measure(1:1+N_ROIs:end) = 0; % Make diagonal distance zero
         linkage_cluster = linkage(distance_measure, 'ward');
         inconsistency = inconsistent(linkage_cluster);
         [clusters, cluster_txt] = linkage_output_extract(linkage_cluster, names);
+
+        cluster_stats = HCA_optimal_cluster(clusters, distance_measure, names);
+        figure; plot(cluster_stats.Num_clusters, cluster_stats.within_cluster_sum);
+        grid on; xlabel('Number of Clusters'); ylabel('Within-Cluster Sum of Distance');
         if bootstrap_hca
             tic;
-            cluster_prob = HCA_bootstrap(connmats_z(:,:,:,cc), bootstrap_iters, clusters, cluster_txt, names, true);
+            cluster_prob = HCA_bootstrap(connmats(:,:,:,cc), bootstrap_iters, clusters, cluster_txt, names);
             toc;
         end
-
         figure;
-        [h,t,outperm] = dendrogram(linkage_cluster, 26,'Labels', replace(names, '_', ' '));
+        [h,t,outperm] = dendrogram(linkage_cluster, N_ROIs, 'Labels', replace(names, '_', ' '));
         title(['Hierarchical Clustering Condition ' conditions{cc}]);
         ylabel('Cluster Distance');
     end

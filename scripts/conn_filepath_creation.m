@@ -11,10 +11,10 @@ addpath('/projectnb/somerslab/tom/helper_functions/');
 addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
 ccc;
 
-supramodal_ROIs = true; % give annot paths to supramodal ROI set instead of full vbias, abias, posterior, MD set
+supramodal_ROIs = false; % give annot paths to supramodal ROI set instead of full vbias, abias, posterior, MD set
 func_topupapplied = true; % give paths for functionals with fmaps already applied
-resting_state = true;
-localizer = false;
+resting_state = false;
+localizer = true;
 
 % Load in subject info
 subjDf = load_subjInfo();
@@ -22,12 +22,12 @@ if resting_state
     data_dir = 'rest';
     experiment_name = 'rest';
     subjInds = ~strcmp(subjDf.([experiment_name,'Runs']),'');
-    reject_subjs = {'RR','AH','PQ','RT','SL','MM'}; % PQ no subthreshold motion runs, RT no rs runs at all
+    reject_subjs = {'MM','RR','AH','PQ','RT','SL'}; % MM rs in different dims, PQ no subthreshold motion runs, RR low activation, AH no ROIs due to no localizer runs w/o motion, RT no rs runs at all
 elseif localizer
     data_dir = 'localizer';
     experiment_name = 'x1WayLocalizer';
     subjInds = ~( strcmp(subjDf.([experiment_name,'Runs']),'') & strcmp(subjDf.('x3WayLocalizerRuns'),'') );
-    reject_subjs = {'RR', 'AH', 'SL', 'AI'};
+    reject_subjs = {'RR', 'AH', 'SL'};
 else
     data_dir = 'bold';
     experiment_name = 'spacetime';
@@ -46,7 +46,7 @@ func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_d
 not_found = zeros(length(subjCodes),1);
 for ss=1:length(subjCodes)
     if supramodal_ROIs
-        subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_avsm_ROIs.annot'];
+        subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_sm_ROIs.annot'];
     else
         subjROIpath = [ROI_path '/lh.' subjCodes{ss} '_ROIs.annot'];
     end
@@ -61,9 +61,9 @@ disp(['No ROIs: ' string(subjCodes(logical(not_found)))' ])
 % print ROI path
 for ss=1:length(subjCodes)
     if supramodal_ROIs
-        subjROIpath = [ROI_path subjCodes{ss} '_avsm_ROIs.surf.nii'];
+        subjROIpath = [ROI_path subjCodes{ss} '_smROIs.surf.nii'];
     else
-        subjROIpath = [ROI_path subjCodes{ss} '_ROIs.surf.nii'];
+        subjROIpath = [ROI_path subjCodes{ss} '_avsm_ROIs.surf.nii'];
     end
     disp(subjROIpath)
 end
@@ -129,6 +129,16 @@ for ss=1:length(subjCodes)
         disp(realignment_filepath)
     end
 end
+
+% Print number of runs per subj
+run_nums = nan(length(subjCodes), 1);
+for ss = 1:length(subjCodes)
+    disp(num2str(length(runs_all{ss})));
+    run_nums(ss) = length(runs_all{ss});
+end
+
+run_nums_tbl = table(subjCodes, run_nums);
+
 % 
 % % Print QC files (art_regression_timeseries_auf_topupApplied.mat)
 % for ss=1:length(subjCodes)

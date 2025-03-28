@@ -16,7 +16,7 @@ projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'MM'}));
+%subjCodes = subjCodes(~ismember(subjCodes, {'MM'}));
 
 subjectsDir_trg = [projectDir, 'data/unpacked_data_nii/'];
 fsd = 'rest';

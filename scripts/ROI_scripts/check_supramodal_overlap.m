@@ -12,8 +12,8 @@ ccc;
 ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
 subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'}; % first 20 are localizer analysis subjs, AI is in rs only
 N = length(subjCodes);
-av_biased_ROIs = {'sPCS', 'iPCS', 'midIFS', 'tgPCS', 'cIFSG', 'CO', 'FO'};
-supramodal_ROIs = {'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
+av_biased_ROIs = {'sPCS', 'iPCS', 'midIFS', 'tgPCS', 'cIFSG', 'CO', 'FO', 'cmSFG'};
+supramodal_ROIs = {'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'sm_dACC', 'sm_preSMA'};
 hemis = {'lh', 'rh'};
 overlaps = zeros([N, length(av_biased_ROIs), length(supramodal_ROIs), 2]);
 lower_100_count = 0;
@@ -28,7 +28,7 @@ for ss = 1:N
 
         % Load annotation files for both ROI sets for this subj
         [verts_ref, labels_orig, ctable_orig] = read_annotation([ROI_dir hemi '.' subjCode '_ROIs.annot']); 
-        [~        , labels_sm, ctable_sm] = read_annotation([ROI_dir hemi '.' subjCode '_smROIs2.annot']); 
+        [~        , labels_sm, ctable_sm] = read_annotation([ROI_dir hemi '.' subjCode '_smROIs.annot']); 
 
         for rb = 1:length(av_biased_ROIs)
             av_ROI = av_biased_ROIs{rb};
@@ -43,8 +43,9 @@ for ss = 1:N
                 overlap = sum(sm_ROI_mask & av_ROI_mask);
                 if overlap ~= 0
                     overlap_count = overlap_count + 1;
-                    disp([subjCode ' ' hemi ' ' av_ROI ' and ' sm_ROI ' overlap ' num2str(overlap) ' vertices']);
-                    if sum(sm_ROI_mask)-overlap < 100 && sum(av_ROI_mask)-overlap < 100
+                    %disp([subjCode ' ' hemi ' ' av_ROI ' and ' sm_ROI ' overlap ' num2str(overlap) ' vertices']);
+                    if sum(av_ROI_mask)-overlap < 100
+                        disp([subjCode ' ' hemi ' ' av_ROI ' and ' sm_ROI ' overlap ' num2str(overlap) ' vertices: new size of ' av_ROI ' ' num2str(sum(av_ROI_mask)-overlap)])
                         lower_100_count = lower_100_count + 1;
                     end
                 end

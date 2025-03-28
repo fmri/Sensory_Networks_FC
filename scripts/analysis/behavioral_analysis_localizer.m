@@ -16,6 +16,7 @@ taskname = 'x1WayLocalizer';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
+subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'SL', 'AH'}));
 n = length(subjCodes);
 
 %% Loop through subjs and get % correct
@@ -118,7 +119,7 @@ for ss = 1:n
 end
 
 %% Save out results
-perc_correct_all = array2table(perc_correct_all(:,[1,3,5]), 'VariableNames',condition_order([1,3,5]))
+perc_correct_all = array2table(perc_correct_all(:,[1,3]), 'VariableNames',condition_order([1,3]), 'RowNames',subjCodes)
 if save_out
     save('behavioral_percent_correct_data.mat', 'subjCodes', 'perc_correct_all', 'n_cond');
     writetable(perc_correct_all, 'behavioral_data.csv')
@@ -145,10 +146,10 @@ mean_corr = mean(corr_matrix(corr_matrix~=0),'all', 'omitnan'); % average correl
 
 % Looking at sphericity: assumption of equal variances in the differences
 % between measures
-measure_differences = nan(n, 6); % with 5 measures, there are 10 comparisons
+measure_differences = nan(n, 4); % with 2 measures, there are 4 comparisons
 count = 0;
-for ii = 1:3
-    for jj = 1:3
+for ii = 1:2
+    for jj = 1:2
         if (ii ~= jj) && (ii > jj)
             count = count + 1;
             measure_differences(:,count) = perc_correct_matrix(:,ii) - perc_correct_matrix(:,jj);
@@ -164,55 +165,46 @@ vars = var(measure_differences); % if these variances are similar, sphericity is
 % measures, within factors ANOVA with the following parameters:
 % alpha: 0.05
 % power = 0.8
-% total sample size = 24
+% total sample size = 21
 % number of groups = 1
 % number of measurements = 3
 % corr among repeated measures = 0.4286
 % nonspereicity correction (epsilon) = 0.8
-% The result is an effect size detectable of f = 0.30997 which is
-% approximately a cohen's d of 0.620 (medium-large effect size)
+% The result is an effect size detectable of f = 0.386 which is
+% approximately a cohen's d of 0.772 (medium-large effect size)
 
 % To translate a cohens d of 0.620 into a raw mean difference we can use the
 % fact that cohens d = difference in means / pooled SD
 pooled_SD = sqrt(mean(sqrt(var(perc_correct_matrix))));
-diff_in_means_detectable = 0.620*pooled_SD;
+diff_in_means_detectable = 0.772*pooled_SD;
 
-% We can detect a difference in means of about 0.1864 as a main effect
+% We can detect a difference in means of about 0.1961 as a main effect
 % currently. Interaction effects likely require a larger difference in
 % means
 
 %%
-LME_design = perc_correct_all(:,[1,3,5]);
+LME_design = perc_correct_all(:,:);
 %LME_design = LME_design(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}),:);
 LME_design.subject = [1:n]';
 
 
 %% Actually run the 2 way repeated measures ANOVA
-design_tbl = table([0,1,2]', 'VariableNames', {'modality'});
+design_tbl = table([0,1]', 'VariableNames', {'modality'});
 design_tbl.modality = categorical(design_tbl.modality);
-rm = fitrm(perc_correct_all, "visual_active,auditory_active,tactile_active~1", WithinDesign=design_tbl);
+rm = fitrm(perc_correct_all, "visual_active,auditory_active~1", WithinDesign=design_tbl);
 results = ranova(rm,'WithinModel','modality')
 
+[h,p,ci,t] = ttest(perc_correct_all.visual_active, perc_correct_all.auditory_active)
 
 %% Plot swarmplot for visualization
 close all;
 figure;
-boxplot(perc_correct_matrix, 'Labels', condition_order([1,3,5]));
+swarmchart([repmat(1,n,1); repmat(2,n,1)], [perc_correct_all.visual_active; perc_correct_all.auditory_active], 'XJitterWidth',0.3);
+hold on;
+boxplot(perc_correct_matrix, 'Labels', {'Visual WM','Auditory WM'});
+grid on;
 ylim([0,1]);
 ylabel('Proportion Correct');
-
-newmat_modality = [mean(perc_correct_matrix(:,[1,2]),2), mean(perc_correct_matrix(:,[3,4]),2), mean(perc_correct_matrix(:,[5,6]),2)];
-newmat_task = [mean(perc_correct_matrix(:,[1,3,5]),2), mean(perc_correct_matrix(:,[2,4,6]),2)];
-
-figure;
-boxplot(newmat_modality, 'Labels', {'visual', 'auditory', 'tactile'});
-ylabel('Proportion Correct');
-ylim([0,1]);
-
-figure;
-boxplot(newmat_task, 'Labels', {'spatial', 'temporal'});
-ylabel('Proportion Correct');
-ylim([0,1]);
 
 
 

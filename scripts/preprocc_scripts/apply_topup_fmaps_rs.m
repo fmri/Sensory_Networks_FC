@@ -17,6 +17,7 @@ subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes, {'RR','AH','PQ','RT','SL','MM'}));
+subjCodes = {'MM'}; %%%%%%%%%%%%%%%%%%%%%%%%%
 subjectsDir = [projectDir, 'data/'];
 
 experiment_name = 'rest';

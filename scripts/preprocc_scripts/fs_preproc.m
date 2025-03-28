@@ -1,7 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% The purpose of this script is to preprocess the localizer data for the
-%%% longDelay and Spacetime experiments using freesurfer preprocessing with
-%%% topup applied fieldmaps
+%%% The purpose of this script is to preprocess the localizer and Spacetime 
+%%% data using freesurfer preprocessing with topup applied fieldmaps
 %%% Tom Possidente - July 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -19,6 +18,7 @@ subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes,{'RR', 'AH'}));
+subjCodes = {'MM'}; 
 
 N = length(subjCodes);
 
@@ -50,7 +50,7 @@ end
 
 %% Loop through subjs
 smooth = 3; %mm
-parfor ss = 1:N
+for ss = 1:N
     subjCode = subjCodes{ss};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
     unix(['echo "' subjCode '" > ' data_dir subjCode '/subjectname']); % create subjectname txt file for fs

@@ -85,4 +85,9 @@ end
 
 groupavg_nohem = squeeze(mean(dice_coeffs_nohem,1));
 
+figure; 
+heatmap(replace(sm_ROI_names, '_', ' '), av_ROI_names, groupavg_nohem)
 
+
+figure; 
+heatmap(replace(sm_ROI_names, '_', ' '), av_ROI_names, ps)
