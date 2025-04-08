@@ -7,12 +7,11 @@
 
 experiment_name = 'spacetime';
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = {'LA'}; %{'AH', 'LA', 'MM', 'RR', 'SL'}; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subjectsDir_trg = [projectDir, 'data/unpacked_data_nii_fs_localizer/'];
 
 %% Loop over subjs and reorg dirs

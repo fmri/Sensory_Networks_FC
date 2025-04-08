@@ -8,16 +8,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/');
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Set up directories and key variables
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 stimTimingBase = '/projectnb/somerslab/hcp_pipeline_subjects/';
 experiment_name = 'x1WayLocalizer';
-targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/stim_timing/';
+targetDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/stim_timing/';
 
-use_3way = true; 
+use_3way = false; 
 
 if use_3way
     file_suffix = '3WayLocalizer';

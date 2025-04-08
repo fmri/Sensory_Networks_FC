@@ -4,14 +4,14 @@
 %%% Tom Possidente - December 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
 ccc;
 
 
 
 %% Set key variables
 % Read in reference annot file so we can keep the same structure for our annot files
-annotpath = '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/fsaverage/label/lh.aparc.annot';
+annotpath = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/recons/fsaverage/label/lh.aparc.annot';
 [verts_ref, labels_ref, ctable_ref] = read_annotation(annotpath); % Read in lh.aparc.annot file for reference annotation file structure
 
 % Create vertices for all annot files to use (same number of vertices for all bc fsaverage space)
@@ -23,7 +23,7 @@ ROIs = {'sPCS', 'iPCS', 'midIFS', 'pVis' ... % visual
 N_ROIs = length(ROIs);
 
 fs_number = 163842;
-ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+ROI_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
 hemis = {'lh', 'rh'};
 
 %% Load in probabilistic ROIs

@@ -9,10 +9,10 @@ ccc;
 
 %% Set up subject info data
 experiment_name = 'spacetime';
-task = 'spacetime'; % localizer or spacetime
+task = 'localizer'; % localizer or spacetime
 tsv_fname = 'f_events_taskswitch_PST.tsv'; % f_events.tsv
 para_fname = 'taskswitch_spacetime_conditions_PST.para'; % [task '_condition_timing.para']
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 
 if strcmp(task, 'localizer')
     seq_name = 'x1WayLocalizer';

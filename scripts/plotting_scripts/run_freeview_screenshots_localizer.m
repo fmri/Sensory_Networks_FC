@@ -5,7 +5,7 @@
 % Tom Possidente August 1 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'))
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'))
 ccc;
 
 %% Get subjIDs
@@ -47,7 +47,7 @@ lh_ROI_paths = {};
 rh_ROI_paths = {};
 contrasts = cell(N,2);
 
-roi_base_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+roi_base_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
 
 all_roi_files = {dir(roi_base_dir).name};
 

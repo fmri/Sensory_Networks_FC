@@ -1,6 +1,12 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% The purpose of this script is to convert annotation files to surface
+%%% nii files that CONN can use 
+%%% Tom Possidente - August 2024
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 experiment_name = 'spacetime';
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);

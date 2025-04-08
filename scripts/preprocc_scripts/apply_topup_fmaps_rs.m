@@ -5,19 +5,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/')
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/')
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/')
 ccc;
 
 %% Set up directories and subj info
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
-path_topup_fmparams = '/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
+path_topup_fmparams = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/fm_acqparams.txt';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.('spacetimeRuns'),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes, {'RR','AH','PQ','RT','SL','MM'}));
-subjCodes = {'MM'}; %%%%%%%%%%%%%%%%%%%%%%%%%
 subjectsDir = [projectDir, 'data/'];
 
 experiment_name = 'rest';
@@ -115,7 +114,7 @@ for ss = 1:length(subjCodes)
                 end
 
                 % Use topup command to convert from echo to more common fieldmaps (requires all dims of images to be even)
-                unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt '...
+                unix(['topup --imain=' split_outpath{1} '.nii' ' --datain=/projectnb/somerslab/tom/projects/sensory_networks_FC/data/fm_acqparams.txt '...
                     '--config=b02b0.cnf --out=' fmaptopup_filepath]);
             else
                 disp(['Subj ' subjCode ': converted fieldmap target folder already contains this file. Remove this file if you want to re-convert. Skipping.'])

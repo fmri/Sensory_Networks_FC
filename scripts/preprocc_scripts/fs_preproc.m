@@ -4,21 +4,20 @@
 %%% Tom Possidente - July 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
-path_topup_fmparams = '/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
+path_topup_fmparams = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/fm_acqparams.txt';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
 subjCodes = subjCodes(~ismember(subjCodes,{'RR', 'AH'}));
-subjCodes = {'MM'}; 
 
 N = length(subjCodes);
 

@@ -4,12 +4,12 @@
 %%% Tom Possidente - August 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Set Key Variables
 
-ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+ROI_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
 subjCode = {'probabilistic'};
 
 ROI = 'tgPCS';

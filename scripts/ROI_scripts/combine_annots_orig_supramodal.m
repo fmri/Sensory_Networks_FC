@@ -6,13 +6,13 @@
 % Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
 ccc;
 
 %% Initialize parameters
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
-ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
-subj_data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
+ROI_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
+subj_data_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/unpacked_data_nii_fs_localizer/';
 subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'}; 
 N = length(subjCodes);
 av_ROIs = {'sPCS', 'iPCS', 'midIFS', 'pVis', 'tgPCS', 'cIFSG', 'CO', 'FO', 'cmSFG', 'pAud'};
@@ -61,7 +61,7 @@ for ss = 1:N
             ctable_orig.table(curr_ROI_row+1,:) = ctable_ref.table(curr_ROI_row+1,:); % just keep same canonical label number and color for this ROI
             label_curr = ctable_orig.table(curr_ROI_row+1,5); % Extract the specific label number
 
-            % Make sure there is no overlap
+            % Deal with overlap
             prelabeled_verts = labels_orig(sm_ROI_mask);
             already_labeled = prelabeled_verts ~= 0; % find vertices in this ROI that already have a label
             already_labeled_vals = prelabeled_verts(already_labeled); % get the label value for verts that have label already
@@ -105,11 +105,11 @@ for ss = 1:N
                             labels_orig(overlap_safe_mask) = label_curr;
                             continue;
                         end
-                        error(['Subj ' subjCode ' ' hemi ' ' sm_ROI ' overlaps ' overlapped_ROI_name{:} ' which causes one ROI to be less than 100 vertices. This should not happen, check label files for both ROIs.'])
-                    elseif reduced_prev_lab_nverts < 100 % don't relabel overlap if it would leave the other ROI with fewer than 100 verts
+                        error(['Subj ' subjCode ' ' hemi ' ' sm_ROI ' overlaps ' overlapped_ROI_name{:} ' which causes both ROIs to be less than 100 vertices. This should not happen, check label files for both ROIs.'])
+                    elseif reduced_prev_lab_nverts < 100 % if the sensory-biased ROI will be less than 100 vertices if overlapped, give all vertices to sensory-biased ROI
                         final_sm_ROI_mask = overlap_safe_mask;
                         labels_orig(overlap_safe_mask) = label_curr;
-                    elseif reduced_curr_lab_nverts <= 100 % do relabel overlap if this ROI would be left with fewer than 100 verts
+                    elseif reduced_curr_lab_nverts <= 100 % If supramodal ROI will be less than 100 vertices if overlapped, still exclude sensory-biased vertices and find the next strongest supramodal vertices to add to supramodal ROI so that it is above 100
                         verts_needed = 100 - reduced_curr_lab_nverts;
                         probROI = probROI_data{rr,hh};
                         prev_label_mask = labels_orig==overlapped_ROI_labels(ii);
@@ -147,18 +147,10 @@ for ss = 1:N
                 final_sm_ROI_mask = sm_ROI_mask;
                 labels_orig(sm_ROI_mask) = label_curr; % replace all indices with current ROI label number
             end
-            %%%%%%%%%%%%%%%%%%%%%%%%
-            path_V_A = [subj_data_dir subjCode '/localizer/localizer_contrasts_' hemi '/V-A/t.nii.gz'];
-            V_A = MRIread(path_V_A);
-            V_A_inROI = V_A.vol(final_sm_ROI_mask); 
-            if any(abs(V_A_inROI) > 2)
-                test1(end + 1) = sum(abs(V_A_inROI)>2)/length(V_A_inROI);
-            end
-            %%%%%%%%%%%%%%%%%%%%%%%%
         end
 
         % Actually write annotation variable to file
-        %write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_avsm_ROIs.annot'], verts_ref, labels_orig, ctable_orig);
+        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_avsm_ROIs.annot'], verts_ref, labels_orig, ctable_orig);
 
     end
 end

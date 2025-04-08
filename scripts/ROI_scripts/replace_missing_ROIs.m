@@ -4,11 +4,11 @@
 %%% Tom Possidente - August 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Load ROI size table
-data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/';
+data_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/';
 load([data_dir 'ROI_size_table.mat'], 'ROI_size_table');
 subjCodes = ROI_size_table.Row;
 ROI_names = ROI_size_table.Properties.VariableNames;

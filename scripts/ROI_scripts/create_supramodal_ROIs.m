@@ -7,7 +7,7 @@
 %%% Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Load Subj Codes
@@ -20,8 +20,8 @@ n_subj = length(subjCodes);
 badlist = {};
 
 %% Set key variables
-ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
-subj_data_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+ROI_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
+subj_data_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/unpacked_data_nii_fs_localizer/';
 hemis = {'lh', 'rh'};
 
 t_thresh = 2;
@@ -90,11 +90,11 @@ for ss = 1:n_subj
             label_table = probROI(intersection_verts_inds,:);
             
             % Make label file
-            % label_fname = [ROI_dir subjCodes{ss} '_' hemis{hh} '_sm_' supramodal_ROIs{rr} '2.label'];
-            % label_file = fopen(label_fname,'w');
-            % fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label_table,1)) '\n']);
-            % writematrix(table2array(label_table), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
-            % fclose(label_file);
+            label_fname = [ROI_dir subjCodes{ss} '_' hemis{hh} '_sm_' supramodal_ROIs{rr} '2.label'];
+            label_file = fopen(label_fname,'w');
+            fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label_table,1)) '\n']);
+            writematrix(table2array(label_table), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+            fclose(label_file);
 
         end
 

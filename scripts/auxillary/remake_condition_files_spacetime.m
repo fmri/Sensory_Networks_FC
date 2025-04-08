@@ -1,28 +1,30 @@
 %%%%
 % The purpose of this script is to create new tsv files for condition
-% timing that correspond to task switching times
+% timing from the raw psychopy output csv files for the spacetime task.
+% This information is contained in the EV files Vaibhov generated but I
+% want to double-check them.
 %
-% Created: Tom Possidente - January 2025
+% Created: Tom Possidente - September 2024
 %%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Get subj codes
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.spacetimeRuns,''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'RR'}));
+subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'SL'}));
 N = length(subjCodes);
 
 %% Set key variables
 csv_dir = '/projectnb/somerslab/vaibhavt/Projects/Trifloc/Data/SubjectsBehavioralFiles/';
 ordered_conditions = {'Block Fixation', 'Auditory Passive', 'Tactile Passive', 'Visual Passive',...
     'Auditory Spatial', 'Tactile Spatial', 'Visual Spatial', 'Auditory Temporal',...
-    'Tactile Temporal', 'Visual Temporal'}; 
-condition_names = {'fixation', 'switch_passive', 'switch_spatial', 'switch_temporal'};
-N_conditions = length(condition_names);
-tsv_pathbase = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/';
+    'Tactile Temporal', 'Visual Temporal'}; % whatever index the condition is in this list is the condition code
+N_conditions = length(ordered_conditions);
+condition1_start = '3'; % first condition in a run should always start at 3s
+tsv_pathbase = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/unpacked_data_nii/';
 
 % 1 = fixation
 % 2 = aP = auditory passive
@@ -34,6 +36,12 @@ tsv_pathbase = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacke
 % 8 = aT = auditory temporal
 % 9 = tT = tactile temporal
 % 10 = vT = visual temporal
+
+%% Generate all possible task switch conditions (yes all 100 of them...)
+count = 0;
+possible_combos = table2array(combinations(1:N_conditions, 1:N_conditions));
+taskswitch_conditions = arrayfun(@(x,y) [ordered_conditions{x} '->' ordered_conditions{y}], possible_combos(:,1), possible_combos(:,2), 'UniformOutput',false);
+taskswitch_condition_labels = (1:length(possible_combos)) + 10;
 
 %% Extract condition info from csvs for each run for each subj
 
@@ -92,11 +100,14 @@ for ss = 1:N
         end
         
         % Add interblock conditions for task switching analysis 
-        [onsets_ts, durations_ts, conditions_ts] = make_taskswitch_conditions(onsets, durations, conditions, ordered_conditions, condition_names, 1:length(condition_names));
+        [onsets_ts, durations_ts, conditions_ts] = make_taskswitch_conditions(onsets, conditions, ordered_conditions, taskswitch_conditions, taskswitch_condition_labels);
         
         % Actually make the tsv files
+        condition_table = array2table([onsets, durations, conditions], 'VariableNames', {'onset', 'duration', 'trial_type'});
+        writetable(condition_table, [tsv_pathbase, subjCode, '/bold/00', num2str(rr) '/f_events_doublecheck.tsv'], 'Delimiter', '\t', 'FileType','text');
+        
         condition_table_taskswitch = array2table([onsets_ts, durations_ts, conditions_ts], 'VariableNames', {'onset', 'duration', 'trial_type'});
-        writetable(condition_table_taskswitch, [tsv_pathbase, subjCode, '/bold/00', num2str(rr) '/f_events_taskswitch_PST.tsv'], 'Delimiter', '\t', 'FileType','text');
+        writetable(condition_table_taskswitch, [tsv_pathbase, subjCode, '/bold/00', num2str(rr) '/f_events_taskswitch.tsv'], 'Delimiter', '\t', 'FileType','text');
     end
 
     disp(['Finished subj ' subjCode])
@@ -143,29 +154,22 @@ function [stim_files, order_correct] = check_stimfile_order(stim_files)
 
 end
 
-function [onsets_out, durations_out, conditions_out] = make_taskswitch_conditions(onsets, durations, conditions, ordered_conditions, taskswitch_conditions, taskswitch_condition_labels)
+function [onsets_out, durations_out, conditions_out] = make_taskswitch_conditions(onsets, conditions, ordered_conditions, taskswitch_conditions, taskswitch_condition_labels)
 % 
     
     %% Identify which task switch is happening between each condition and get its label number
-    conditions_out = [];
+    conditions_out = nan(length(conditions),1);
     for ii = 1:length(conditions)
         curr_cond_name = ordered_conditions{conditions(ii)};
-        if ismember(curr_cond_name, {'Block Fixation'})
-            conditions_out = [conditions_out; 1];
-            continue;
-        elseif ismember(curr_cond_name, {'Auditory Passive', 'Visual Passive', 'Tactile Passive'})
-            curr_cond_type = 'switch_passive';
-        elseif ismember(curr_cond_name, {'Visual Spatial', 'Auditory Spatial', 'Tactile Spatial'})
-            curr_cond_type = 'switch_spatial';
-        elseif ismember(curr_cond_name, {'Visual Temporal',  'Tactile Temporal', 'Auditory Temporal'})
-            curr_cond_type = 'switch_temporal';
+        if ii == 1
+            task_switch = ['Block Fixation->' curr_cond_name];
         else
-            error('condition name not recognized');
+            prev_cond_name = ordered_conditions{conditions(ii-1)};
+            task_switch = [prev_cond_name '->' curr_cond_name];
         end
-        conditions_out = [conditions_out; taskswitch_condition_labels(ismember(taskswitch_conditions, curr_cond_type))];
+        conditions_out(ii) = taskswitch_condition_labels(ismember(taskswitch_conditions, task_switch));
     end
     durations_out = repelem(3,length(conditions_out),1); % all task switch durations are 3s
-    durations_out(conditions_out==1) = durations(conditions_out==1);
     onsets_out = onsets - 3;
 
 end

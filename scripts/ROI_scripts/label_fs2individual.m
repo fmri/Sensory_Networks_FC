@@ -1,14 +1,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% The purpose of this script is to transform the freesurfer ROI labels
-%%% for all subjects from fsaverage space into individual subject space
+%%% for all subjects from fsaverage space into individual subject space to
+%%% make sure they match well to the original contrasts in individual space
 %%% Tom Possidente - August 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Make sure to set the SUBJECTS_DIR environment variable to
-% /projectnb/somerslab/tom/projects/spacetime_network/data/recons/ before
-% running this script
-
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Get subj IDs
@@ -19,7 +16,7 @@ subjCodes = subjDf_cut.subjCode;
 N = length(subjCodes);
 
 %% Set up paths
-base_path = '/projectnb/somerslab/tom/projects/spacetime_network/';
+base_path = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 label_path = [base_path 'data/ROIs/'];
 
 

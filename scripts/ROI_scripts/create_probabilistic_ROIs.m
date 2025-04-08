@@ -5,14 +5,14 @@
 %%% Tom Possidente - August 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Get Subj Codes
 
 experiment_name = 'spacetime';
 
-ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+ROI_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);

@@ -5,58 +5,34 @@
 % Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
 ccc;
 
 %% Load missing ROIs
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
 
 %% Setup analysis parameters
-ROI_set = 3; % 1 = original sensory biased + 3 MDs, 2 = posteriors + 6MDs, 3 = sensory biased + 6 MDs
-localizer = false;
 task = 'rest';
-use_replacement_ROIs = true;
 plot_individual_betamaps = true;
 save_out = false;
 
-if ~localizer
-    if ismember(task, {'rest', 'resting', 'rs'})
-        reject_subjs = {'AH', 'RR'};
-        subjCodes = {'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'KQ', 'LN', 'PT', 'PL', 'NS'};
-        compare_conditions = '1';
-        task1_perc_ind = nan;
-        task2_perc_ind = nan;
-    else
-        error('non-resting state analyses not yet implemented');
-    end
+if ismember(task, {'rest', 'resting', 'rs'})
+    reject_subjs = {'RR','AH','PQ','RT','SL','MM'};
+    subjCodes = {'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'KQ', 'LN', 'PT', 'PL', 'NS'};
+    compare_conditions = '1';
+    task1_perc_ind = nan;
+    task2_perc_ind = nan;
 else
-    % reject_subjs = {'AH', 'SL', 'RR', 'AI'};
-    % subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
-    % conditions = {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'}; % Note this is a different order than the conditions in the tsv or para files, this is because Conn saves the conditions in a particular order (which is different from the order you in the condition files for some reason)
-    % ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/gPPI/';
-    % title_str = task;
-    % tasks = strsplit(task,'-');
-    % compare_conditions = cell2mat(cellfun(@(x) find(ismember(conditions, x)), tasks, 'UniformOutput', false)); % this preserves the order of the conditions
-    % task1_perc_ind = nan;
-    % task2_perc_ind = nan;
+    error('non-resting state analyses not yet implemented');
 end
 
 Nsubjs = length(subjCodes);
-switch ROI_set
-    case 1
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/firstlevel/connectivity_3sm/';
-        nROIs = 13*2;
-        missing_ROIs = [missing_ROIs'; replacement_ROIs];
-    case 2
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/firstlevel/sm_connectivity/';
-        nROIs = 8*2;
-        missing_ROIs = [];
-    case 3
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/firstlevel/avsm_connectivity/';
-        nROIs = 16*2;
-        missing_ROIs = [];
-end
+
+ROI_dataDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_resting_state/results/firstlevel/avsm_connectivity/';
+nROIs = 16*2;
+missing_ROIs = [];
+
 corrs = nan(nROIs,nROIs,Nsubjs,2);
 
 
@@ -80,67 +56,25 @@ for nn = 1:length(cond1_names)
     names{nn} = name_preclean{2}(1:end-4);
 end
 
-%% Remove missing ROIs
-if ~use_replacement_ROIs
-    for mm = 1:length(missing_ROIs)
-        subj_ROI_hemi = strsplit(missing_ROIs{mm}, '_');
-        subj_ind = find(strcmp(subj_ROI_hemi{1}, subjCodes));
-        if strcmp(subj_ROI_hemi(3), 'lh')
-            ROI_ind = find(ismember(names, subj_ROI_hemi(2)), 1, 'first');
-        else
-            ROI_ind = find(ismember(names, subj_ROI_hemi(2)), 1, 'last');
-        end
-        corr_diffs(ROI_ind,:,subj_ind) = NaN;
-        corr_diffs(:,ROI_ind,subj_ind) = NaN;
-    end
-end
-
 %% Plot mean beta matrices
 mean_corr_diffs = mean(corr_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
-switch ROI_set
-    case 1
-        desired_order = {'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)',...
-            'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)',...
-            'pVis (L)', 'pAud (L)', 'pVis (R)', 'pAud (R)'};
-        ROI_str = 'sm_ROIs';
-        reject_str = {'sm_ROIs2', 'avsm_ROIs'};
-        ROI_str_mod = 5;
-        vbias_ROIs = {'sPCS', 'iPCS', 'midIFS'};
-        abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO'};
-        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC'};
-        pVis_ROIs = {'pVis'};
-        pAud_ROIs = {'pAud'};
-    case 2
-        desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
-            'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
-            'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], ...
-            'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-            'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)'};
-        ROI_str_mod = 2;
-        reject_str = {'sm_ROIs2', 'avsm_ROIs'};
-        ROI_str = 'ROIs';
-        vbias_ROIs = {};
-        abias_ROIs = {};
-        pVis_ROIs = {'pVis'};
-        pAud_ROIs = {'pAud'};
-        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
-    case 3
-        desired_order = {
-                'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
-                'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
-                'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-                'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
-                'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
-        ROI_str_mod = 5;
-        reject_str = {'sm_ROIs2'};
-        ROI_str = 'avsm_ROIs'; 
-        vbias_ROIs = {'sPCS', 'iPCS'};
-        abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
-        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
-        pVis_ROIs = {'pVis'};
-        pAud_ROIs = {};
-end
+
+desired_order = {
+        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
+        'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
+        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
+        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
+        'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+ROI_str_mod = 5;
+reject_str = {'sm_ROIs2'};
+ROI_str = 'avsm_ROIs'; 
+vbias_ROIs = {'sPCS', 'iPCS'};
+abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
+sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
+pVis_ROIs = {'pVis'};
+pAud_ROIs = {};
+
 
 for nn = 1:length(cond1_names)
     name_preclean = strsplit(cond1_names{nn},'.');
@@ -277,10 +211,10 @@ toc
 
 emm = emmeans(lme,'unbalanced');
 emm.table
-save(['conn_LME_results_' task '.mat'], 'lme', 'emm'); %%% CHANGE ME
-
+if save_out
+    save(['conn_LME_results_' task '.mat'], 'lme', 'emm'); %%% CHANGE ME
+end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
-%title(title_str);
 
 %% Sig testing
 N_cond = height(emm.table);

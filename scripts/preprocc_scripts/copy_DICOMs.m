@@ -12,7 +12,7 @@
 %%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/');
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 % Load in subject info
@@ -23,7 +23,7 @@ subjCodes = subjDf_cut.subjCode;
 
 % Loop over subjs and copy out DICOMs
 rawDicomDir = '/projectnb/somerslab/BU_DICOMs/';
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/copied_DICOMs/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/copied_DICOMs/';
 for s=1:length(subjCodes)
     subjCode = subjCodes{s};
     subjRow = find(strcmp(subjDf_cut.subjCode, subjCode));
@@ -33,7 +33,7 @@ for s=1:length(subjCodes)
     subjID_exp = [experimentDate subjCode];
     unix(['rsync -av ' rawDicomDir '/' subjID_exp ' ' projectDir]);
 
-    % Make sure we a session with the T1 data
+    % Make sure we have the right T1 data
     t1Date = subjDf_cut.t1Date{subjRow};
     t1Run = subjDf_cut.t1Runs{subjRow};
     if contains(t1Date, '/') % if multiple dates

@@ -5,16 +5,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/')
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/')
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/')
 ccc;
 
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 dicomsBase=[projectDir 'data/copied_DICOMs/'];
-path_topup_fmparams = '/projectnb/somerslab/tom/projects/spacetime_network/data/fm_acqparams.txt';
+path_topup_fmparams = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/fm_acqparams.txt';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);

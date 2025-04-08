@@ -5,16 +5,16 @@
 %%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/');
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
-unix('export SUBJECTS_DIR=/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii/');
+unix('export SUBJECTS_DIR=/projectnb/somerslab/tom/projects/sensory_networks_FC/data/unpacked_data_nii/');
 
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
@@ -56,12 +56,12 @@ for ss = 1:length(subjCodes)
     % Initialize directories 
     T1SourcePath = [dirSource 'anat/run' t1Run '/sub-' subjCode '_run' t1Run '_T1.nii'];
     
-    if isfile(['/projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.nii'])
+    if isfile(['/projectnb/somerslab/tom/projects/sensory_networks_FC/data/recons/' subjCode '/mri/T1.nii'])
         disp([subjCode ' already reconned, skipping.']);
-    elseif isfile(['/projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.mgz'])
+    elseif isfile(['/projectnb/somerslab/tom/projects/sensory_networks_FC/data/recons/' subjCode '/mri/T1.mgz'])
         disp([subjCode ' already reconned, but T1 is in mgz format. Converting to nii with mri_convert, then skipping recon.'])
-        unix(['mri_convert /projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.mgz ' ...
-               '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/' subjCode '/mri/T1.nii'])
+        unix(['mri_convert /projectnb/somerslab/tom/projects/sensory_networks_FC/data/recons/' subjCode '/mri/T1.mgz ' ...
+               '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/recons/' subjCode '/mri/T1.nii'])
     else
         disp([subjCode ' started recon']);
         unix(['recon-all -i ' T1SourcePath ' -subject ' subjCode ' -all']);

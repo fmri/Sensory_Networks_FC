@@ -5,11 +5,11 @@
 % Tom Possidente - December 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
 ccc;
 
 %% Search directory for replacement ROIs
-ROI_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+ROI_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
 files = {dir(ROI_dir).name};
 files_cut = files(contains(files, 'replacement.label'));
 

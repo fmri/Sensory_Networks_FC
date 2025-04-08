@@ -6,7 +6,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'))
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'))
 ccc;
 
 %% Get subjIDs
@@ -18,7 +18,7 @@ subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR'})); % no ROIs for t
 N = length(subjCodes);
 
 %% Set key paths and variables
-ROI_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/ROIs/';
+ROI_path = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
 
 fsaverage = true; % false for individual subj space ROI info
 

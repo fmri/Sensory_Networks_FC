@@ -1,12 +1,12 @@
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The purpose of this script is to load in the behavioral data for the
-% spacetime localizer task and calculate the % correct for each subj for each
+% localizer task and calculate the % correct for each subj for each
 % condition for each modality and run statistical testing on them
 %
 % Created: Tom Possidente - Jan 2025
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 save_out = false;
@@ -20,7 +20,7 @@ subjCodes = subjCodes(~ismember(subjCodes, {'RR', 'SL', 'AH'}));
 n = length(subjCodes);
 
 %% Loop through subjs and get % correct
-behavioral_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/';
+behavioral_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/behavioral/';
 modality_names = {'visual', 'auditory', 'tactile'};
 n_conditions = 2*length(modality_names);
 correct_colnames = {'trials_response', 'trialsresponse', 'odd_trial_responseCorrect'};
@@ -129,71 +129,10 @@ missing_all_data = all(ismissing(perc_correct_all),2);
 perc_correct_all=perc_correct_all(~missing_all_data,:); % delete any rows with all nans
 n = n-sum(missing_all_data);
 
-%% Power analysis
-% For a repeated measures ANOVA With sample N=20, alpha = 0.05, power = 0.8,
-% and a 3x2 measurements, we need to calculate the correlation among
-% repeated measures and assess nonsphericity in order to do a power
-% analysis.
-
-% Calculating correlation among repeated measures
 perc_correct_matrix = table2array(perc_correct_all);
-corr_matrix = triu(corr(perc_correct_matrix),1); % get upper triangle (without diag) of correlation matrix
-mean_corr = mean(corr_matrix(corr_matrix~=0),'all', 'omitnan'); % average correlation
-% This process is not technically statistically valid, but it gives a rough
-% idea of the correlation among measures, good enough for a power analysis
-% % We should have fisher z transformed, averaged, convert back to
-% correlation coeff.
-
-% Looking at sphericity: assumption of equal variances in the differences
-% between measures
-measure_differences = nan(n, 4); % with 2 measures, there are 4 comparisons
-count = 0;
-for ii = 1:2
-    for jj = 1:2
-        if (ii ~= jj) && (ii > jj)
-            count = count + 1;
-            measure_differences(:,count) = perc_correct_matrix(:,ii) - perc_correct_matrix(:,jj);
-            disp(num2str([ii, jj])); % checking all combos are done
-        end
-
-    end
-end
-
-vars = var(measure_differences); % if these variances are similar, sphericity is good
-
-% gpower was used to calculate effect size detectable from a reapeated
-% measures, within factors ANOVA with the following parameters:
-% alpha: 0.05
-% power = 0.8
-% total sample size = 21
-% number of groups = 1
-% number of measurements = 3
-% corr among repeated measures = 0.4286
-% nonspereicity correction (epsilon) = 0.8
-% The result is an effect size detectable of f = 0.386 which is
-% approximately a cohen's d of 0.772 (medium-large effect size)
-
-% To translate a cohens d of 0.620 into a raw mean difference we can use the
-% fact that cohens d = difference in means / pooled SD
-pooled_SD = sqrt(mean(sqrt(var(perc_correct_matrix))));
-diff_in_means_detectable = 0.772*pooled_SD;
-
-% We can detect a difference in means of about 0.1961 as a main effect
-% currently. Interaction effects likely require a larger difference in
-% means
-
-%%
-LME_design = perc_correct_all(:,:);
-%LME_design = LME_design(~ismember(subjCodes, {'AH', 'SL', 'RR', 'AI'}),:);
-LME_design.subject = [1:n]';
 
 
-%% Actually run the 2 way repeated measures ANOVA
-design_tbl = table([0,1]', 'VariableNames', {'modality'});
-design_tbl.modality = categorical(design_tbl.modality);
-rm = fitrm(perc_correct_all, "visual_active,auditory_active~1", WithinDesign=design_tbl);
-results = ranova(rm,'WithinModel','modality')
-
+%% Run 2 sample matched t-test
 [h,p,ci,t] = ttest(perc_correct_all.visual_active, perc_correct_all.auditory_active)
 
 %% Plot swarmplot for visualization

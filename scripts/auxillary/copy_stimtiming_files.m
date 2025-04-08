@@ -6,14 +6,14 @@
 % Created: Tom Possidente - March 2024
 %%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Set up directories and subj info
 
 experiment_name = 'spacetime';
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
@@ -21,7 +21,7 @@ subjCodes = subjDf_cut.subjCode;
 subjectsDir = [projectDir 'data/'];
 stimtimeDir = [subjectsDir 'behavioral/stim_timing/'];
 
-experiment_name = 'x3WayLocalizer'; % Change stimtiming files to x1WayLocalizer here if you want to copy those files into the functional localizer dirs
+experiment_name = 'x1WayLocalizer'; % Change stimtiming files to x1WayLocalizer here if you want to copy those files into the functional localizer dirs
 
 if strcmp(experiment_name, 'spacetime')
     file_suffix = '.txt';

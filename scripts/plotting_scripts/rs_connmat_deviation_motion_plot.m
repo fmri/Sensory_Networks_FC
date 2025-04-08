@@ -8,11 +8,9 @@
 ccc;
 
 
-
-
 %% Load in average motion data and connectivity data
-motion_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_resting_state/results/qa/QA_2024_06_21_093046259/';
-conndata_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/';
+motion_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_resting_state/results/qa/QA_2024_06_21_093046259/';
+conndata_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/';
 load([conndata_dir 'rs_group_connmat.mat'], 'names', 'connmat_group_nandiag');
 load([conndata_dir 'rs_indiv_connmats.mat'], 'connmats_nandiag');
 

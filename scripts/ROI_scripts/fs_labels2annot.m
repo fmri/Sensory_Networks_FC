@@ -4,12 +4,12 @@
 %%% Tom Possidente - August 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Get Subj Codes
 
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 experiment_name = 'spacetime';
 
 
@@ -21,7 +21,7 @@ N = length(subjCodes);
 
 %% Set key variables
 use_replacements = true; % use replacement ROIs or not
-use_dummies_for_missing = false; % put in dummy 1 vertex ROIs for any missing ROIs
+
 % Read in reference annot file so we can keep the same structure for our annot files
 annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 [verts_ref, labels_ref, ctable_ref] = read_annotation(annotpath); % Read in lh.aparc.annot file for reference annotation file structure
@@ -148,21 +148,6 @@ for ss = 1:N
                 end
             else
                 annot_labels(label_vertex_inds) = label_curr; % replace all indices with current ROI label number
-            end
-        end
-num_bad_ROIs
-        % If there are any missing ROIs, add a dummy ROI to the annotation
-        if use_dummies_for_missing  
-            if any_missing
-                for mr = 1:length(missing_ROIs)
-                    annot_ctable.numEntries = annot_ctable.numEntries + 1;
-                    annot_ctable.struct_names{N_ROIs_subj+mr+1} = missing_ROIs{mr}; % +1 for 'unknown' name
-                    annot_ctable.table(N_ROIs_subj+mr+1,:) = ctable_ref.table(N_ROIs_subj+mr+1,:); % just keep same canonical label number and color for this ROI
-                    label_curr = annot_ctable.table(N_ROIs_subj+mr+1,5); % Extract the specific label number
-                    dummy_vol = false(1,fs_number);
-                    dummy_vol(mr) = true; % just one voxel of ROI for dummy value
-                    annot_labels(dummy_vol) = label_curr; % replace 1s with label number in annotation labels variable
-                end
             end
         end
 

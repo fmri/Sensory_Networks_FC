@@ -5,102 +5,33 @@
 % Tom Possidente - October 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
 ccc;
 %% Load missing ROIs
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/missing_ROIs.mat', 'missing_ROIs');
-load('/projectnb/somerslab/tom/projects/spacetime_network/data/replacement_ROI_list.mat', 'replacement_ROIs');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/replacement_ROI_list.mat', 'replacement_ROIs');
 
 %% Setup analysis parameters
-ROI_set = 3; % 1 = original sensory biased + 3 MDs, 2 = posteriors + 6MDs, 3 = sensory biased + 6 MDs
-localizer = true;
-use_replacement_ROIs = true;
 plot_individual_betamaps = true;
 save_out = false;
 
-if localizer
-    reject_subjs = {'AH', 'SL', 'RR'};
-    subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
-else
-    subjCodes = {'MM'	'PP' 'MK' 'AB' 'AD'	'LA' 'AE' 'TP' 'NM'	'AF' 'AG' 'GG' 'UV'	'PQ' 'KQ' 'LN' 'RT'	'PT' 'PL' 'NS'};
-    reject_subjs = {'AH', 'SL', 'RR', 'AI'};
-    load('/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/behavioral/behavioral_percent_correct_data.mat', 'perc_correct_all', 'subjCodes')
-    perc_correct_all = perc_correct_all(~ismember(subjCodes, reject_subjs),1:4);
-    subjCodes_pcorrect = subjCodes(~ismember(subjCodes, reject_subjs));
-end
+reject_subjs = {'AH', 'SL', 'RR'};
+subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
 
 
 task = 'vA-aA';
-if ~localizer
-    if strcmp(task, 'auditory')
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_auditory_allROIs/';
-        compare_conditions = [6,9]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
-        skip_subjs = {'LN','GG','TP'};
-        title_str = 'aS - aT';
-        task1_perc_ind = 3;
-        task2_perc_ind = 4;
-    elseif strcmp(task, 'visual')
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_allconds_allROIs/';
-        compare_conditions = [2,8]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
-        skip_subjs = {'LA','RT'};
-        title_str = 'vT - vS';
-        task1_perc_ind = 1;
-        task2_perc_ind = 2;
-    elseif strcmp(task, 'aS-aP')
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_allconds_allROIs/';
-        compare_conditions = [6,3]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
-        skip_subjs = {'LN','GG' ,'TP'};
-        title_str = 'aS-aP';
-        task1_perc_ind = nan;
-        task2_perc_ind = nan;
-    elseif strcmp(task, 'aT-aP')
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_allconds_allROIs/';
-        compare_conditions = [9,3]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
-        skip_subjs = {};
-        title_str = 'aT-aP';
-        task1_perc_ind = nan;
-        task2_perc_ind = nan;
-    elseif strcmp(task, 'vT-vP')
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_allconds_allROIs/';
-        compare_conditions = [2,5]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
-        skip_subjs = {'RT','LA'};
-        title_str = 'vT-aP';
-        task1_perc_ind = nan;
-        task2_perc_ind = nan;
-    elseif strcmp(task, 'vS-vP')
-        ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_spacetime_task/results/firstlevel/gPPI_allconds_allROIs/';
-        compare_conditions = [8,5]; % auditory spatial=6, auditory temporal=9, 2=visual temporal, 8=visual spatial, 3=auditory passive, 5=visual passive
-        skip_subjs = {'RT','LA'};
-        title_str = 'vT-aP';
-        task1_perc_ind = nan;
-        task2_perc_ind = nan;N_subj = 20;
+conditions = {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'}; % Note this is a different order than the conditions in the tsv or para files, this is because Conn saves the conditions in a particular order (which is different from the order you in the condition files for some reason)
 
-    else
-        error('task string not recognized');
-    end
-else
-    conditions = {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'}; % Note this is a different order than the conditions in the tsv or para files, this is because Conn saves the conditions in a particular order (which is different from the order you in the condition files for some reason)
-    switch ROI_set
-        case 1
-            ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/sm_gPPI_21/';
-            nROIs = 13*2;
-            missing_ROIs = [missing_ROIs'; replacement_ROIs];
-        case 2
-            ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/gPPI_3sm_21/';
-            nROIs = 8*2;
-            missing_ROIs = []; 
-        case 3
-            ROI_dataDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/avsm_gPPI/';
-            nROIs = 16*2;
-            missing_ROIs = []; 
-    end
-    skip_subjs = reject_subjs;
-    title_str = task;
-    tasks = strsplit(task,'-');
-    compare_conditions = cell2mat(cellfun(@(x) find(ismember(conditions, x)), tasks, 'UniformOutput', false)); % this preserves the order of the conditions
-    task1_perc_ind = nan;
-    task2_perc_ind = nan;
-end
+ROI_dataDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/avsm_gPPI/';
+nROIs = 16*2;
+missing_ROIs = []; 
+
+skip_subjs = reject_subjs;
+title_str = task;
+tasks = strsplit(task,'-');
+compare_conditions = cell2mat(cellfun(@(x) find(ismember(conditions, x)), tasks, 'UniformOutput', false)); % this preserves the order of the conditions
+task1_perc_ind = nan;
+task2_perc_ind = nan;
 
 Nsubjs = length(subjCodes);
 betas = nan(nROIs,nROIs,Nsubjs,2);
@@ -125,67 +56,23 @@ for nn = 1:length(cond1_names)
     names{nn} = name_preclean{2}(1:end-4);
 end
 
-%% Remove missing ROIs
-if ~use_replacement_ROIs
-    for mm = 1:length(missing_ROIs)
-        subj_ROI_hemi = strsplit(missing_ROIs{mm}, '_');
-        subj_ind = find(strcmp(subj_ROI_hemi{1}, subjCodes));
-        if strcmp(subj_ROI_hemi(3), 'lh')
-            ROI_ind = find(ismember(names, subj_ROI_hemi(2)), 1, 'first');
-        else
-            ROI_ind = find(ismember(names, subj_ROI_hemi(2)), 1, 'last');
-        end
-        beta_diffs(ROI_ind,:,subj_ind) = NaN;
-        beta_diffs(:,ROI_ind,subj_ind) = NaN;
-    end
-end
-
 %% Plot mean beta matrices
 mean_beta_diffs = mean(beta_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
-switch ROI_set
-    case 1
-        desired_order = {'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)',...
-            'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)',...
-            'pVis (L)', 'pAud (L)', 'pVis (R)', 'pAud (R)'};
-        ROI_str = 'sm_ROIs';
-        reject_str = {'sm_ROIs2', 'avsm_ROIs'};
-        ROI_str_mod = 5;
-        vbias_ROIs = {'sPCS', 'iPCS', 'midIFS'};
-        abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO'};
-        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC'};
-        pVis_ROIs = {'pVis'};
-        pAud_ROIs = {'pAud'};
-    case 2
-        desired_order = {'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', 'tgPCS (R)', 'FO (R)', 'CO (R)', ...
-            'cIFSG (R)', 'cmSFG (R)', 'pAud (R)',...
-            'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], ...
-            'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-            'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)'};
-        ROI_str_mod = 2;
-        reject_str = {'sm_ROIs2', 'avsm_ROIs'};
-        ROI_str = 'ROIs';
-        vbias_ROIs = {};
-        abias_ROIs = {};
-        pVis_ROIs = {'pVis'};
-        pAud_ROIs = {'pAud'};
-        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
-    case 3
-        desired_order = {
-                'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
-                'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
-                'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-                'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
-                'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
-        ROI_str_mod = 5;
-        reject_str = {'sm_ROIs2'};
-        ROI_str = 'avsm_ROIs'; 
-        vbias_ROIs = {'sPCS', 'iPCS'};
-        abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
-        sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
-        pVis_ROIs = {'pVis'};
-        pAud_ROIs = {};
-end
+desired_order = {
+        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
+        'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
+        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
+        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
+        'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+ROI_str_mod = 5;
+reject_str = {'sm_ROIs2'};
+ROI_str = 'avsm_ROIs'; 
+vbias_ROIs = {'sPCS', 'iPCS'};
+abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
+sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
+pVis_ROIs = {'pVis'};
+pAud_ROIs = {};
 
 for nn = 1:length(cond1_names)
     name_preclean = strsplit(cond1_names{nn},'.');
@@ -309,10 +196,8 @@ end
 
 % Set Axis properties
 set(gca,'xticklabel',connection_types(inds));
-%ylim([-0.2 0.2])
 ylabel('Mean PPI beta')
 xlabel('Connection Type');
-%grid on;
 legend({'Visual WM', 'Auditory WM'});
 title('Change in connectivity during visual and auditory working memory')
 set(gca, 'FontSize', 18)
@@ -324,27 +209,17 @@ data_table.connection_type = categorical(data_table.connection_type);
 
 %% Fit LME
 tic;
-if localizer
-    lme = fitglme(data_table, ['beta_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
-        ' + (1 + connection_type | hemispheres)'], ...
-        'DummyVarCoding','reference');
-
-    % lme = fitglme(data_table, ['beta_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
-    %     ''], ...
-    %     'DummyVarCoding','reference');
-else
-    lme = fitglme(data_table, ['beta_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
-        ' + (1 + connection_type | hemisphere1) + (1 + connection_type | hemisphere2) + (1 + connection_type | task_pcorrect_diff)'], ...
-        'DummyVarCoding','reference');
-end
-
+lme = fitglme(data_table, ['beta_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
+    ' + (1 + connection_type | hemispheres)'], ...
+    'DummyVarCoding','reference');
 toc
 
 
 emm = emmeans(lme,'unbalanced');
 emm.table
-save(['gPPI_LME_results_localizer_' task 'avsm.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
-
+if save_out
+    save(['gPPI_LME_results_localizer_' task 'avsm.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
+end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 title(title_str);
 

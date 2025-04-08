@@ -8,18 +8,18 @@
 %%%%%
 
 addpath('/projectnb/somerslab/tom/helper_functions/');
-addpath('/projectnb/somerslab/tom/projects/spacetime_network/functions/');
+addpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/');
 ccc;
 
 %% Set up directories and key variables
-projectDir = '/projectnb/somerslab/tom/projects/spacetime_network/';
+projectDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/';
 stimTimingBase = '/projectnb/somerslab/hcp_pipeline_subjects/';
 experiment_name = 'spacetime';
 EV_fileNames = {'Fixation_Block.txt', 'Passive_Auditory.txt', 'Passive_Tactile.txt', 'Passive_Visual.txt',...
     'Spatial_Auditory.txt', 'Spatial_Tactile.txt', 'Spatial_Visual.txt',...
     'Temporal_Auditory.txt', 'Temporal_Tactile.txt', 'Temporal_Visual.txt'};
 condition_codes = 1:length(EV_fileNames);
-targetDir = '/projectnb/somerslab/tom/projects/spacetime_network/data/behavioral/stim_timing/';
+targetDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/stim_timing/';
 
 %% Load subject info
 subjDf = load_subjInfo();
