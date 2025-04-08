@@ -9,5 +9,4 @@ Running most of this code requires access to the data on the SCC.
 
 Organization:
 - scripts: contains key scripts for file i/o and organization, file conversion, preprocessing, ROI creation, and analysis
-- archive_code: old scripts/functions no longer used/useful
 - functions: key functions used by scripts
