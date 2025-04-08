@@ -5,7 +5,7 @@ Somers Lab - BU
 
 This repository contains code for preprocessing, analysing, and making figures for the sensory networks functional connectivity project. 
 
-Running most of this code requires access to the data folder which is available on SCC (/projectnb/somerslab/tom/projects/sensory_networks_FC/data/).
+Running most of this code requires access to the data on the SCC.
 
 Organization:
 - scripts: contains key scripts for file i/o and organization, file conversion, preprocessing, ROI creation, and analysis
