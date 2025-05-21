@@ -90,11 +90,11 @@ for ss = 1:n_subj
             label_table = probROI(intersection_verts_inds,:);
             
             % Make label file
-            label_fname = [ROI_dir subjCodes{ss} '_' hemis{hh} '_sm_' supramodal_ROIs{rr} '2.label'];
-            label_file = fopen(label_fname,'w');
-            fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label_table,1)) '\n']);
-            writematrix(table2array(label_table), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
-            fclose(label_file);
+            % label_fname = [ROI_dir subjCodes{ss} '_' hemis{hh} '_sm_' supramodal_ROIs{rr} '2.label'];
+            % label_file = fopen(label_fname,'w');
+            % fprintf(label_file, ['#!ascii label  , from subject  vox2ras=TkReg\n' num2str(size(label_table,1)) '\n']);
+            % writematrix(table2array(label_table), label_fname, 'Delimiter', 'tab', 'WriteMode', 'append', 'FileType', 'text');
+            % fclose(label_file);
 
         end
 

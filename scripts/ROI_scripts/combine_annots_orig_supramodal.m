@@ -22,7 +22,7 @@ hemis = {'lh', 'rh'};
 t_thresh = 2;
 fs_number = 163842; % vertices in a hemisphere
 badlist = {};
-test1 = [];
+avg_stat = nan(N, N_ROIs, 2);
 
 %% Load supramodal search spaces
 probROI_data = cell(N_ROIs, 2);
@@ -85,7 +85,7 @@ for ss = 1:N
                     numoverlap = sum(already_labeled_vals==overlapped_ROI_labels(ii));
                     reduced_prev_lab_nverts = overlapping_label_nverts - numoverlap;
                     
-                    disp(['Subj ' subjCode ' ' hemi ' ' sm_ROI ' (' num2str(curr_nverts) ') overlaps ' overlapped_ROI_name{:} ' (' num2str(overlapping_label_nverts) ') by ' num2str(numoverlap) ' verts'])
+                    %disp(['Subj ' subjCode ' ' hemi ' ' sm_ROI ' (' num2str(curr_nverts) ') overlaps ' overlapped_ROI_name{:} ' (' num2str(overlapping_label_nverts) ') by ' num2str(numoverlap) ' verts'])
 
                     if ismember(overlapped_ROI_name, {'aINS', 'preSMA', 'dACC'}) % these ROIs are not actually used, so always overlap them
                         if ii ~= N_overlapped
@@ -133,7 +133,7 @@ for ss = 1:N
                                 t_thresh2 = t_thresh2 - 0.001;
                                 candidate_verts = abs(V_A_inROI) < 2 & vA_vP_inROI > t_thresh2 & aA_aP_inROI > t_thresh2;
                             end
-                            disp(['t thresh needed to get 100 verts for supramodal ROI = ' num2str(t_thresh2)]);
+                            %disp(['t thresh needed to get 100 verts for supramodal ROI = ' num2str(t_thresh2)]);
                         end
                         verts_add = ismember(1:fs_number, search_space_lim_inds(candidate_verts));
                         final_sm_ROI_mask = verts_add' | overlap_safe_mask;
@@ -147,17 +147,34 @@ for ss = 1:N
                 final_sm_ROI_mask = sm_ROI_mask;
                 labels_orig(sm_ROI_mask) = label_curr; % replace all indices with current ROI label number
             end
+
+            path_V_A = [subj_data_dir subjCode '/localizer/localizer_contrasts_' hemi '/V-A/cespct.nii.gz'];
+            V_A = MRIread(path_V_A);
+            V_A_inROI = V_A.vol(final_sm_ROI_mask); 
+            avg_stat(ss, rr, hh) = mean(V_A_inROI);
+
         end
 
         % Actually write annotation variable to file
-        write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_avsm_ROIs.annot'], verts_ref, labels_orig, ctable_orig);
+        %write_annotation([projectDir '/data/ROIs/' hemi '.' subjCode '_avsm_ROIs.annot'], verts_ref, labels_orig, ctable_orig);
 
     end
 end
 
 
 
-
-
+%%
+figure;
+count = 1;
+for ii = 1:N_ROIs
+   for hh = 1:2
+        scatter(ones(N,1)*count, avg_stat(:,ii,hh));
+        mean(avg_stat(:,ii,hh))
+        hold on; 
+        count = count + 1;
+        [h,p,ci,stats] = ttest(avg_stat(:,ii,hh));
+        p
+   end
+end
 
 

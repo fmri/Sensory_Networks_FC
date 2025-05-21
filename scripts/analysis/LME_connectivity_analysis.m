@@ -10,7 +10,6 @@ ccc;
 
 %% Load missing ROIs
 load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.mat', 'missing_ROIs');
-load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/replacement_ROI_list.mat', 'replacement_ROIs');
 
 %% Setup analysis parameters
 task = 'rest';
@@ -227,4 +226,6 @@ for cc = 1:N_cond
 end
 gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 
-
+%% Sig testing vbias <-> supramodal against abias <-> supramodal
+res_table = contrasts_wald(lme, emm, [0 0 -1 0 0 0 0 0 1 0]);
+res_table.pVal
