@@ -13,7 +13,7 @@ ccc;
 %subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
 
 % Load difficulties
-load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/staircase_difficulties.mat', 'avg_difficulty', 'modalities', 'subjCodes');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/staircase_difficulties_oddevenavg.mat', 'avg_difficulty', 'modalities', 'subjCodes');
 diff_subjCodes = subjCodes;
 
 % Load percent correct

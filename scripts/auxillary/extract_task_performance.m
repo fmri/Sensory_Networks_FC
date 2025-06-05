@@ -44,6 +44,7 @@ for ss = 1:N
 
     assert(length(files_csv)==num_runs, ['Subj ' subjCode ': Number of runs specified in subjInfo.csv does not match number of runs found in behavioral data files']);
     
+    %difficulty_subj = nan(3, num_runs, 16);
     difficulty_subj = nan(3, num_runs, 16);
 
     % Loop through each run and collect difficulty data for each task
@@ -52,7 +53,9 @@ for ss = 1:N
         for ii = 1:3
             mask = ismember(behavioral_data.modality, modalities{ii}) & ismember(behavioral_data.type, 'Active');
             task_data = behavioral_data(mask,:);
-            difficulty_subj(ii,rr,:) = task_data.trials_intensity;
+            %difficulty_subj(ii,rr,:) = task_data.trials_intensity;
+            difficulty_subj(ii,rr,:,1) = task_data.odd_trial_changeValue;
+            difficulty_subj(ii,rr,:,2) = task_data.even_trial_changeValue;
         end
     end
     difficulty{ss} = difficulty_subj;
@@ -60,9 +63,11 @@ end
 
 %% Compute averages
 avg_difficulty = nan(N,3);
+
 for ss = 1:N
     for ii = 1:3
-        avg_difficulty(ss,ii) = mean(difficulty{ss}(ii,:,:), [2,3])
+        %avg_difficulty(ss,ii) = mean(difficulty{ss}(ii,:,:), [2,3])
+        avg_difficulty(ss,ii) = squeeze(mean(difficulty{ss}(ii,:,:,:), [2,3,4]));
     end
 end
 
