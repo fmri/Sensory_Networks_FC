@@ -16,10 +16,6 @@ ccc;
 load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/staircase_difficulties_oddevenavg.mat', 'avg_difficulty', 'modalities', 'subjCodes');
 diff_subjCodes = subjCodes;
 
-% Load percent correct
-load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/behavioral/behavioral/behavioral_percent_correct_data_localizer.mat', 'subjCodes', 'perc_correct_all');
-perc_subjCodes = subjCodes;
-
 % Load gppi betas 
 load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/gPPI_va-aa_fulltable.mat', 'data_table', 'subjCodes')
 assert(all(strcmp(diff_subjCodes, subjCodes)))
@@ -60,14 +56,12 @@ lm_table_vis.beta_diff = lm_table_vis.beta_diff - mean(lm_table_vis.beta_diff);
 lm_table_aud.beta_diff = lm_table_aud.beta_diff - mean(lm_table_aud.beta_diff); 
 
 lm_aud = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff')
-lm_table_aud_plot.aud_difficulty = 60 - lm_table_aud_plot.aud_difficulty; % Change to inverse difficulty for clearer visualization
 lm_aud_plot = fitlm(lm_table_aud_plot, 'aud_difficulty ~ 1 + beta_diff');
-figure; plot(lm_aud_plot); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Task Performance');
+figure; plot(lm_aud_plot); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
 
 lm_vis = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff')
-lm_table_vis_plot.vis_difficulty = 60 - lm_table_vis_plot.vis_difficulty; % Change to inverse difficulty for clearer visualization
 lm_vis_plot = fitlm(lm_table_vis_plot, 'vis_difficulty ~ 1 + beta_diff');
-figure; plot(lm_vis_plot); title(''); xlabel('Visual Connections: Auditory Betas - Visual Betas'); ylabel('Visual WM Task Performance');
+figure; plot(lm_vis_plot); title(''); xlabel('Visual Connections: Auditory Betas - Visual Betas'); ylabel('Visual WM Change in Frequency');
 
 %% Test individual connections
 for ss = 1:N
@@ -103,7 +97,6 @@ for cc = 1:N_conns
     
     aud_tbl = table(betas(:,cc,1), avg_difficulty(:,1));
     aud_tbl.Properties.VariableNames = {'betas', 'aud_difficulty'};
-    aud_tbl.aud_difficulty = 60 - aud_tbl.aud_difficulty;
     lm_aud = fitlm(aud_tbl, 'aud_difficulty ~ 1 + betas')
     figure; plot(lm_aud);
     xlabel('Visual Betas'); ylabel('Auditory WM Task Performance'); 
@@ -112,7 +105,6 @@ for cc = 1:N_conns
 
     aud_tbl = table(betas(:,cc,2), avg_difficulty(:,1));
     aud_tbl.Properties.VariableNames = {'betas', 'aud_difficulty'};
-    aud_tbl.aud_difficulty = 60 - aud_tbl.aud_difficulty;
     lm_aud = fitlm(aud_tbl, 'aud_difficulty ~ 1 + betas')
     figure; plot(lm_aud);
     xlabel('Auditory Betas'); ylabel('Auditory WM Task Performance'); 

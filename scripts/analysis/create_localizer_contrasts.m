@@ -37,7 +37,7 @@ funcstem_rh = ['fmcpr_tu.siemens.sm5.' space '.rh.nii.gz'];
 rlf_name = 'localizer_contrasts_runlistfile.txt'; 
 
 run_mkanalysis = false;
-run_mkcontrast = false;
+run_mkcontrast = true;
 use_3way_contrasts = false; 
 
 if use_3way_contrasts == true
@@ -213,6 +213,7 @@ if run_mkcontrast
             'V-AT -a 1 -a 2 -c 3 -c 4 -c 5 -c 6'])
         unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
             'V-AT -a 1 -a 2 -c 3 -c 4 -c 5 -c 6'])
+
         unix(['mkcontrast-sess -analysis ' analysis_name_lh ' -contrast ' ...
             'A-P -a 1 -a 3 -a 5 -c 2 -c 4 -c 6'])
         unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
@@ -297,6 +298,16 @@ if run_mkcontrast
             'vAaA-vPaP -a 1 -a 3 -c 2 -c 4'])
         unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
             'vAaA-vPaP -a 1 -a 3 -c 2 -c 4'])
+
+        unix(['mkcontrast-sess -analysis ' analysis_name_lh ' -contrast ' ...
+            'aPvP-f -a 4 -a 2 -c 7'])
+        unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
+            'aPvP-f -a 4 -a 2 -c 7'])
+
+        unix(['mkcontrast-sess -analysis ' analysis_name_lh ' -contrast ' ...
+            'aPtPvP-f -a 4 -a 2 -a 6 -c 7'])
+        unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
+            'aPtPvP-f -a 4 -a 6 -a 2 -c 7'])
     end
 
 end
