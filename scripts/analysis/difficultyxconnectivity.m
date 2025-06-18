@@ -57,7 +57,7 @@ lm_table_aud.beta_diff = lm_table_aud.beta_diff - mean(lm_table_aud.beta_diff);
 
 lm_aud = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff')
 lm_aud_plot = fitlm(lm_table_aud_plot, 'aud_difficulty ~ 1 + beta_diff');
-figure; plot(lm_aud_plot); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
+f = figure; p = plot(lm_aud_plot); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
 
 lm_vis = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff')
 lm_vis_plot = fitlm(lm_table_vis_plot, 'vis_difficulty ~ 1 + beta_diff');
