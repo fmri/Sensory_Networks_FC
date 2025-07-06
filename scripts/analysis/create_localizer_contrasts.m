@@ -308,6 +308,12 @@ if run_mkcontrast
             'aPtPvP-f -a 4 -a 2 -a 6 -c 7'])
         unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
             'aPtPvP-f -a 4 -a 6 -a 2 -c 7'])
+
+        unix(['mkcontrast-sess -analysis ' analysis_name_lh ' -contrast ' ...
+            'aAvA-f -a 3 -a 1 -a 6 -c 7'])
+        unix(['mkcontrast-sess -analysis ' analysis_name_rh ' -contrast ' ...
+            'aAvA-f -a 3 -a 1 -a 2 -c 7'])
+
     end
 
 end

@@ -33,7 +33,6 @@ for rr = 1:N_ROIs
     end
 end
 
-
 %% Read in reference annot file so we can keep the same structure for our annot files
 annotpath = [projectDir 'data/recons/fsaverage/label/lh.aparc.annot'];
 [verts_ref, labels_ref, ctable_ref] = read_annotation(annotpath); % Read in lh.aparc.annot file for reference annotation file structure
@@ -122,7 +121,7 @@ for ss = 1:N
                         vA_vP = MRIread(path_vA_vP);
                         aA_aP = MRIread(path_aA_aP);
                         V_A = MRIread(path_V_A);
-                        vA_vP_inROI = vA_vP.vol(search_space_lim); 
+                        vA_vP_inROI = vA_vP.vol(search_space_lim);
                         aA_aP_inROI = aA_aP.vol(search_space_lim); 
                         V_A_inROI = V_A.vol(search_space_lim); 
                         candidate_verts = abs(V_A_inROI) < 2 & vA_vP_inROI > t_thresh & aA_aP_inROI > t_thresh;
@@ -148,7 +147,7 @@ for ss = 1:N
                 labels_orig(sm_ROI_mask) = label_curr; % replace all indices with current ROI label number
             end
 
-            path_V_A = [subj_data_dir subjCode '/localizer/localizer_contrasts_' hemi '/V-A/cespct.nii.gz'];
+            path_V_A = [subj_data_dir subjCode '/localizer/localizer_contrasts_' hemi '/V-A/sig.nii.gz'];
             V_A = MRIread(path_V_A);
             V_A_inROI = V_A.vol(final_sm_ROI_mask); 
             avg_stat(ss, rr, hh) = mean(V_A_inROI);
@@ -172,8 +171,8 @@ for ii = 1:N_ROIs
         mean(avg_stat(:,ii,hh))
         hold on; 
         count = count + 1;
-        [h,p,ci,stats] = ttest(avg_stat(:,ii,hh));
-        p
+        %[h,p,ci,stats] = ttest(avg_stat(:,ii,hh));
+        %p
    end
 end
 

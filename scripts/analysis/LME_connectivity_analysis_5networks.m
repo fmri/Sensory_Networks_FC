@@ -5,7 +5,7 @@
 % Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/functions/'));
 ccc;
 
 %% Load missing ROIs
@@ -55,24 +55,25 @@ for nn = 1:length(cond1_names)
     names{nn} = name_preclean{2}(1:end-4);
 end
 
-%% Plot mean beta matrices
+%% Plot mean correlation matrices
 mean_corr_diffs = mean(corr_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
 
 desired_order = {
-        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
-        'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
-        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
-        'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+        'tgPCS (L)', 'tgPCS (R)', 'FO (L)', 'FO (R)', 'CO (L)', 'CO (R)', 'cIFSG (L)', 'cIFSG (R)', 'cmSFG (L)', 'cmSFG (R)',...
+        'pAud (L)', 'pAud (R)', ...
+        'sPCS (L)', 'sPCS (R)', 'iPCS (L)', 'iPCS (R)', 'midIFS (L)', 'midIFS (R)',...
+        [pVis_name ' (L)'], [pVis_name ' (R)'], ...
+        'sm_aINS (L)', 'sm_aINS (R)', 'sm_preSMA (L)', 'sm_preSMA (R)', 'sm_dACC (L)', 'sm_dACC (R)', 'sm_sPCS (L)', 'sm_sPCS (R)',...
+        'sm_iPCS (L)', 'sm_iPCS (R)', 'sm_midFSG (L)', 'sm_midFSG (R)'};
 ROI_str_mod = 5;
 reject_str = {'sm_ROIs2'};
 ROI_str = 'avsm_ROIs'; 
-vbias_ROIs = {'sPCS', 'iPCS'};
-abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
-sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
+vbias_ROIs = {'sPCS', 'iPCS', 'midIFS'};
+abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO'};
+sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
 pVis_ROIs = {'pVis'};
-pAud_ROIs = {};
+pAud_ROIs = {'pAud'};
 
 
 for nn = 1:length(cond1_names)
@@ -84,7 +85,19 @@ names_plot = names_clean(reorder_inds);
 mean_corr_diffs = mean_corr_diffs(reorder_inds, reorder_inds);
 
 figure;
-heatmap(names_plot, names_plot, mean_corr_diffs); colormap turbo; title(task);
+heatmap(names_plot, names_plot, mean_corr_diffs); colormap(redbluedark); title(task);
+clim([-1, 1]);
+
+%% Make Dendrogram
+distance_measure = 1-abs(mean_corr_diffs);
+distance_measure(1:1+nROIs:end) = 0; % Make diagonal distance zero
+linkage_cluster = linkage(distance_measure, 'single');
+inconsistency = inconsistent(linkage_cluster);
+[clusters, cluster_txt] = linkage_output_extract(linkage_cluster, names);
+figure;
+[h,t,outperm] = dendrogram(linkage_cluster, nROIs, 'Labels', replace(names_plot, '_', ' '));
+title('Hierarchical Clustering');
+ylabel('Cluster Distance');
 
 %% Build design matrix for LME
 hemis = repelem({'lh', 'rh'},nROIs);
@@ -122,11 +135,6 @@ for ss = 1:Nsubjs
             if rr1 ~= rr2 % don't include same ROI to itself
                 ROI2 = names{rr2};
                 hemi2 = hemis{rr2};
-
-                if ( strcmp(ROI1, 'sm_sPCS') ) ||  ( strcmp(ROI2, 'sm_sPCS') )
-                    continue
-                end
-
                 if ismember(ROI2, sm_ROIs)
                     ROI2_type = 'supramodal';
                 elseif ismember(ROI2, abias_ROIs)
@@ -232,5 +240,5 @@ end
 gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 
 %% Sig testing vbias <-> supramodal against abias <-> supramodal
-res_table = contrasts_wald(lme, emm, [0 0 -1 0 0 0 0 0 1 0]);
+res_table = contrasts_wald(lme, emm, [0 0 0 -1 0 0 0 0 0 0 0 0 0 1 0]);
 res_table.pVal

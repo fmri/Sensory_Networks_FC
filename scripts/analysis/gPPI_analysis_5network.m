@@ -8,8 +8,7 @@
 addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
 ccc;
 %% Load missing ROIs
-load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.mat', 'missing_ROIs');
-load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/replacement_ROI_list.mat', 'replacement_ROIs');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/all_replacement_ROIs.mat', 'all_replacement_ROIs');
 
 %% Setup analysis parameters
 plot_individual_betamaps = true;
@@ -36,6 +35,8 @@ task2_perc_ind = nan;
 Nsubjs = length(subjCodes);
 betas = nan(nROIs,nROIs,Nsubjs,2);
 
+use_replacements = true;
+
 %% Load gPPI betas
 load([ROI_dataDir 'resultsROI_Condition' sprintf('%03d', compare_conditions(1)) '.mat'], 'Z', 'names');
 betas(:,:,:,1) = Z;
@@ -60,19 +61,20 @@ end
 mean_beta_diffs = mean(beta_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
 desired_order = {
-        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
-        'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
-        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
-        'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+        'tgPCS (L)', 'tgPCS (R)', 'FO (L)', 'FO (R)', 'CO (L)', 'CO (R)', 'cIFSG (L)', 'cIFSG (R)', 'cmSFG (L)', 'cmSFG (R)',...
+        'pAud (L)', 'pAud (R)', ...
+        'sPCS (L)', 'sPCS (R)', 'iPCS (L)', 'iPCS (R)', 'midIFS (L)', 'midIFS (R)',...
+        [pVis_name ' (L)'], [pVis_name ' (R)'], ...
+        'sm_aINS (L)', 'sm_aINS (R)', 'sm_preSMA (L)', 'sm_preSMA (R)', 'sm_dACC (L)', 'sm_dACC (R)', 'sm_sPCS (L)', 'sm_sPCS (R)',...
+        'sm_iPCS (L)', 'sm_iPCS (R)', 'sm_midFSG (L)', 'sm_midFSG (R)'};
 ROI_str_mod = 5;
 reject_str = {'sm_ROIs2'};
 ROI_str = 'avsm_ROIs'; 
-vbias_ROIs = {'sPCS', 'iPCS'};
-abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO', 'pAud'};
-sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG', 'midIFS'};
+vbias_ROIs = {'sPCS', 'iPCS', 'midIFS'};
+abias_ROIs = {'tgPCS', 'cIFSG', 'cmSFG', 'CO', 'FO'};
+sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG'};
 pVis_ROIs = {'pVis'};
-pAud_ROIs = {};
+pAud_ROIs = {'pAud'};
 
 for nn = 1:length(cond1_names)
     name_preclean = strsplit(cond1_names{nn},'.');
@@ -84,7 +86,8 @@ names_plot = names_clean(reorder_inds);
 mean_beta_diffs = mean_beta_diffs(reorder_inds, reorder_inds);
 
 figure;
-heatmap(names_plot, names_plot, mean_beta_diffs); colormap turbo; title(task);
+heatmap(names_plot, names_plot, mean_beta_diffs); colormap(redbluedark); title(task);
+caxis([-0.3, 0.3])
 
 %% Build design matrix for LME
 hemis = repelem({'lh', 'rh'},nROIs/2);
@@ -124,9 +127,11 @@ for ss = 1:Nsubjs
                 ROI2 = names{rr2};
                 hemi2 = hemis{rr2};
 
-                % if ( strcmp(ROI1, 'sm_sPCS') ) ||  ( strcmp(ROI2, 'sm_sPCS') )
-                %     continue
-                % end
+                if ~use_replacements
+                    if ismember([subjCodes{ss} '_' ROI1 '_' hemi1], all_replacement_ROIs) | ismember([subjCodes{ss} '_' ROI2 '_' hemi2], all_replacement_ROIs)
+                        continue
+                    end
+                end
 
                 if ismember(ROI2, sm_ROIs)
                     ROI2_type = 'supramodal';
@@ -141,7 +146,7 @@ for ss = 1:Nsubjs
                 else
                     error('ROI type unknown');
                 end
-                
+
                 ROItype_order = sort({ROI1_type, ROI2_type});
                 connection_type = [ROItype_order{1} '<->' ROItype_order{2}];
                 beta_diff1 = beta_diffs(rr1,rr2,ss);
@@ -241,29 +246,33 @@ gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 [a,b] = sortrows(gppi_sigdiff_tbl, 'EMM', 'descend', 'ComparisonMethod', 'abs');
 
 %% Compare Visual WM betas and Auditory WM betas 
-% vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'abias<->abias', 'abias<->supramodal', 'abias<->vbias'};
-% aud_beta_conns = {'abias<->abias', 'abias<->supramodal', 'abias<->vbias', 'pVis<->vbias', 'pVis<->supramodal'};
-vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'supramodal<->vbias', 'vbias<->vbias'};
-aud_beta_conns = {'abias<->abias', 'abias<->supramodal'};
-hemisphere_possibilities = {'lh_lh', 'rh_lh', 'rh_rh'};
 
-anova_table = table();
-for ss = 1:Nsubjs
-    for hh = 1:length(hemisphere_possibilities)
-        vis_inds = ismember(data_table.connection_type, vis_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
-        mean_beta_vis = mean(data_table.vis_beta(vis_inds));
-        anova_table = [anova_table; {mean_beta_vis, hemisphere_possibilities{hh}, ss, 1}];
-
-        aud_inds = ismember(data_table.connection_type, aud_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
-        mean_beta_aud = mean(data_table.aud_beta(aud_inds));
-        anova_table = [anova_table; {mean_beta_aud, hemisphere_possibilities{hh}, ss, 2}];
-    end
-end
-anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 'connection_type'};
-
-[pvals,tbl,stats] = anovan(anova_table.audvis_beta, ...
-    {anova_table.connection_type, anova_table.subject, anova_table.hemisphere}, ... 
-    'model',1, 'random',[2,3], 'varnames',{'connection_type' 'subject', 'hemisphere'});
+figure;
+vis_beta_conns = {'vbias<->vbias', 'pVis<->supramodal', 'pVis<->vbias', 'supramodal<->vbias'};
+aud_beta_conns = {'abias<->abias', 'abias<->supramodal', 'abias<->pAud', 'pAud<->supramodal'};
+vis_beta_data = data_table.vis_beta(ismember(data_table.connection_type, vis_beta_conns), :);
+aud_beta_data = data_table.aud_beta(ismember(data_table.connection_type, aud_beta_conns), :);
+errorbar([1,2], [mean(vis_beta_data), mean(aud_beta_data)] , [std(vis_beta_data)/sqrt(length(vis_beta_data)), std(aud_beta_data)/sqrt(length(aud_beta_data))], 'LineStyle', 'none', 'Marker', '.', 'MarkerSize', 20, 'Color', 'blue');
+xlim([0.5,2.5])
+xticks([1,2]);
+xticklabels({'Visual WM', 'Auditory WM'});
+title({'5 Apriori Networks | Non-Recruitment', ...
+      'Visual WM: fontal vis<->frontal vis, posterior vis<->supramodal, posterior vis<->frontal vis, supramodal<->frontal vis', ...
+      'Auditory WM: frontal aud<->frontal aud, frontal aud<->supramodal, frontal aud<->posterior aud, posterior aud<->supramodal'});
+ylabel('PPI Beta');
 
 
+figure;
+vis_beta_conns = {'abias<->vbias', 'abias<->pVis', 'pAud<->pVis', 'pAud<->vbias'};
+vis_beta_conns = {'abias<->vbias', 'abias<->pVis', 'pAud<->pVis', 'pAud<->vbias'};
+vis_beta_data = data_table.vis_beta(ismember(data_table.connection_type, vis_beta_conns), :);
+aud_beta_data = data_table.aud_beta(ismember(data_table.connection_type, aud_beta_conns), :);
+errorbar([1,2], [mean(vis_beta_data), mean(aud_beta_data)] , [std(vis_beta_data)/sqrt(length(vis_beta_data)), std(aud_beta_data)/sqrt(length(aud_beta_data))], 'LineStyle', 'none', 'Marker', '.', 'MarkerSize', 20, 'Color', 'blue');
+xlim([0.5,2.5])
+xticks([1,2]);
+xticklabels({'Visual WM', 'Auditory WM'});
+title({'5 Apriori Networks | Recruitment', ...
+        'Visual WM: frontal aud<->frontal vis, frontal aud<->posterior vis, posterior aud<->posterior vis, posterior aud<->frontal vis',...
+        'Auditory WM: frontal aud<->frontal vis, frontal aud<->posterior vis, posterior aud<->posterior vis, posterior aud<->frontal vis'});
+ylabel('PPI Beta');
 

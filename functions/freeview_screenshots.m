@@ -1,6 +1,6 @@
 %%
 function freeview_screenshots(subjIDs, contrast_list, lh_label_list, rh_label_list, colortable, use_fsaverage, ...
-    save_dir, func_path, func_folder, recon_dir, analysis_name, stat_file, overlayThreshold, label_opacity, ss_suffix, ss_on)
+    save_dir, func_path, func_folder, recon_dir, analysis_name, stat_file, overlayThreshold, label_opacity, ss_suffix, ss_on, overlay_path_override)
 %FREEVIEW_SCREENSHOTS - Creates command files for freeview to plot and screenshot all given labels per contrast and subj
 %
 % If matlab is running into errors opening freesurfer, try running this
@@ -12,7 +12,7 @@ function freeview_screenshots(subjIDs, contrast_list, lh_label_list, rh_label_li
 % Initialize inputs
 assert(nargin >= 4, 'Not enough input arguments (subjIDs, contrast_list, lh_label_list, rh_label_list all required)');
 
-if nargin < 5 || isempty(colortable)
+if nargin < 5 || isempty(colortable) && (~isempty(lh_label_list) && ~isempty(rh_label_list))
     ROI = ["aINS", "preSMA", "ppreCun", "dACC", ... % multisensory
         "sPCS", "iPCS", "midIFS", "aIPS", "pIPS", "DO", "LOT", "VOT",... % visual
         "tgPCS", "cIFSG", "pAud", "CO", "FO", "cmSFG"]'; % auditory
@@ -22,60 +22,71 @@ if nargin < 5 || isempty(colortable)
     colortable = table(ROI, color(:,1), color(:,2), color(:,3), 'VariableNames', {'ROI', 'c1', 'c2', 'c3'});
 end
 
-if nargin <= 6 || isempty(use_fsaverage)
+if nargin < 6 || isempty(use_fsaverage)
     use_fsaverage = true;
 end
 
-if nargin <= 7 || isempty(save_dir)
-    save_dir = '/projectnb/somerslab/tom/projects/spacetime_network/figures_images/roi_QC_screenshots/';
+if nargin < 7 || isempty(save_dir)
+    save_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/figures_images/roi_QC_screenshots/';
 end
 
-if nargin <= 8 || isempty(func_path)
-    func_path = '/projectnb/somerslab/tom/projects/spacetime_network/data/unpacked_data_nii_fs_localizer/';
+if nargin < 8 || isempty(func_path)
+    func_path = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/unpacked_data_nii_fs_localizer/';
 end
 
-if nargin <= 9 || isempty(func_folder)
+if nargin < 9 || isempty(func_folder)
     func_folder = 'localizer';
 end
 
-if nargin <= 10 || isempty(recon_dir)
-    recon_dir = '/projectnb/somerslab/tom/projects/spacetime_network/data/recons/';
+if nargin < 10 || isempty(recon_dir)
+    recon_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/recons/';
 end
 
-if nargin <= 11 || isempty(analysis_name)
+if nargin < 11 || isempty(analysis_name)
     analysis_name = {'localizer_contrasts', ''};
 end
 
-if nargin <= 12 || isempty(stat_file)
+if nargin < 12 || isempty(stat_file)
     stat_file = 'sig.nii.gz';
 end
 
-if nargin <= 13 || isempty(overlayThreshold)
+if nargin < 13 || isempty(overlayThreshold)
     overlayThreshold = '1.3,3,5'; % min, mid, max
 end
 
-if nargin <= 13 || isempty(label_opacity)
+if nargin < 13 || isempty(label_opacity)
     label_opacity = '0.5'; % min, mid, max
 end
 
-if nargin <= 14 || isempty(ss_suffix)
+if nargin < 14 || isempty(ss_suffix)
     ss_suffix = '';
 end
 
-if nargin <= 15 || isempty(ss_on)
+if nargin < 15 || isempty(ss_on)
     ss_on = true;
+end
+
+if nargin < 16 || isempty(overlay_path_override)
+    overlay_path_override = false;
 end
 
 
 % Set key variables
 inflationType = 'inflated'; % inflated / pial
 hemis = {'lh','rh'};
-viewAngles = {'lateral', 'medial', 'posterior'}; % could add dorsal / ventral
+viewAngles = {'lateral'}; % could add dorsal / ventral
+%viewAngles = {'lateral', 'medial', 'posterior'}; % could add dorsal / ventral
 
 labelOutline = 'false'; % true / false
 annotOutline = 'true';
-lh_analysisName = [analysis_name{1} '_lh_' analysis_name{2}];
-rh_analysisName = [analysis_name{1} '_rh_' analysis_name{2}];
+
+if overlay_path_override
+    lh_analysisName = analysis_name;
+    rh_analysisName = analysis_name;
+else
+    lh_analysisName = [analysis_name{1} '_lh_' analysis_name{2}];
+    rh_analysisName = [analysis_name{1} '_rh_' analysis_name{2}];
+end
 
 if isfile([save_dir '/run_all_screenshots.sh'])
     disp('run_all_screenshots.sh already exists in the save_dir, pausing execution. Either exit the script or press continue to delete and replace the file.')
@@ -91,6 +102,13 @@ if isempty(contrast_list)
 end
 
 for ss = 1:length(subjIDs)
+    if length(stat_file)==1
+        stat_file_lh = stat_file;
+        stat_file_rh = stat_file;
+    else
+        stat_file_lh = stat_file{ss,1};
+        stat_file_rh = stat_file{ss,2};
+    end
     subjID = subjIDs{ss};
 
     if use_fsaverage
@@ -99,37 +117,60 @@ for ss = 1:length(subjIDs)
         surfaceSubjID = subjID;
     end
 
-    subj_func_dir = [func_path subjID '/' func_folder '/'];
+    if overlay_path_override
+        subj_func_dir = [func_path '/' func_folder '/'];
+    else
+        subj_func_dir = [func_path subjID '/' func_folder '/'];
+    end
 
     for cc = 1:size(contrast_list,2)
         contrast = contrast_list{ss,cc};
-        lh_overlay = [subj_func_dir '/' lh_analysisName '/' contrast '/' stat_file];
-        rh_overlay = [subj_func_dir '/' rh_analysisName '/' contrast '/' stat_file];
+        if overlay_path_override
+            lh_overlay = [subj_func_dir '/' lh_analysisName '/' stat_file_lh];
+            rh_overlay = [subj_func_dir '/' rh_analysisName '/' stat_file_rh];
+        else
+            lh_overlay = [subj_func_dir '/' lh_analysisName '/' contrast '/' stat_file_lh];
+            rh_overlay = [subj_func_dir '/' rh_analysisName '/' contrast '/' stat_file_rh];
+        end
 
-        lh_labelList_curr = lh_label_list{ss,cc};
-        rh_labelList_curr = rh_label_list{ss,cc};
+        if ~isempty(lh_label_list) && ~isempty(rh_label_list)
+            lh_labelList_curr = lh_label_list{ss,cc};
+            rh_labelList_curr = rh_label_list{ss,cc};
 
-        lh_annotList = {};
-        rh_annotList = {};
+            lh_annotList = {};
+            rh_annotList = {};
+        end
 
         for h = 1:length(hemis)
             hemi = hemis{h};
             if strcmp(hemi,'lh')
                 overlay = lh_overlay;
-                labelList = lh_labelList_curr;
-                annotList = lh_annotList;
-                label_names = cellfun(@(x) split(x,'_'), lh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
-                label_names = string(cellfun(@(x) x{find(contains(x,subjID))+1}, label_names, 'UniformOutput', false)); % ROI name should be 2nd to last item
-                inds = cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names);
-                labelColors = table2array(colortable(inds, 2:4)); % select ROIs and get last 3 rows for RGB values corresponding to each ROI
+                if ~isempty(lh_label_list)
+                    labelList = lh_labelList_curr;
+                    annotList = lh_annotList;
+                    label_names = cellfun(@(x) split(x,'_'), lh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
+                    label_names = string(cellfun(@(x) x{find(contains(x,subjID))+1}, label_names, 'UniformOutput', false)); % ROI name should be 2nd to last item
+                    inds = cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names);
+                    labelColors = table2array(colortable(inds, 2:4)); % select ROIs and get last 3 rows for RGB values corresponding to each ROI
+                else
+                    labelList = {};
+                    annotList = {};
+                    labelColors = [];
+                end
             elseif strcmp(hemi,'rh')
                 overlay = rh_overlay;
-                labelList = rh_labelList_curr;
-                annotList = rh_annotList;
-                label_names = cellfun(@(x) split(x,'_'), rh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
-                label_names = string(cellfun(@(x) x{find(contains(x,subjID))+1}, label_names, 'UniformOutput', false)); % ROI name should be 2nd to last item
-                inds = cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names);
-                labelColors = table2array(colortable(inds, 2:4)); % select ROIs and get last 3 rows for RGB values corresponding to each ROI
+                if ~isempty(rh_label_list)
+                    labelList = rh_labelList_curr;
+                    annotList = rh_annotList;
+                    label_names = cellfun(@(x) split(x,'_'), rh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
+                    label_names = string(cellfun(@(x) x{find(contains(x,subjID))+1}, label_names, 'UniformOutput', false)); % ROI name should be 2nd to last item
+                    inds = cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names);
+                    labelColors = table2array(colortable(inds, 2:4)); % select ROIs and get last 3 rows for RGB values corresponding to each ROI
+                else
+                    labelList = {};
+                    annotList = {};
+                    labelColors = [];
+                end
             end
             if no_contrasts
                 overlay = '';
@@ -192,7 +233,7 @@ disp(['All subjects complete. Run "bash ' save_dir 'run_all_screenshots.sh" from
                 fprintf(fid, '%s\n', cmdSS);
                 fclose(fid);
             end
-            
+
             fid = fopen([saveDir '/' subjID '_' contrast '_' hemi '.txt'], 'a');
             cmdQuit = 'freeview -quit';
             fprintf(fid, '%s\n', cmdQuit);
@@ -208,7 +249,7 @@ disp(['All subjects complete. Run "bash ' save_dir 'run_all_screenshots.sh" from
         fclose(fid);
 
         %unix(fv_command);
-        %disp(fv_command)
+        %disp(fv_command);
         disp(['Complete ' subjID ' ' contrast]);
     end
 end

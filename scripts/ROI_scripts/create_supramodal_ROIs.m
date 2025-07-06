@@ -27,7 +27,7 @@ hemis = {'lh', 'rh'};
 t_thresh = 2;
 t_thresh_2 = 2;
 
-supramodal_ROIs = {'sPCS', 'iPCS', 'midFSG', 'aINS', 'preSMA', 'dACC'} %'aIPS', 'pIPS'};
+supramodal_ROIs = {'sPCS', 'iPCS', 'midFSG', 'aINS', 'preSMA', 'dACC'};
 n_ROIs = length(supramodal_ROIs);
 
 probROI_data = cell(n_ROIs, 2);

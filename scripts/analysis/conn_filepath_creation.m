@@ -63,7 +63,7 @@ for ss=1:length(subjCodes)
     if supramodal_ROIs
         subjROIpath = [ROI_path subjCodes{ss} '_smROIs.surf.nii'];
     else
-        subjROIpath = [ROI_path subjCodes{ss} '_avsm_ROIs.surf.nii'];
+        subjROIpath = [ROI_path subjCodes{ss} '_avsm_ROIs3.surf.nii'];
     end
     disp(subjROIpath)
 end

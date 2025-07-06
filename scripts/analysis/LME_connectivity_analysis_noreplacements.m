@@ -9,7 +9,8 @@ addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions
 ccc;
 
 %% Load missing ROIs
-load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.mat', 'missing_ROIs');
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/all_replacement_ROIs.mat', 'all_replacement_ROIs');
+use_replacements = false;
 
 %% Setup analysis parameters
 task = 'rest';
@@ -122,9 +123,11 @@ for ss = 1:Nsubjs
             if rr1 ~= rr2 % don't include same ROI to itself
                 ROI2 = names{rr2};
                 hemi2 = hemis{rr2};
-
-                if ( strcmp(ROI1, 'sm_sPCS') ) ||  ( strcmp(ROI2, 'sm_sPCS') )
-                    continue
+                
+                if ~use_replacements
+                    if ismember([subjCodes{ss} '_' ROI1 '_' hemi1], all_replacement_ROIs) | ismember([subjCodes{ss} '_' ROI2 '_' hemi2], all_replacement_ROIs)
+                        continue
+                    end
                 end
 
                 if ismember(ROI2, sm_ROIs)

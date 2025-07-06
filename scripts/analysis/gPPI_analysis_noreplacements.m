@@ -56,6 +56,9 @@ for nn = 1:length(cond1_names)
     names{nn} = name_preclean{2}(1:end-4);
 end
 
+load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/all_replacement_ROIs.mat', 'all_replacement_ROIs');
+use_replacements = false;
+
 %% Plot mean beta matrices
 mean_beta_diffs = mean(beta_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
@@ -124,9 +127,11 @@ for ss = 1:Nsubjs
                 ROI2 = names{rr2};
                 hemi2 = hemis{rr2};
 
-                % if ( strcmp(ROI1, 'sm_sPCS') ) ||  ( strcmp(ROI2, 'sm_sPCS') )
-                %     continue
-                % end
+                if ~use_replacements
+                    if ismember([subjCodes{ss} '_' ROI1 '_' hemi1], all_replacement_ROIs) | ismember([subjCodes{ss} '_' ROI2 '_' hemi2], all_replacement_ROIs)
+                        continue
+                    end
+                end
 
                 if ismember(ROI2, sm_ROIs)
                     ROI2_type = 'supramodal';
@@ -141,7 +146,7 @@ for ss = 1:Nsubjs
                 else
                     error('ROI type unknown');
                 end
-                
+
                 ROItype_order = sort({ROI1_type, ROI2_type});
                 connection_type = [ROItype_order{1} '<->' ROItype_order{2}];
                 beta_diff1 = beta_diffs(rr1,rr2,ss);
@@ -239,31 +244,4 @@ for cc = 1:N_cond
 end
 gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 [a,b] = sortrows(gppi_sigdiff_tbl, 'EMM', 'descend', 'ComparisonMethod', 'abs');
-
-%% Compare Visual WM betas and Auditory WM betas 
-% vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'abias<->abias', 'abias<->supramodal', 'abias<->vbias'};
-% aud_beta_conns = {'abias<->abias', 'abias<->supramodal', 'abias<->vbias', 'pVis<->vbias', 'pVis<->supramodal'};
-vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'supramodal<->vbias', 'vbias<->vbias'};
-aud_beta_conns = {'abias<->abias', 'abias<->supramodal'};
-hemisphere_possibilities = {'lh_lh', 'rh_lh', 'rh_rh'};
-
-anova_table = table();
-for ss = 1:Nsubjs
-    for hh = 1:length(hemisphere_possibilities)
-        vis_inds = ismember(data_table.connection_type, vis_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
-        mean_beta_vis = mean(data_table.vis_beta(vis_inds));
-        anova_table = [anova_table; {mean_beta_vis, hemisphere_possibilities{hh}, ss, 1}];
-
-        aud_inds = ismember(data_table.connection_type, aud_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
-        mean_beta_aud = mean(data_table.aud_beta(aud_inds));
-        anova_table = [anova_table; {mean_beta_aud, hemisphere_possibilities{hh}, ss, 2}];
-    end
-end
-anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 'connection_type'};
-
-[pvals,tbl,stats] = anovan(anova_table.audvis_beta, ...
-    {anova_table.connection_type, anova_table.subject, anova_table.hemisphere}, ... 
-    'model',1, 'random',[2,3], 'varnames',{'connection_type' 'subject', 'hemisphere'});
-
-
 
