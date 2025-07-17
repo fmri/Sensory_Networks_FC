@@ -13,21 +13,21 @@ experiment_name = 'spacetime';
 subjDf = load_subjInfo();
 subjDf_cut = subjDf(~strcmp(subjDf.([experiment_name,'Runs']),''),:);
 subjCodes = subjDf_cut.subjCode;
-subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL'})); % no ROIs for these subjs
+subjCodes = subjCodes(~ismember(subjCodes, {'AH', 'SL', 'RR'})); % no ROIs for these subjs
 N = length(subjCodes);
 
 use_fsaverage = true; % if false will use the ROIs from individual surface
 
 %% Create lookup table for ROIs and corresponding colors
-ROI = ["aINS", "preSMA", "ppreCun", "dACC", ... % multisensory
-        "sPCS", "iPCS", "midIFS", "aIPS", "pIPS", "DO", "LOT", "VOT",... % visual
-        "tgPCS", "cIFSG", "pAud", "CO", "FO", "cmSFG"]'; % auditory
+ROI = ["sm_aINS", "sm_preSMA", "sm_dACC", "sm_sPCS", "sm_iPCS", "sm_midFSG" ... % supramodal
+    "sPCS", "iPCS", "midIFS", "pVis",... % visual
+    "tgPCS", "cIFSG", "pAud", "CO", "FO", "cmSFG"]'; % auditory
 % color = [[0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; ... % blue
 %           [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; ... % green
 %           [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]]; % green
-color = [[0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; ... % green
-          [0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; ... % blue
-          [255 165 0]; [255 165 0]; [255 165 0]; [255 165 0]; [255 165 0]; [255 165 0]]; % orange
+color = [[0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; [0 255 0]; ... % green
+    [0 0 255]; [0 0 255]; [0 0 255]; [0 0 255]; ... % blue
+    [255 165 0]; [255 165 0]; [255 165 0]; [255 165 0]; [255 165 0]; [255 165 0]]; % orange
 ctable = table(ROI, color(:,1), color(:,2), color(:,3), 'VariableNames', {'ROI', 'c1', 'c2', 'c3'});
 
 
@@ -35,41 +35,40 @@ ctable = table(ROI, color(:,1), color(:,2), color(:,3), 'VariableNames', {'ROI',
 lh_ROI_paths = {};
 rh_ROI_paths = {};
 
-roi_base_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs/';
-
-all_roi_files = {dir(roi_base_dir).name};
+roi_base_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/ROIs_final/';
 
 if use_fsaverage
-    all_roi_files = all_roi_files(~contains(all_roi_files, 'indiv'));
+    roi_base_dir = [roi_base_dir 'fsaverage/'];
     ss_suffix = '_fsavg';
 else
-    all_roi_files = all_roi_files(contains(all_roi_files, 'indiv'));
+    roi_base_dir = [roi_base_dir 'subjspace/'];
     ss_suffix = '_self';
 end
 
-
 for ss = 1:N % loop through subjs
     subjCode = subjCodes{ss};
-    subj_ROIs = all_roi_files(contains(all_roi_files, [subjCode '_'])); % find all ROI files for subj
-    if strcmp(subjCode, 'NS') % due to "NS" being in the label aINS, we have to take out the wrong aINS for this subj
-        bad_aINS = contains(subj_ROIs, 'aINS') & ~contains(subj_ROIs, 'NS_aINS');
-        subj_ROIs = subj_ROIs(~bad_aINS);
-    end
+    subj_dir = [roi_base_dir subjCode '/'];
+    subj_ROIs = {dir(subj_dir).name};
 
     lh_ROI_files = subj_ROIs(contains(subj_ROIs, 'lh')); % find all lh ROIs
     rh_ROI_files = subj_ROIs(contains(subj_ROIs, 'rh')); % find all rh ROIs
     
-
+    count = 0;
     for rr = 1:length(lh_ROI_files) % for each ROI
-        ROI_split = split(lh_ROI_files{rr}, '_');
-        ROI_name = ROI_split{2}; % isolate name of ROI only 
-        lh_ROI_paths{ss, 1}{rr} = [roi_base_dir lh_ROI_files{rr}]; % put it in correct cell for subj and contrast
+        ROI_name = split(lh_ROI_files{rr}, '.');
+        if ismember(ROI_name{2}, ROI)
+            count = count + 1;
+            lh_ROI_paths{ss, 1}{count} = [subj_dir lh_ROI_files{rr}]; % put it in correct cell for subj and contrast
+        end
     end
 
+    count = 0;
     for rr = 1:length(rh_ROI_files)
-        ROI_split = split(rh_ROI_files{rr}, '_');
-        ROI_name = ROI_split{2};
-        rh_ROI_paths{ss, 1}{rr} = [roi_base_dir rh_ROI_files{rr}];
+        ROI_name = split(rh_ROI_files{rr}, '.');
+        if ismember(ROI_name{2}, ROI)
+            count = count + 1;
+            rh_ROI_paths{ss, 1}{count} = [subj_dir rh_ROI_files{rr}]; % put it in correct cell for subj and contrast
+        end    
     end
 
 end
@@ -78,3 +77,7 @@ end
 contrasts = {};
 freeview_screenshots(subjCodes, contrasts, lh_ROI_paths, rh_ROI_paths, ctable, use_fsaverage,[],[],[],[],[],[],[],'0.9',ss_suffix)
 crop_ppt_fv_images(subjCodes, contrasts, true, [], 'ROI_fsavg_surface_screenshots_nocontrasts')
+
+
+%    subjIDs, contrast_list, lh_label_list, rh_label_list, colortable, use_fsaverage, ...
+%    save_dir, func_path, func_folder, recon_dir, analysis_name, stat_file, overlayThreshold, label_opacity, ss_suffix, ss_on, overlay_path_override

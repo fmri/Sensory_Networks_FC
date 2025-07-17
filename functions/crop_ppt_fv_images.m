@@ -12,7 +12,7 @@ if nargin < 3 || isempty(run_PPT)
 end
 
 if nargin < 4 || isempty(save_dir)
-    save_dir = '/projectnb/somerslab/tom/projects/spacetime_network/figures_images/roi_QC_screenshots/';
+    save_dir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/figures_images/roi_QC_screenshots/';
 end
 
 if nargin < 5 || isempty(pptTitle)
@@ -22,7 +22,7 @@ end
 
 % Set key variables
 hemis = {'lh','rh'};
-viewAngles = {'lateral', 'medial', 'posterior'}; % could add dorsal / ventral
+viewAngles = {'lateral', 'medial'}; % could add dorsal / ventral
 
 no_contrasts = false;
 if isempty(contrast_list)
@@ -39,20 +39,21 @@ for ss=1:length(subjIDs)
             hemi=hemis{h};
             for v=1:length(viewAngles)
                 viewAngle = viewAngles{v};
-                imgFile = [save_dir '/' subjID '_' contrast '_' viewAngle '_' hemi '.png']; 
+                imgFile = [save_dir '/' subjID '_' contrast '_' viewAngle '_' hemi '_fsavg.png']; 
                 if strcmp(hemi,'lh')
                     if contains(imgFile,'lateral')
-                        cropAmts= [200,200,550,550]; % top,bottom,left,right
+                        cropAmts= [125,125,400,400];
+                        %cropAmts= [200,200,550,550]; % top,bottom,left,right
                     elseif contains(imgFile,'medial')
-                        cropAmts= [200,200,550,550]; % top,bottom,left,right
+                        cropAmts= [125,125,400,400]; % top,bottom,left,right
                     elseif contains(imgFile,'posterior')
                         cropAmts= [200,200,550,850]; % top,bottom,left,right
                     end
                 elseif strcmp(hemi,'rh')
                     if contains(imgFile,'lateral')
-                        cropAmts= [200,200,550,550]; % top,bottom,left,right
+                        cropAmts= [125,125,400,400]; % top,bottom,left,right
                     elseif contains(imgFile,'medial')
-                        cropAmts= [200,200,550,550]; % top,bottom,left,right
+                        cropAmts= [125,125,400,400]; % top,bottom,left,right
                     elseif contains(imgFile,'posterior')
                         cropAmts= [200,200,850,550]; % top,bottom,left,right
                     end
@@ -119,7 +120,7 @@ end
                     for v = 1:length(viewAngles)
                         try
                             viewAngle=viewAngles{v};
-                            imgFile = [save_dir '/' subjID '_' contrast '_' viewAngle '_' hemi '_crop.png']; 
+                            imgFile = [save_dir '/' subjID '_' contrast '_' viewAngle '_' hemi '_fsavg_crop.png']; 
                             img = Picture(imgFile);
 
                             % Read the image to get its original dimensions

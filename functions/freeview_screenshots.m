@@ -47,26 +47,26 @@ if nargin < 11 || isempty(analysis_name)
 end
 
 if nargin < 12 || isempty(stat_file)
-    stat_file = 'sig.nii.gz';
+    stat_file = {'sig.nii.gz'};
 end
 
 if nargin < 13 || isempty(overlayThreshold)
     overlayThreshold = '1.3,3,5'; % min, mid, max
 end
 
-if nargin < 13 || isempty(label_opacity)
+if nargin < 14 || isempty(label_opacity)
     label_opacity = '0.5'; % min, mid, max
 end
 
-if nargin < 14 || isempty(ss_suffix)
+if nargin < 15 || isempty(ss_suffix)
     ss_suffix = '';
 end
 
-if nargin < 15 || isempty(ss_on)
+if nargin < 16 || isempty(ss_on)
     ss_on = true;
 end
 
-if nargin < 16 || isempty(overlay_path_override)
+if nargin < 17 || isempty(overlay_path_override)
     overlay_path_override = false;
 end
 
@@ -74,7 +74,7 @@ end
 % Set key variables
 inflationType = 'inflated'; % inflated / pial
 hemis = {'lh','rh'};
-viewAngles = {'lateral'}; % could add dorsal / ventral
+viewAngles = {'lateral', 'medial'}; % could add dorsal / ventral
 %viewAngles = {'lateral', 'medial', 'posterior'}; % could add dorsal / ventral
 
 labelOutline = 'false'; % true / false
@@ -103,8 +103,8 @@ end
 
 for ss = 1:length(subjIDs)
     if length(stat_file)==1
-        stat_file_lh = stat_file;
-        stat_file_rh = stat_file;
+        stat_file_lh = stat_file{1};
+        stat_file_rh = stat_file{1};
     else
         stat_file_lh = stat_file{ss,1};
         stat_file_rh = stat_file{ss,2};
@@ -148,9 +148,9 @@ for ss = 1:length(subjIDs)
                 if ~isempty(lh_label_list)
                     labelList = lh_labelList_curr;
                     annotList = lh_annotList;
-                    label_names = cellfun(@(x) split(x,'_'), lh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
-                    label_names = string(cellfun(@(x) x{find(contains(x,subjID))+1}, label_names, 'UniformOutput', false)); % ROI name should be 2nd to last item
-                    inds = cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names);
+                    label_names = cellfun(@(x) split(x,'.'), lh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
+                    label_names = string(cellfun(@(x) x{2}, label_names, 'UniformOutput', false)); % ROI name should be 2nd 
+                    inds = cell2mat(cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names, 'UniformOutput', false));
                     labelColors = table2array(colortable(inds, 2:4)); % select ROIs and get last 3 rows for RGB values corresponding to each ROI
                 else
                     labelList = {};
@@ -162,9 +162,9 @@ for ss = 1:length(subjIDs)
                 if ~isempty(rh_label_list)
                     labelList = rh_labelList_curr;
                     annotList = rh_annotList;
-                    label_names = cellfun(@(x) split(x,'_'), rh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
-                    label_names = string(cellfun(@(x) x{find(contains(x,subjID))+1}, label_names, 'UniformOutput', false)); % ROI name should be 2nd to last item
-                    inds = cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names);
+                    label_names = cellfun(@(x) split(x,'.'), rh_labelList_curr, 'UniformOutput', false); % split file name to isolate ROI name
+                    label_names = string(cellfun(@(x) x{2}, label_names, 'UniformOutput', false)); % ROI name should be 2nd 
+                    inds = cell2mat(cellfun(@(x) find(strcmp(colortable.ROI,x)), label_names, 'UniformOutput', false));
                     labelColors = table2array(colortable(inds, 2:4)); % select ROIs and get last 3 rows for RGB values corresponding to each ROI
                 else
                     labelList = {};
