@@ -5,7 +5,7 @@
 % Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/functions/'));
 ccc;
 
 %% Load missing ROIs
@@ -60,11 +60,11 @@ mean_corr_diffs = mean(corr_diffs, 3, 'omitnan');
 pVis_name = 'pVis';
 
 desired_order = {
-        'tgPCS (L)', 'FO (L)', 'CO (L)', 'cIFSG (L)', 'cmSFG (L)', 'pAud (L)', ...
-        'tgPCS (R)', 'FO (R)', 'CO (R)', 'cIFSG (R)', 'cmSFG (R)', 'pAud (R)', ...
-        'sPCS (L)', 'iPCS (L)', 'midIFS (L)', [pVis_name ' (L)'], 'sPCS (R)', 'iPCS (R)', 'midIFS (R)', [pVis_name ' (R)'], ...
-        'sm_aINS (L)', 'sm_preSMA (L)', 'sm_dACC (L)', 'sm_sPCS (L)', 'sm_iPCS (L)', 'sm_midFSG (L)',...
-        'sm_aINS (R)', 'sm_preSMA (R)', 'sm_dACC (R)', 'sm_sPCS (R)', 'sm_iPCS (R)', 'sm_midFSG (R)'};
+        [pVis_name ' (L)'], [pVis_name ' (R)'], 'sPCS (L)', 'sPCS (R)', 'iPCS (L)', 'iPCS (R)', ...
+        'pAud (L)', 'pAud (R)', 'tgPCS (L)', 'tgPCS (R)', 'FO (L)', 'FO (R)', 'CO (L)', 'CO (R)', 'cIFSG (L)', 'cIFSG (R)',...
+        'cmSFG (L)', 'cmSFG (R)', ...
+        'aINS-sm (L)', 'aINS-sm (R)', 'preSMA-sm (L)', 'preSMA-sm (R)' 'dACC-sm (L)', 'dACC-sm (R)', 'sPCS-sm (L)', 'sPCS-sm (R)',...
+        'iPCS-sm (L)', 'iPCS-sm (R)', 'midFSG-sm (L)', 'midFSG-sm (R)', 'midIFS (L)', 'midIFS (R)'};
 ROI_str_mod = 5;
 reject_str = {'sm_ROIs2'};
 ROI_str = 'avsm_ROIs'; 
@@ -74,17 +74,22 @@ sm_ROIs = {'sm_aINS', 'sm_preSMA', 'sm_dACC', 'sm_sPCS', 'sm_iPCS', 'sm_midFSG',
 pVis_ROIs = {'pVis'};
 pAud_ROIs = {};
 
-
 for nn = 1:length(cond1_names)
     name_preclean = strsplit(cond1_names{nn},'.');
     names_clean{nn} = name_preclean{2};
+    if contains(names_clean{nn}, 'sm_')
+        names_clean{nn} = erase(names_clean{nn}, 'sm_');
+        names_clean{nn} = strsplit(names_clean{nn}, ' ');
+        names_clean{nn} = [names_clean{nn}{1} '-sm ' names_clean{nn}{2}];
+    end
 end
 [ROIs_match, reorder_inds] = ismember(desired_order, names_clean);
 names_plot = names_clean(reorder_inds);
 mean_corr_diffs = mean_corr_diffs(reorder_inds, reorder_inds);
 
 figure;
-heatmap(names_plot, names_plot, mean_corr_diffs); colormap turbo; title(task);
+heatmap(names_plot, names_plot, mean_corr_diffs); colormap(redbluedark); title('Resting State Connectivity Heatmap'); 
+clim([-0.8,0.8])
 
 %% Build design matrix for LME
 hemis = repelem({'lh', 'rh'},nROIs);
@@ -145,20 +150,23 @@ for ss = 1:Nsubjs
                 connection_type = [ROItype_order{1} '<->' ROItype_order{2}];
                 corr_diff1 = corr_diffs(rr1,rr2,ss);
 
+                ROI_order = sort({ROI1, ROI2});
+                ROI_type = [ROI_order{1} '<->' ROI_order{2}];
+
                 if rr1 > rr2 % only count each occurance once
                     hemi12 = [hemi1 '_' hemi2];
                     corr_diff = corr_diff1;
                     if isnan(corr_diff)
                         error('corr is nan');
                     end
-                    data_table = [data_table; {corr_diff, ss, hemi12, connection_type, task_pcorrect_diff}];
+                    data_table = [data_table; {corr_diff, ss, hemi12, connection_type, ROI_type, task_pcorrect_diff}];
                 end
             end
         end
     end
 end
 
-data_table.Properties.VariableNames = {'corr_diff', 'subject', 'hemispheres', 'connection_type', 'task_pcorrect_diff'};
+data_table.Properties.VariableNames = {'corr_diff', 'subject', 'hemispheres', 'connection_type', 'ROI_type', 'task_pcorrect_diff'};
 
 %% Make connectivity bar graph
 
@@ -204,14 +212,25 @@ set(gca, 'FontSize', 18)
 data_table.subject = categorical(data_table.subject);
 data_table.hemispheres = categorical(data_table.hemispheres);
 data_table.connection_type = categorical(data_table.connection_type);
+data_table.ROI_type = categorical(data_table.ROI_type);
 
 %% Fit LME
 tic;
 lme = fitglme(data_table, ['corr_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
-    ' + (1 + connection_type | hemispheres)'], ...
+    ' + (1 + connection_type | hemispheres) + (1 + connection_type | ROI_type)'], ...
     'DummyVarCoding','reference');
 toc
 
+residuals = lme.residuals;
+figure; 
+figure; qqplot(residuals)
+figure; 
+x = (residuals - mean(residuals))/std(residuals);
+cdfplot(x)
+hold on
+x_values = linspace(min(x),max(x));
+plot(x_values,normcdf(x_values,0,1),'r-')
+legend('Empirical CDF','Standard Normal CDF','Location','best')
 
 emm = emmeans(lme,'unbalanced');
 emm.table

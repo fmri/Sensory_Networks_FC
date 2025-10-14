@@ -22,7 +22,7 @@ subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', '
 task = 'vA-aA';
 conditions = {'aP', 'tP', 'vP', 'aA', 'tA', 'vA', 'f'}; % Note this is a different order than the conditions in the tsv or para files, this is because Conn saves the conditions in a particular order (which is different from the order you in the condition files for some reason)
 
-ROI_dataDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/avsm_gPPI/';
+ROI_dataDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_localizer_task/results/firstlevel/avsm_gPPI_nofix/';
 nROIs = 16*2;
 missing_ROIs = []; 
 
@@ -226,7 +226,7 @@ toc
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
-    save(['gPPI_LME_results_localizer_' task 'avsm.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
+    save(['gPPI_LME_results_localizer_' task 'avsm_nofix.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
 end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 title(title_str);
@@ -267,11 +267,3 @@ anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 
 
 
 
-
-
-x = (residuals - mean(residuals))/std(residuals);
-cdfplot(x)
-hold on
-x_values = linspace(min(x),max(x));
-plot(x_values,normcdf(x_values,0,1),'r-')
-legend('Empirical CDF','Standard Normal CDF','Location','best')

@@ -5,14 +5,13 @@
 % Tom Possidente - October 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(genpath('/projectnb/somerslab/tom/projects/sensory_networks_FC/functions/'));
+addpath(genpath('/projectnb/somerslab/tom/functions/'));
 ccc;
 %% Load missing ROIs
 load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/all_replacement_ROIs.mat', 'all_replacement_ROIs');
 
 %% Setup analysis parameters
-plot_individual_betamaps = true;
-save_out = false;
+save_out = true; %%%%%%%%%%%%%%%
 
 reject_subjs = {'AH', 'SL', 'RR'};
 subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
@@ -152,6 +151,9 @@ for ss = 1:Nsubjs
                 beta_diff1 = beta_diffs(rr1,rr2,ss);
                 beta_vis1 = betas(rr1,rr2,ss,1);
                 beta_aud1 = betas(rr1,rr2,ss,2);
+                
+                ROI_order = sort({ROI1, ROI2});
+                ROI_type = [ROI_order{1} '<->' ROI_order{2}];
 
                 if rr1 > rr2 % only count each occurance once
                     hemi12 = [hemi1 '_' hemi2];
@@ -161,14 +163,14 @@ for ss = 1:Nsubjs
                     if isnan(beta_diff_mean)
                         continue;
                     end
-                    data_table = [data_table; {beta_diff_mean, beta_vis_mean, beta_aud_mean, ss, hemi12, connection_type, task_pcorrect_diff}];
+                    data_table = [data_table; {beta_diff_mean, beta_vis_mean, beta_aud_mean, ss, hemi12, connection_type, ROI_type, task_pcorrect_diff}];
                 end
             end
         end
     end
 end
 
-data_table.Properties.VariableNames = {'beta_diff', 'vis_beta', 'aud_beta', 'subject', 'hemispheres', 'connection_type', 'task_pcorrect_diff'};
+data_table.Properties.VariableNames = {'beta_diff', 'vis_beta', 'aud_beta', 'subject', 'hemispheres', 'connection_type', 'ROI_type', 'task_pcorrect_diff'};
 
 
 %% Make gPPI beta bar graph
@@ -216,11 +218,12 @@ set(gca, 'FontSize', 18)
 data_table.subject = categorical(data_table.subject);
 data_table.hemispheres = categorical(data_table.hemispheres);
 data_table.connection_type = categorical(data_table.connection_type);
+data_table.ROI_type = categorical(data_table.ROI_type);
 
 %% Fit LME
 tic;
 lme = fitglme(data_table, ['beta_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
-    ' + (1 + connection_type | hemispheres)'], ...
+    ' + (1 + connection_type | hemispheres) + (1 + connection_type | ROI_type)'], ...
     'DummyVarCoding','reference');
 toc
 
@@ -228,7 +231,7 @@ toc
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
-    save(['gPPI_LME_results_localizer_' task 'avsm.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
+    save(['gPPI_LME_results_localizer_' task 'avsm_5network.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
 end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 title(title_str);
@@ -245,7 +248,7 @@ end
 gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 [a,b] = sortrows(gppi_sigdiff_tbl, 'EMM', 'descend', 'ComparisonMethod', 'abs');
 
-%% Compare Visual WM betas and Auditory WM betas 
+%% Plot Visual WM betas and Auditory WM betas 
 
 figure;
 vis_beta_conns = {'vbias<->vbias', 'pVis<->supramodal', 'pVis<->vbias', 'supramodal<->vbias'};
@@ -276,3 +279,29 @@ title({'5 Apriori Networks | Recruitment', ...
         'Auditory WM: frontal aud<->frontal vis, frontal aud<->posterior vis, posterior aud<->posterior vis, posterior aud<->frontal vis'});
 ylabel('PPI Beta');
 
+vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'supramodal<->vbias', 'vbias<->vbias'};
+aud_beta_conns = {'abias<->abias', 'abias<->supramodal'};
+hemisphere_possibilities = {'lh_lh', 'rh_lh', 'rh_rh'};
+
+%% ANOVA Compare Visual WM betas and Auditory WM betas 
+vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'supramodal<->vbias', 'vbias<->vbias'};
+aud_beta_conns = {'pAud<->abias', 'pAud<->supramodal', 'abias<->abias', 'abias<->supramodal'};
+hemisphere_possibilities = {'lh_lh', 'rh_lh', 'rh_rh'};
+
+anova_table = table();
+for ss = 1:Nsubjs
+    for hh = 1:length(hemisphere_possibilities)
+        vis_inds = ismember(data_table.connection_type, vis_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
+        mean_beta_vis = mean(data_table.vis_beta(vis_inds));
+        anova_table = [anova_table; {mean_beta_vis, hemisphere_possibilities{hh}, ss, 1}];
+
+        aud_inds = ismember(data_table.connection_type, aud_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
+        mean_beta_aud = mean(data_table.aud_beta(aud_inds));
+        anova_table = [anova_table; {mean_beta_aud, hemisphere_possibilities{hh}, ss, 2}];
+    end
+end
+anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 'connection_type'};
+
+[pvals,tbl,stats] = anovan(anova_table.audvis_beta, ...
+    {anova_table.connection_type, anova_table.subject, anova_table.hemisphere}, ... 
+    'model',1, 'random',[2,3], 'varnames',{'connection_type' 'subject', 'hemisphere'});
