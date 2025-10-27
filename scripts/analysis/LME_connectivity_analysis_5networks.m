@@ -224,21 +224,32 @@ toc
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
-    save(['conn_LME_results_' task '.mat'], 'lme', 'emm'); %%% CHANGE ME
+    save(['conn_LME_results_' task '_5networks.mat'], 'lme', 'emm'); %%% CHANGE ME
 end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 
 %% Sig testing
 N_cond = height(emm.table);
-gppi_sigdiff_tbl = table();
+sigdiff_tbl = table();
 for cc = 1:N_cond
     contrast = zeros(1,N_cond);
     contrast(cc) = 1;
     res_table = contrasts_wald(lme, emm, contrast);
-    gppi_sigdiff_tbl = [gppi_sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
+    sigdiff_tbl = [sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
 end
-gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
+sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 
 %% Sig testing vbias <-> supramodal against abias <-> supramodal
 res_table = contrasts_wald(lme, emm, [0 0 0 -1 0 0 0 0 0 0 0 0 0 1 0]);
 res_table.pVal
+
+figure;
+b1 = bar(1, sigdiff_tbl.EMM(14));
+hold on;
+b2 = bar(2, sigdiff_tbl.EMM(4));
+errorbar([1;2], [sigdiff_tbl.EMM(14);sigdiff_tbl.EMM(4)], [sigdiff_tbl.SE(14);sigdiff_tbl.SE(4)], 'LineStyle','none') 
+ylabel('Mean Connectivity Coefficient');
+xticks([1,2])
+xticklabels({'frontal visual <-> supramodal', 'frontal auditory <-> supramodal'});
+
+save('connectivity_supramodalcomp_plotpoints_5networks.mat', 'sigdiff_tbl');

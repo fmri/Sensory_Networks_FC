@@ -265,5 +265,20 @@ anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 
     {anova_table.connection_type, anova_table.subject, anova_table.hemisphere}, ... 
     'model',1, 'random',[2,3], 'varnames',{'connection_type' 'subject', 'hemisphere'});
 
+avg_visconns = mean(anova_table.audvis_beta(anova_table.connection_type==1));
+avg_audconns = mean(anova_table.audvis_beta(anova_table.connection_type==2));
+sem_visconns = std(anova_table.audvis_beta(anova_table.connection_type==1)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==1)));
+sem_audconns = std(anova_table.audvis_beta(anova_table.connection_type==2)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==2)));
 
+figure;
+%swarmchart(anova_table.connection_type, anova_table.audvis_beta);
+b1 = bar(1, avg_visconns);
+hold on;
+b2 = bar(2, avg_audconns);
+errorbar([1;2], [avg_visconns;avg_audconns], [sem_visconns;sem_audconns], 'LineStyle','none') 
+ylabel('Mean PPI Beta');
+xticks([1,2])
+xticklabels({'Visual Stream Connections', 'Auditory Stream Connections'});
+legend([b1,b2], {'Visual WM Change in Connectivity', 'Auditory WM Change in Connectivity'});
 
+save('5network_anova_plotpoints.mat', 'avg_visconns', 'avg_audconns', 'sem_visconns', 'sem_audconns');

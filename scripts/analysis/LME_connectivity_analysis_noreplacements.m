@@ -15,7 +15,7 @@ use_replacements = false;
 %% Setup analysis parameters
 task = 'rest';
 plot_individual_betamaps = true;
-save_out = false;
+save_out = true;
 
 if ismember(task, {'rest', 'resting', 'rs'})
     reject_subjs = {'RR','AH','PQ','RT','SL','MM'};
@@ -219,21 +219,45 @@ toc
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
-    save(['conn_LME_results_' task '.mat'], 'lme', 'emm'); %%% CHANGE ME
+    save(['conn_LME_results_' task '_noreplacements.mat'], 'lme', 'emm'); %%% CHANGE ME
 end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 
+%% Normality tests
+residuals = lme.residuals;
+figure; 
+figure; qqplot(residuals)
+figure; 
+x = (residuals - mean(residuals))/std(residuals);
+cdfplot(x)
+hold on
+x_values = linspace(min(x),max(x));
+plot(x_values,normcdf(x_values,0,1),'r-')
+legend('Empirical CDF','Standard Normal CDF','Location','best')
+
+
 %% Sig testing
 N_cond = height(emm.table);
-gppi_sigdiff_tbl = table();
+sigdiff_tbl = table();
 for cc = 1:N_cond
     contrast = zeros(1,N_cond);
     contrast(cc) = 1;
     res_table = contrasts_wald(lme, emm, contrast);
-    gppi_sigdiff_tbl = [gppi_sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
+    sigdiff_tbl = [sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
 end
-gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
+sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 
 %% Sig testing vbias <-> supramodal against abias <-> supramodal
 res_table = contrasts_wald(lme, emm, [0 0 -1 0 0 0 0 0 1 0]);
 res_table.pVal
+
+figure;
+b1 = bar(1, sigdiff_tbl.EMM(9));
+hold on;
+b2 = bar(2, sigdiff_tbl.EMM(3));
+errorbar([1;2], [sigdiff_tbl.EMM(9);sigdiff_tbl.EMM(3)], [sigdiff_tbl.SE(9);sigdiff_tbl.SE(3)], 'LineStyle','none') 
+ylabel('Mean Connectivity Coefficient');
+xticks([1,2])
+xticklabels({'frontal visual <-> supramodal', 'frontal+posterior auditory <-> supramodal'});
+
+save('connectivity_supramodalcomp_plotpoints_noreplacements.mat', 'sigdiff_tbl');

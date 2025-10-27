@@ -14,7 +14,7 @@ load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.ma
 %% Setup analysis parameters
 task = 'rest';
 plot_individual_betamaps = true;
-save_out = false;
+save_out = true;
 
 if ismember(task, {'rest', 'resting', 'rs'})
     reject_subjs = {'RR','AH','PQ','RT','SL','MM'};
@@ -217,21 +217,64 @@ data_table.ROI_type = categorical(data_table.ROI_type);
 %% Fit LME
 tic;
 lme = fitglme(data_table, ['corr_diff ~ 1 + connection_type + (1 + connection_type | subject) ' ...
-    ' + (1 + connection_type | hemispheres) + (1 + connection_type | ROI_type)'], ...
+    ' + (1 + connection_type | hemispheres)'], ...
     'DummyVarCoding','reference');
 toc
 
+%% Normality checks
 residuals = lme.residuals;
-figure; 
-figure; qqplot(residuals)
-figure; 
 x = (residuals - mean(residuals))/std(residuals);
-cdfplot(x)
+
+nBoot = 10000;              % Number of bootstrap samples
+alpha = 0.05;              % For 95% confidence interval
+n = length(x);                   % Sample size
+
+residuals_sorted = sort(x);
+p = ((1:n)' - 0.5) / n;   % Plotting positions
+
+% Theoretical quantiles for normal distribution
+theoretical_q = norminv(p, 0, 1);  % Change distribution here if needed
+
+% Bootstrap resampling
+bootstrap_q = zeros(n, nBoot);  % Each column is one bootstrap sample's sorted data
+
+for i = 1:nBoot
+    resample = datasample(x, n);  % Resample with replacement
+    bootstrap_q(:, i) = sort(resample);  % Store sorted bootstrap sample
+end
+
+% Compute confidence bounds at each quantile
+lower_bound = quantile(bootstrap_q, alpha/2, 2);      % Lower bound (2.5%)
+upper_bound = quantile(bootstrap_q, 1 - alpha/2, 2);  % Upper bound (97.5%)
+
+% Plotting
+figure;
+hold on;
+fill([theoretical_q; flipud(theoretical_q)], ...
+     [lower_bound; flipud(upper_bound)], ...
+     [0.9 0.9 0.9], 'EdgeColor', 'none', 'DisplayName', '95% CI');
+plot(theoretical_q, residuals_sorted, 'bo', 'DisplayName', 'Data');
+plot(theoretical_q, theoretical_q, 'r--', 'LineWidth', 1.5, 'DisplayName', 'y = x');
+
+xlabel('Theoretical Quantiles (Normal)');
+ylabel('Sample Quantiles');
+title('QQ Plot with Bootstrap 95% Confidence Interval');
+legend('Location','best');
+
+figure;
+c = cdfplot(x);
+set(c, 'LineWidth', 3);
 hold on
 x_values = linspace(min(x),max(x));
-plot(x_values,normcdf(x_values,0,1),'r-')
-legend('Empirical CDF','Standard Normal CDF','Location','best')
+plot(x_values,normcdf(x_values,0,1),'r-', 'LineWidth', 1.5)
+legend('Empirical CDF','Standard Normal CDF','Location','best');
+grid off;
 
+skew = skewness(residuals)
+kurt = kurtosis(residuals)
+
+
+%% Estimate marginal means, save, and plot
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
@@ -241,15 +284,56 @@ plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 
 %% Sig testing
 N_cond = height(emm.table);
-gppi_sigdiff_tbl = table();
+sigdiff_tbl = table();
 for cc = 1:N_cond
     contrast = zeros(1,N_cond);
     contrast(cc) = 1;
     res_table = contrasts_wald(lme, emm, contrast);
-    gppi_sigdiff_tbl = [gppi_sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
+    sigdiff_tbl = [sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
 end
-gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
+sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 
 %% Sig testing vbias <-> supramodal against abias <-> supramodal
 res_table = contrasts_wald(lme, emm, [0 0 -1 0 0 0 0 0 1 0]);
 res_table.pVal
+
+figure;
+b1 = bar(1, sigdiff_tbl.EMM(9));
+hold on;
+b2 = bar(2, sigdiff_tbl.EMM(3));
+errorbar([1;2], [sigdiff_tbl.EMM(9);sigdiff_tbl.EMM(3)], [sigdiff_tbl.SE(9);sigdiff_tbl.SE(3)], 'LineStyle','none') 
+ylabel('Mean Connectivity Coefficient');
+xticks([1,2])
+xticklabels({'frontal visual <-> supramodal', 'frontal+posterior auditory <-> supramodal'});
+
+save('connectivity_supramodalcomp_plotpoints.mat', 'sigdiff_tbl');
+
+%% Combine and plot all network connection comparisons
+datadir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/';
+load([datadir 'connectivity_supramodalcomp_plotpoints_5networks.mat'], 'sigdiff_tbl');
+sigdiff_5networks = sigdiff_tbl; 
+load([datadir 'connectivity_supramodalcomp_plotpoints_noreplacements.mat'], 'sigdiff_tbl');
+sigdiff_noreps = sigdiff_tbl; 
+load([datadir 'connectivity_supramodalcomp_plotpoints.mat'], 'sigdiff_tbl');
+
+means = [sigdiff_tbl.EMM(9), sigdiff_noreps.EMM(9), sigdiff_5networks.EMM(14); sigdiff_tbl.EMM(3), sigdiff_noreps.EMM(3), sigdiff_5networks.EMM(4)]';
+sems = [sigdiff_tbl.SE(9), sigdiff_noreps.SE(9), sigdiff_5networks.SE(14); sigdiff_tbl.SE(3), sigdiff_noreps.SE(3), sigdiff_5networks.SE(4)]';
+
+figure;
+b1 = bar([1,2,3], [means(1,1), means(1,2); means(2,1), means(2,2); means(3,1), means(3,2)]);
+hold on;
+ngroups = 3;
+nbars = 2;
+
+% Calculating the width for each bar group
+groupwidth = min(0.8, nbars/(nbars + 1.5));
+for i = 1:nbars
+    x = (1:ngroups) - groupwidth/2 + (2*i-1) * groupwidth / (2*nbars);
+    errorbar(x, means(:,i), sems(:,i), 'k.');
+end
+ylabel('Mean Resting State Connecitivity Coefficient');
+xticks([1,2,3])
+xticklabels({'Original', 'No replacement ROIs', 'a priori 5 networks'});
+legend([b1(1), b1(2)], {'visual <-> supramodal', 'auditory <-> supramodal'});
+
+

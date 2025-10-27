@@ -12,8 +12,7 @@ load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.ma
 load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/replacement_ROI_list.mat', 'replacement_ROIs');
 
 %% Setup analysis parameters
-plot_individual_betamaps = true;
-save_out = false;
+save_out = true;
 
 reject_subjs = {'AH', 'SL', 'RR'};
 subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
@@ -177,13 +176,19 @@ n_conntypes = length(connection_types);
 mean_PPI = nan(n_conntypes,2);
 SE_PPI = nan(n_conntypes,2);
 
+data_visaud = nan(Nsubjs,n_conntypes,2);
 for cc = 1:n_conntypes
     conn_type = connection_types{cc};
     mean_PPI(cc,1) = mean(data_table.vis_beta(strcmp(data_table.connection_type, conn_type)));
     mean_PPI(cc,2) = mean(data_table.aud_beta(strcmp(data_table.connection_type, conn_type)));
     SE_PPI(cc,1) = std(data_table.vis_beta(strcmp(data_table.connection_type, conn_type)))/sqrt(sum(strcmp(data_table.connection_type, conn_type)));
     SE_PPI(cc,2) = std(data_table.aud_beta(strcmp(data_table.connection_type, conn_type)))/sqrt(sum(strcmp(data_table.connection_type, conn_type)));
+    for nn = 1:Nsubjs
+        data_visaud(nn,cc,1) = mean(data_table.vis_beta(strcmp(data_table.connection_type, conn_type) & data_table.subject==nn));
+        data_visaud(nn,cc,2) = mean(data_table.aud_beta(strcmp(data_table.connection_type, conn_type) & data_table.subject==nn));
+    end
 end
+
 
 mean_diffPPIs = abs(mean_PPI(:,1) - mean_PPI(:,2));
 [~,inds] = sort(mean_diffPPIs, 'descend');
@@ -191,7 +196,7 @@ y = mean_PPI(inds,:);
 err = SE_PPI(inds,:);
 
 % Plot
-figure(1); clf;
+figure(2); clf;
 hb = bar(y); % get the bar handles
 hold on;
 for k = 1:size(y,2)
@@ -200,6 +205,10 @@ for k = 1:size(y,2)
     % draw errorbar
     errorbar(xpos, y(:,k), err(:,k), 'LineStyle', 'none', ...
         'Color', 'k', 'LineWidth', 1);
+    
+    for cc = 1:n_conntypes
+        scatter(repmat(xpos(cc), Nsubjs, 1), squeeze(data_visaud(:,inds(cc),1)), 'k');
+    end
 end
 
 % Set Axis properties
@@ -266,12 +275,106 @@ anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 
     'model',1, 'random',[2,3], 'varnames',{'connection_type' 'subject', 'hemisphere'});
 
 
+avg_visconns = mean(anova_table.audvis_beta(anova_table.connection_type==1));
+avg_audconns = mean(anova_table.audvis_beta(anova_table.connection_type==2));
+sem_visconns = std(anova_table.audvis_beta(anova_table.connection_type==1)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==1)));
+sem_audconns = std(anova_table.audvis_beta(anova_table.connection_type==2)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==2)));
+
+figure;
+%swarmchart(anova_table.connection_type, anova_table.audvis_beta);
+b1 = bar(1, avg_visconns);
+hold on;
+b2 = bar(2, avg_audconns);
+errorbar([1;2], [avg_visconns;avg_audconns], [sem_visconns;sem_audconns], 'LineStyle','none') 
+ylabel('Mean PPI Beta');
+xticks([1,2])
+xticklabels({'Visual Stream Connections', 'Auditory Stream Connections'});
+legend([b1,b2], {'Visual WM Change in Connectivity', 'Auditory WM Change in Connectivity'});
+
+save('gPPI_anova_plotpoints.mat', 'avg_visconns', 'avg_audconns', 'sem_visconns', 'sem_audconns');
+
+%% Combine and plot all ANOVAs
+datadir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/';
+load([datadir 'gPPI_anova_plotpoints_5networks.mat'], 'avg_audconns', 'avg_visconns', 'sem_audconns', 'sem_visconns');
+avg_audconns_5networks = avg_audconns; 
+avg_visconns_5networks = avg_visconns;
+sem_audconns_5networks = sem_audconns;
+sem_visconns_5networks = sem_visconns;
+load([datadir 'gPPI_anova_plotpoints_noreplacements.mat'], 'avg_audconns', 'avg_visconns', 'sem_audconns', 'sem_visconns');
+avg_audconns_noreps = avg_audconns; 
+avg_visconns_noreps = avg_visconns;
+sem_audconns_noreps = sem_audconns;
+sem_visconns_noreps = sem_visconns;
+load([datadir 'gPPI_anova_plotpoints.mat'], 'avg_audconns', 'avg_visconns', 'sem_audconns', 'sem_visconns');
+
+means = [avg_visconns, avg_visconns_noreps, avg_visconns_5networks; avg_audconns, avg_audconns_noreps, avg_audconns_5networks]';
+sems = [sem_visconns, sem_visconns_noreps, sem_visconns_5networks; sem_audconns, sem_audconns_noreps, sem_audconns_5networks]';
+
+figure;
+b1 = bar([1,2,3], [avg_visconns, avg_audconns; avg_visconns_noreps, avg_audconns_noreps; avg_visconns_5networks, avg_audconns_5networks]);
+hold on;
+ngroups = 3;
+nbars = 2;
+% Calculating the width for each bar group
+groupwidth = min(0.8, nbars/(nbars + 1.5));
+for i = 1:nbars
+    x = (1:ngroups) - groupwidth/2 + (2*i-1) * groupwidth / (2*nbars);
+    errorbar(x, means(:,i), sems(:,i), 'k.');
+end
+ylabel('Mean PPI Beta');
+xticks([1,2,3])
+xticklabels({'Original', 'No replacement ROIs', 'a priori 5 networks'});
+legend([b1(1), b1(2)], {'Visual WM Change in Connectivity in Visual Stream', 'Auditory WM Change in Connectivity in Auditory Stream'});
 
 
-
+%% normality checks
+residuals = lme.residuals;
 x = (residuals - mean(residuals))/std(residuals);
-cdfplot(x)
+
+nBoot = 10000;              % Number of bootstrap samples
+alpha = 0.05;              % For 95% confidence interval
+n = length(x);                   % Sample size
+
+residuals_sorted = sort(x);
+p = ((1:n)' - 0.5) / n;   % Plotting positions
+
+% Theoretical quantiles for normal distribution
+theoretical_q = norminv(p, 0, 1);  % Change distribution here if needed
+
+% Bootstrap resampling
+bootstrap_q = zeros(n, nBoot);  % Each column is one bootstrap sample's sorted data
+
+for i = 1:nBoot
+    resample = datasample(x, n);  % Resample with replacement
+    bootstrap_q(:, i) = sort(resample);  % Store sorted bootstrap sample
+end
+
+% Compute confidence bounds at each quantile
+lower_bound = quantile(bootstrap_q, alpha/2, 2);      % Lower bound (2.5%)
+upper_bound = quantile(bootstrap_q, 1 - alpha/2, 2);  % Upper bound (97.5%)
+
+% Plotting
+figure;
+hold on;
+fill([theoretical_q; flipud(theoretical_q)], ...
+     [lower_bound; flipud(upper_bound)], ...
+     [0.9 0.9 0.9], 'EdgeColor', 'none', 'DisplayName', '95% CI');
+plot(theoretical_q, residuals_sorted, 'bo', 'DisplayName', 'Data');
+plot(theoretical_q, theoretical_q, 'r--', 'LineWidth', 1.5, 'DisplayName', 'y = x');
+
+xlabel('Theoretical Quantiles (Normal)');
+ylabel('Sample Quantiles');
+title('QQ Plot with Bootstrap 95% Confidence Interval');
+legend('Location','best');
+
+figure;
+c = cdfplot(x);
+set(c, 'LineWidth', 3);
 hold on
 x_values = linspace(min(x),max(x));
-plot(x_values,normcdf(x_values,0,1),'r-')
-legend('Empirical CDF','Standard Normal CDF','Location','best')
+plot(x_values,normcdf(x_values,0,1),'r-', 'LineWidth', 1.5)
+legend('Empirical CDF','Standard Normal CDF','Location','best');
+grid off;
+
+skew = skewness(residuals)
+kurt = kurtosis(residuals)

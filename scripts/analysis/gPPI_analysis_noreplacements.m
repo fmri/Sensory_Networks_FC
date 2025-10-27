@@ -13,7 +13,7 @@ load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/replacement_ROI
 
 %% Setup analysis parameters
 plot_individual_betamaps = true;
-save_out = false;
+save_out = true;
 
 reject_subjs = {'AH', 'SL', 'RR'};
 subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
@@ -228,7 +228,7 @@ toc
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
-    save(['gPPI_LME_results_localizer_' task 'avsm.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
+    save(['gPPI_LME_results_localizer_' task 'avsm_noreplacements.mat'], 'lme', 'emm', 'data_table'); %%% CHANGE ME
 end
 plot_psc_emmeans(sortrows(emm.table,'Row','descend'));
 title(title_str);
@@ -245,3 +245,58 @@ end
 gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 [a,b] = sortrows(gppi_sigdiff_tbl, 'EMM', 'descend', 'ComparisonMethod', 'abs');
 
+%% Compare Visual WM betas and Auditory WM betas 
+vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'supramodal<->vbias', 'vbias<->vbias'};
+aud_beta_conns = {'abias<->abias', 'abias<->supramodal'};
+hemisphere_possibilities = {'lh_lh', 'rh_lh', 'rh_rh'};
+
+anova_table = table();
+for ss = 1:Nsubjs
+    for hh = 1:length(hemisphere_possibilities)
+        vis_inds = ismember(data_table.connection_type, vis_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
+        mean_beta_vis = mean(data_table.vis_beta(vis_inds));
+        anova_table = [anova_table; {mean_beta_vis, hemisphere_possibilities{hh}, ss, 1}];
+
+        aud_inds = ismember(data_table.connection_type, aud_beta_conns) & ismember(data_table.hemispheres, hemisphere_possibilities{hh}) & double(data_table.subject)==ss;
+        mean_beta_aud = mean(data_table.aud_beta(aud_inds));
+        anova_table = [anova_table; {mean_beta_aud, hemisphere_possibilities{hh}, ss, 2}];
+    end
+end
+anova_table.Properties.VariableNames = {'audvis_beta', 'hemisphere', 'subject', 'connection_type'};
+
+[pvals,tbl,stats] = anovan(anova_table.audvis_beta, ...
+    {anova_table.connection_type, anova_table.subject, anova_table.hemisphere}, ... 
+    'model',1, 'random',[2,3], 'varnames',{'connection_type' 'subject', 'hemisphere'});
+
+
+avg_visconns = mean(anova_table.audvis_beta(anova_table.connection_type==1));
+avg_audconns = mean(anova_table.audvis_beta(anova_table.connection_type==2));
+sem_visconns = std(anova_table.audvis_beta(anova_table.connection_type==1)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==1)));
+sem_audconns = std(anova_table.audvis_beta(anova_table.connection_type==2)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==2)));
+
+figure;
+%swarmchart(anova_table.connection_type, anova_table.audvis_beta);
+b1 = bar(1, avg_visconns);
+hold on;
+b2 = bar(2, avg_audconns);
+errorbar([1;2], [avg_visconns;avg_audconns], [sem_visconns;sem_audconns], 'LineStyle','none') 
+ylabel('Mean PPI Beta');
+xticks([1,2])
+xticklabels({'Visual Stream Connections', 'Auditory Stream Connections'});
+legend([b1,b2], {'Visual WM Change in Connectivity', 'Auditory WM Change in Connectivity'});
+
+save('gPPI_anova_plotpoints_noreplacements.mat', 'avg_visconns', 'avg_audconns', 'sem_visconns', 'sem_audconns');
+
+
+
+%% normality checks
+residuals = lme.residuals;
+x = (residuals - mean(residuals))/std(residuals);
+figure;
+qqplot(residuals);
+figure;
+cdfplot(x)
+hold on
+x_values = linspace(min(x),max(x));
+plot(x_values,normcdf(x_values,0,1),'r-')
+legend('Empirical CDF','Standard Normal CDF','Location','best')
