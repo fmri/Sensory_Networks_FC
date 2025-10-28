@@ -207,16 +207,20 @@ for k = 1:size(y,2)
         'Color', 'k', 'LineWidth', 1);
     
     for cc = 1:n_conntypes
-        scatter(repmat(xpos(cc), Nsubjs, 1), squeeze(data_visaud(:,inds(cc),1)), 'k');
+        scatter(repmat(xpos(cc), Nsubjs, 1), squeeze(data_visaud(:,inds(cc),k)), 'k');
     end
 end
 
 % Set Axis properties
-set(gca,'xticklabel',connection_types(inds));
+connection_types_alt_ordered = {'post vis<->supramodal', 'post vis<->front vis', 'post+front aud<->post+front aud', 'post+front aud<->front vis',...
+                      'post+front aud<->supramodal', 'supramodal<->front vis', 'front vis<->front vis',...
+                      'post+front aud<->post vis', 'supramodal<->supramodal'};
+%set(gca,'xticklabel',connection_types(inds));
+set(gca,'xticklabel',connection_types_alt_ordered);
 ylabel('Mean PPI beta')
 xlabel('Connection Type');
 legend({'Visual WM', 'Auditory WM'});
-title('Change in connectivity during visual and auditory working memory')
+title('LME PPI Changes in Connectivity in Visual and Auditory WM')
 set(gca, 'FontSize', 18)
 
 %% Change to categorical data types
@@ -281,7 +285,6 @@ sem_visconns = std(anova_table.audvis_beta(anova_table.connection_type==1)) / sq
 sem_audconns = std(anova_table.audvis_beta(anova_table.connection_type==2)) / sqrt(length(anova_table.audvis_beta(anova_table.connection_type==2)));
 
 figure;
-%swarmchart(anova_table.connection_type, anova_table.audvis_beta);
 b1 = bar(1, avg_visconns);
 hold on;
 b2 = bar(2, avg_audconns);

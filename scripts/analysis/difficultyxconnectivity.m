@@ -50,70 +50,11 @@ end
 lm_table_vis.Properties.VariableNames = {'subject', 'beta_diff' 'vis_difficulty'};
 lm_table_aud.Properties.VariableNames = {'subject', 'beta_diff', 'aud_difficulty'};
 
-lm_table_aud_plot = lm_table_aud;
-lm_table_vis_plot = lm_table_vis;
-lm_table_vis.beta_diff = lm_table_vis.beta_diff - mean(lm_table_vis.beta_diff); 
-lm_table_aud.beta_diff = lm_table_aud.beta_diff - mean(lm_table_aud.beta_diff); 
-
 lm_aud = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff')
-lm_aud_plot = fitlm(lm_table_aud_plot, 'aud_difficulty ~ 1 + beta_diff');
+lm_aud_plot = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff');
 f = figure; p = plot(lm_aud_plot); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
 
 lm_vis = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff')
-lm_vis_plot = fitlm(lm_table_vis_plot, 'vis_difficulty ~ 1 + beta_diff');
+lm_vis_plot = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff');
 figure; plot(lm_vis_plot); title(''); xlabel('Visual Connections: Auditory Betas - Visual Betas'); ylabel('Visual WM Change in Frequency');
 
-%% Test individual connections
-for ss = 1:N
-    % Get network-level changes in connectivity for subj
-    subj_data = data_table(data_table.subject==ss,:);
-    for cc = 1:N_conns
-        % Vis betas
-        betas(ss,cc,1) = mean(subj_data.vis_beta(ismember(subj_data.connection_type, connections{cc})));
-
-        % Aud betas
-        betas(ss,cc,2) = mean(subj_data.aud_beta(ismember(subj_data.connection_type, connections{cc})));
-    end
-end
-
-%% Plot
-for cc = 1:N_conns
-    % vis_tbl = table(betas(:,cc,1), avg_difficulty(:,3));
-    % vis_tbl.Properties.VariableNames = {'betas', 'vis_difficulty'};
-    % vis_tbl.vis_difficulty = 60 - vis_tbl.vis_difficulty;
-    % lm_vis = fitlm(vis_tbl, 'vis_difficulty ~ 1 + betas');
-    % figure; plot(lm_vis);
-    % xlabel('Visual Betas'); ylabel('Visual WM Task Performance'); 
-    % title(['Visual WM: ' connections{cc} ' | p=' num2str(lm_vis.Coefficients{2,4})]);
-    % set(gca, 'FontSize', 18);
-    % 
-    % vis_tbl = table(betas(:,cc,2), avg_difficulty(:,3));
-    % vis_tbl.Properties.VariableNames = {'betas', 'vis_difficulty'};
-    % vis_tbl.vis_difficulty = 60 - vis_tbl.vis_difficulty;
-    % lm_vis = fitlm(vis_tbl, 'vis_difficulty ~ 1 + betas');
-    % figure; plot(lm_vis);
-    % xlabel('Auditory Betas'); ylabel('Visual WM Task Performance'); 
-    % title(['Auditory WM: ' connections{cc} ' | p=' num2str(lm_vis.Coefficients{2,4})]);
-    
-    aud_tbl = table(betas(:,cc,1), avg_difficulty(:,1));
-    aud_tbl.Properties.VariableNames = {'betas', 'aud_difficulty'};
-    lm_aud = fitlm(aud_tbl, 'aud_difficulty ~ 1 + betas')
-    figure; plot(lm_aud);
-    xlabel('Visual Betas'); ylabel('Auditory WM Task Performance'); 
-    title(['Visual WM: ' connections{cc} ' | p=' num2str(lm_aud.Coefficients{2,4})]);
-    set(gca, 'FontSize', 18);
-
-    aud_tbl = table(betas(:,cc,2), avg_difficulty(:,1));
-    aud_tbl.Properties.VariableNames = {'betas', 'aud_difficulty'};
-    lm_aud = fitlm(aud_tbl, 'aud_difficulty ~ 1 + betas')
-    figure; plot(lm_aud);
-    xlabel('Auditory Betas'); ylabel('Auditory WM Task Performance'); 
-    title(['Auditory WM: ' connections{cc} ' | p=' num2str(lm_aud.Coefficients{2,4})]);
-    set(gca, 'FontSize', 18);
-
-end
-
-% tbl = array2table(betas(:,:,2));
-% tbl.Properties.VariableNames = strrep(connections, '<->', '');
-% tbl.aud_difficulty = avg_difficulty(:,1);
-% fitlm(tbl, 'aud_difficulty ~ 1 + abiasabias + abiasvbias + abiassupramodal + pVissupramodal + pVisvbias')
