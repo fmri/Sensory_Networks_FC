@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The purpose of this script is to extract the gPPI connectivity (correlation) values from the
-% CONN toolbox gPPI analysis results and compute group-level statistics on
+% CONN toolbox analysis results and compute group-level statistics on
 % them
 % Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,7 +92,7 @@ heatmap(names_plot, names_plot, mean_corr_diffs); colormap(redbluedark); title('
 clim([-0.8,0.8])
 
 %% Build design matrix for LME
-hemis = repelem({'lh', 'rh'},nROIs);
+hemis = repelem({'lh', 'rh'},nROIs/2);
 data_table = table();
 for ss = 1:Nsubjs
 
@@ -167,6 +167,7 @@ for ss = 1:Nsubjs
 end
 
 data_table.Properties.VariableNames = {'corr_diff', 'subject', 'hemispheres', 'connection_type', 'ROI_type', 'task_pcorrect_diff'};
+%data_table(data_table.hemispheres)
 
 %% Make connectivity bar graph
 

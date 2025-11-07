@@ -177,6 +177,8 @@ mean_PPI = nan(n_conntypes,2);
 SE_PPI = nan(n_conntypes,2);
 
 data_visaud = nan(Nsubjs,n_conntypes,2);
+data_visaud_tbl = table();
+counter = 0;
 for cc = 1:n_conntypes
     conn_type = connection_types{cc};
     mean_PPI(cc,1) = mean(data_table.vis_beta(strcmp(data_table.connection_type, conn_type)));
@@ -184,8 +186,16 @@ for cc = 1:n_conntypes
     SE_PPI(cc,1) = std(data_table.vis_beta(strcmp(data_table.connection_type, conn_type)))/sqrt(sum(strcmp(data_table.connection_type, conn_type)));
     SE_PPI(cc,2) = std(data_table.aud_beta(strcmp(data_table.connection_type, conn_type)))/sqrt(sum(strcmp(data_table.connection_type, conn_type)));
     for nn = 1:Nsubjs
+        counter = counter + 1;
         data_visaud(nn,cc,1) = mean(data_table.vis_beta(strcmp(data_table.connection_type, conn_type) & data_table.subject==nn));
         data_visaud(nn,cc,2) = mean(data_table.aud_beta(strcmp(data_table.connection_type, conn_type) & data_table.subject==nn));
+        data_visaud_tbl{counter,1} = mean(data_table.vis_beta(strcmp(data_table.connection_type, conn_type) & data_table.subject==nn));
+        data_visaud_tbl{counter,2} = {'visual'};
+        data_visaud_tbl{counter,3} = {conn_type};
+        counter = counter + 1;
+        data_visaud_tbl{counter,1} = mean(data_table.aud_beta(strcmp(data_table.connection_type, conn_type) & data_table.subject==nn));
+        data_visaud_tbl{counter,2} = {'auditory'};
+        data_visaud_tbl{counter,3} = {conn_type};
     end
 end
 
@@ -217,6 +227,25 @@ connection_types_alt_ordered = {'post vis<->supramodal', 'post vis<->front vis',
                       'post+front aud<->post vis', 'supramodal<->supramodal'};
 %set(gca,'xticklabel',connection_types(inds));
 set(gca,'xticklabel',connection_types_alt_ordered);
+ylabel('Mean PPI beta')
+xlabel('Connection Type');
+legend({'Visual WM', 'Auditory WM'});
+title('LME PPI Changes in Connectivity in Visual and Auditory WM')
+set(gca, 'FontSize', 18)
+
+%% Make box plots
+data_visaud_tbl.Properties.VariableNames = {'PPI', 'modality', 'connection_type'};
+new_conntype_order = {'pVis<->supramodal', 'empty1', 'pVis<->vbias', 'empty2', 'abias<->abias', 'empty3', 'abias<->vbias', 'empty4',...
+                      'abias<->supramodal', 'empty5', 'supramodal<->vbias', 'empty6', 'vbias<->vbias', 'empty7','abias<->pVis',...
+                      'empty8','supramodal<->supramodal'};
+data_visaud_tbl.connection_type = categorical(data_visaud_tbl.connection_type, new_conntype_order);
+data_visaud_tbl.modality = categorical(data_visaud_tbl.modality, {'visual', 'auditory'});
+figure(3);
+b = boxchart(data_visaud_tbl.connection_type, data_visaud_tbl.PPI, 'GroupByColor',data_visaud_tbl.modality);
+xt = xticks;
+xt([2 4 6 8,10,12,14,16]) = categorical(" "); % Invisible character (ATL+255), not a space!
+xt([1,3,5,7,9,11,13,15,17]) = categorical(connection_types_alt_ordered);
+xticklabels(xt);
 ylabel('Mean PPI beta')
 xlabel('Connection Type');
 legend({'Visual WM', 'Auditory WM'});

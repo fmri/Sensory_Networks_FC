@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% The purpose of this script is to extract the gPPI connectivity (correlation) values from the
-% CONN toolbox gPPI analysis results and compute group-level statistics on
+% The purpose of this script is to extract the connectivity (correlation) values from the
+% CONN toolbox analysis results and compute group-level statistics on
 % them
 % Tom Possidente - Feb 2025
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +88,7 @@ figure;
 heatmap(names_plot, names_plot, mean_corr_diffs); colormap turbo; title(task);
 
 %% Build design matrix for LME
-hemis = repelem({'lh', 'rh'},nROIs);
+hemis = repelem({'lh', 'rh'},nROIs/2);
 data_table = table();
 for ss = 1:Nsubjs
 
