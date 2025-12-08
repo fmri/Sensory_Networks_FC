@@ -222,6 +222,7 @@ lme = fitglme(data_table, ['corr_diff ~ 1 + connection_type + (1 + connection_ty
     'DummyVarCoding','reference');
 toc
 
+
 %% Normality checks
 residuals = lme.residuals;
 x = (residuals - mean(residuals))/std(residuals);
@@ -294,9 +295,16 @@ for cc = 1:N_cond
 end
 sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
 
+for mm = 1:height(emm.table)
+    estimated_effect_size = (emm.table.Estimated_Marginal_Mean(mm)) / std(lme.Variables.corr_diff);
+    disp([emm.table.connection_type(mm) num2str(estimated_effect_size)])
+end
+
 %% Sig testing vbias <-> supramodal against abias <-> supramodal
 res_table = contrasts_wald(lme, emm, [0 0 -1 0 0 0 0 0 1 0]);
 res_table.pVal
+
+estimated_effect_size = (emm.table.Estimated_Marginal_Mean(9) - emm.table.Estimated_Marginal_Mean(3)) / std(lme.Variables.corr_diff)
 
 figure;
 b1 = bar(1, sigdiff_tbl.EMM(9));

@@ -14,7 +14,7 @@ load('/projectnb/somerslab/tom/projects/sensory_networks_FC/data/missing_ROIs.ma
 %% Setup analysis parameters
 task = 'rest';
 plot_individual_betamaps = true;
-save_out = false;
+save_out = true;
 
 if ismember(task, {'rest', 'resting', 'rs'})
     reject_subjs = {'RR','AH','PQ','RT','SL','MM'};

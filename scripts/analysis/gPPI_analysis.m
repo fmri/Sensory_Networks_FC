@@ -264,7 +264,6 @@ lme = fitglme(data_table, ['beta_diff ~ 1 + connection_type + (1 + connection_ty
     'DummyVarCoding','reference');
 toc
 
-
 emm = emmeans(lme,'unbalanced');
 emm.table
 if save_out
@@ -283,6 +282,12 @@ for cc = 1:N_cond
     gppi_sigdiff_tbl = [gppi_sigdiff_tbl; {emm.table.Row{cc}, emm.table{cc,"Estimated_Marginal_Mean"}, emm.table{cc,"SE"}, res_table.pVal}];
 end
 gppi_sigdiff_tbl.Properties.VariableNames = {'Condition', 'EMM', 'SE', 'pVal'};
+
+for mm = 1:height(emm.table)
+    estimated_effect_size = (emm.table.Estimated_Marginal_Mean(mm)) / std(lme.Variables.beta_diff);
+    disp([emm.table.connection_type(mm) num2str(estimated_effect_size)])
+end
+
 
 %% Compare Visual WM betas and Auditory WM betas 
 vis_beta_conns = {'pVis<->vbias', 'pVis<->supramodal', 'supramodal<->vbias', 'vbias<->vbias'};

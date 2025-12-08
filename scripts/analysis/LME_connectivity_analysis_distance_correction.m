@@ -28,7 +28,7 @@ end
 
 Nsubjs = length(subjCodes_rs);
 
-ROI_dataDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_resting_state/results/firstlevel/avsm_connectivity/';
+ROI_dataDir = '/projectnb/somerslab/tom/projects/sensory_networks_FC/data/conn_toolbox_folder/conn_resting_state_nosmoothing/results/firstlevel/avsm_connectivity/';
 nROIs = 16*2;
 missing_ROIs = [];
 

@@ -102,7 +102,8 @@ for ss=1:length(subjCodes)
     runs = str2num(runs);
     runs_all{ss} = runs;
     for ii=1:length(runs)
-        subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/' prefix 'f' suffix];
+        %subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/' prefix 'f' suffix];
+        subjDirFunc = [func_path '/' subjCode '/' data_dir, '/00' num2str(ii) '/uf_topupApplied.nii']; %%%%%%%%%%%%%
         if ~isfile(subjDirFunc)
             subjDirFunc = [subjDirFunc '.gz'];
             if ~isfile(subjDirFunc)
