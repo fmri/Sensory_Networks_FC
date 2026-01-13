@@ -28,13 +28,8 @@ perc_correct_all = nan(n,n_conditions);
 n_cond = nan(n,n_conditions);
 perc_correct_byrun = nan(n,2,6);
 
-if strcmp(taskname, 'x1WayLocalizer')
-    condition_str = {'active', 'passive'};
-    condition_order = {'visual_active', 'visual_passive', 'auditory_active', 'auditory_passive', 'tactile_active', 'tactile_passive'};
-elseif strcmp(taskname, 'spacetime')
-    condition_str = {'spatial', 'temporal'};
-    condition_order = {'visual_spatial', 'visual_temporal', 'auditory_spatial', 'auditory_temporal', 'tactile_spatial', 'tactile_temporal'};
-end
+condition_str = {'active', 'passive'};
+condition_order = {'visual_active', 'visual_passive', 'auditory_active', 'auditory_passive', 'tactile_active', 'tactile_passive'};
 
 for ss = 1:n
 
@@ -55,9 +50,7 @@ for ss = 1:n
         continue
     end
 
-    if strcmp(taskname, 'spacetime')
-        files_csv = files( contains(files, '.csv') & (contains(files, '_spatial_temporal_') | contains(files, 'ac_trifloc_task')) ); % Get only csv files in this dir
-    elseif strcmp(taskname, 'x1WayLocalizer')
+    if strcmp(taskname, 'x1WayLocalizer')
         files_csv = files( contains(files, '.csv') & (contains(files, 'trifloc_task_') | contains(files, 'ac_trifloc_task')) ); % Get only csv files in this dir
     else
         error('unrecognized taskname');
@@ -68,6 +61,7 @@ for ss = 1:n
     responses = [];
     modalities = {};
     conditions = {};
+    cue_text_stopped = {}; % indicates 1st trial (should be dropped)
 
 
     % Loop through each run and collect reponses, modality, and condition data
@@ -77,6 +71,7 @@ for ss = 1:n
         nrows = height(behavioral_data);
         modalities(ss,rr,:) = behavioral_data.modality;
         conditions(ss,rr,:) = behavioral_data.type;
+        cue_text_stopped(rr,:) = behavioral_data.cue_text_stopped;
 
         which_column = find(ismember(correct_colnames, behavioral_data.Properties.VariableNames), 1);
         if which_column ~= 1
@@ -90,7 +85,7 @@ for ss = 1:n
 
     % Loop through each modality and calculate % correct
     for mm = 1:length(modality_names)
-        modality_cond1_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{1}, conditions(ss,:,:)));
+        modality_cond1_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{1}, conditions(ss,:,:))) & ~strcmpi(cue_text_stopped, 'None');
         n_cond(ss,(mm*2)-1) = sum(modality_cond1_mask,'all');
         perc_correct = mean(subj_responses(modality_cond1_mask), 'all', 'omitnan');
         perc_correct_all(ss,(mm*2)-1) = perc_correct;
@@ -104,7 +99,7 @@ for ss = 1:n
             perc_correct_byrun(ss,mm,rr) = mean(responses(ss,rr, modality_cond1_mask(rr,:)), 'omitnan');
         end
 
-        modality_cond2_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{2}, conditions(ss,:,:)));
+        modality_cond2_mask = squeeze(strcmpi(modality_names{mm}, modalities(ss,:,:)) & strcmpi(condition_str{2}, conditions(ss,:,:))) & ~strcmpi(cue_text_stopped, 'None');
         n_cond(ss,(mm*2)) = sum(modality_cond2_mask, 'all');
         perc_correct = mean(subj_responses(modality_cond2_mask), 'all', 'omitnan');
         perc_correct_all(ss,(mm*2)) = perc_correct;

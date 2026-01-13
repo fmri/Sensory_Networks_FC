@@ -10,7 +10,7 @@ ccc;
 
 %% Initialize Key Variables
 %reject_subjs = {'AH', 'SL', 'RR'};
-subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS', 'AI'};
+subjCodes = {'MM', 'PP', 'MK', 'AB', 'AD', 'LA', 'AE', 'TP', 'NM', 'AF', 'AG', 'AI', 'GG', 'UV', 'PQ', 'KQ', 'LN', 'RT', 'PT', 'PL', 'NS'};
 N = length(subjCodes);
 
 subjDf = load_subjInfo();
@@ -44,7 +44,6 @@ for ss = 1:N
 
     assert(length(files_csv)==num_runs, ['Subj ' subjCode ': Number of runs specified in subjInfo.csv does not match number of runs found in behavioral data files']);
     
-    %difficulty_subj = nan(3, num_runs, 16);
     difficulty_subj = nan(3, num_runs, 16);
 
     % Loop through each run and collect difficulty data for each task
@@ -63,10 +62,15 @@ end
 
 %% Compute averages
 avg_difficulty = nan(N,3);
-
+%all_difficulty_aud = []
 for ss = 1:N
     for ii = 1:3
-        %avg_difficulty(ss,ii) = mean(difficulty{ss}(ii,:,:), [2,3])
+        % if ii == 1
+        %     dat = difficulty{ss}(ii,:,:,:);
+        %     dat = dat(:);
+        %     all_difficulty_aud(end+1:end+length(dat)) = dat;
+        % end
+
         avg_difficulty(ss,ii) = squeeze(mean(difficulty{ss}(ii,:,:,:), [2,3,4]));
     end
 end

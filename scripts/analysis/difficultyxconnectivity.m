@@ -47,14 +47,21 @@ for ss = 1:N
         end
     end
 end
-lm_table_vis.Properties.VariableNames = {'subject', 'beta_diff' 'vis_difficulty'};
-lm_table_aud.Properties.VariableNames = {'subject', 'beta_diff', 'aud_difficulty'};
 
-lm_aud = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff')
-lm_aud_plot = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff');
-f = figure; p = plot(lm_aud_plot); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
+lm_table_vis.Properties.VariableNames = {'subject', 'beta_diff_visconns' 'vis_difficulty'};
+lm_table_aud.Properties.VariableNames = {'subject', 'beta_diff_audconns', 'aud_difficulty'};
 
-lm_vis = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff')
-lm_vis_plot = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff');
-figure; plot(lm_vis_plot); title(''); xlabel('Visual Connections: Auditory Betas - Visual Betas'); ylabel('Visual WM Change in Frequency');
+lm_table_all = table(lm_table_vis.subject, lm_table_vis.beta_diff_visconns, lm_table_aud.beta_diff_audconns, lm_table_vis.vis_difficulty, lm_table_aud.aud_difficulty);
+lm_table_all.Properties.VariableNames = {'subject', 'beta_diff_visconns', 'beta_diff_audconns', 'vis_difficulty', 'aud_difficulty'};
 
+lm_aud = fitlm(lm_table_aud, 'aud_difficulty ~ 1 + beta_diff_audconns')
+f = figure; p = plot(lm_aud); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
+
+lm_vis = fitlm(lm_table_vis, 'vis_difficulty ~ 1 + beta_diff_visconns')
+figure; plot(lm_vis); title(''); xlabel('Visual Connections: Auditory Betas - Visual Betas'); ylabel('Visual WM Change in Frequency');
+
+lm_audbeta_predvis = fitlm(lm_table_all, 'vis_difficulty ~ 1 + beta_diff_audconns')
+figure; plot(lm_audbeta_predvis); title(''); xlabel('Auditory Connections: Auditory Betas - Visual Betas'); ylabel('Visual WM Change in Frequency');
+
+lm_visbeta_predaud = fitlm(lm_table_all, 'aud_difficulty ~ 1 + beta_diff_visconns')
+figure; plot(lm_visbeta_predaud); title(''); xlabel('Visual Connections: Auditory Betas - Visual Betas'); ylabel('Auditory WM Change in Frequency');
