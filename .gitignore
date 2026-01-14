@@ -2,6 +2,7 @@ data/
 archive/
 log/
 fs_analysis_results/
+publication_files/
 figures_images/
 .ipynb_checkpoints/
 .virtual_documents/
