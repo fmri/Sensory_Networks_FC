@@ -1,6 +1,6 @@
 # Sensory Networks Functional Connectivity
 This repository contains code used in the following publication: 
-- Possidente, T.\*, Tripathi, V.\*, McGuire, J. T. & Somers, D. C. (in press) Interactions between sensory-biased and supramodal working memory networks in the human cerebral cortex. Communications Biology.
+- Possidente, T.\*, Tripathi, V.\*, McGuire, J. T. & Somers, D. C. (in press) Interactions between sensory-biased and supramodal working memory networks in the human cerebral cortex. <i>Communications Biology</i>.
 
 This repository contains code for preprocessing, analysing, and making figures for the sensory networks functional connectivity project. 
 
